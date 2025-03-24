@@ -1,0 +1,288 @@
+/* General styling */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* Container layouts */
+.game-container {
+  display: flex;
+  flex-direction: column;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  height: 100vh;
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #ddd;
+}
+
+.game-content {
+  display: flex;
+  flex: 1;
+  gap: 20px;
+}
+
+.left-panel {
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.main-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.right-panel {
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.game-controls {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 2px solid #ddd;
+  display: flex;
+  justify-content: center;
+}
+
+/* Player setup styles */
+.player-setup {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.player-setup h2 {
+  margin-top: 0;
+  color: #2c3e50;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.player-entry {
+  display: flex;
+  gap: 10px;
+}
+
+.player-entry input[type="text"] {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.start-game-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.start-game-btn:hover {
+  background-color: #2980b9;
+}
+
+.error {
+  color: #e74c3c;
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: #fadbd8;
+  border-radius: 4px;
+}
+
+/* Player info styles */
+.player-info {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.player-info.current {
+  border: 2px solid #f39c12;
+  background-color: #fef9e7;
+}
+
+.player-color {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  margin-right: 10px;
+  border: 1px solid #ddd;
+}
+
+.player-details {
+  flex: 1;
+}
+
+.player-details h3 {
+  margin: 0 0 5px 0;
+  font-size: 16px;
+}
+
+.player-resources {
+  font-size: 14px;
+  display: flex;
+  gap: 10px;
+}
+
+.resource {
+  display: flex;
+  align-items: center;
+}
+
+.resource-label {
+  color: #7f8c8d;
+  margin-right: 5px;
+}
+
+.resource-value {
+  font-weight: bold;
+}
+
+/* Space info styles */
+.space-info {
+  padding: 15px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.space-info h3 {
+  margin-top: 0;
+  color: #2c3e50;
+}
+
+.space-type {
+  display: inline-block;
+  padding: 3px 10px;
+  background-color: #3498db;
+  color: white;
+  border-radius: 20px;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.space-description {
+  margin-bottom: 15px;
+}
+
+.visit-info h4 {
+  margin: 10px 0 5px;
+  color: #2c3e50;
+}
+
+/* Available moves styles */
+.available-moves {
+  padding: 15px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.available-moves h3 {
+  margin-top: 0;
+  color: #2c3e50;
+}
+
+.move-option {
+  padding: 8px 12px;
+  margin: 5px 0;
+  background-color: #ecf0f1;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.move-option:hover {
+  background-color: #3498db;
+  color: white;
+}
+
+/* Game control buttons */
+.end-turn-btn {
+  padding: 10px 20px;
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.end-turn-btn:hover {
+  background-color: #27ae60;
+}
+
+.end-turn-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Error screen */
+.error-screen {
+  max-width: 600px;
+  margin: 100px auto;
+  padding: 30px;
+  text-align: center;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+}
+
+.error-message {
+  color: #e74c3c;
+  margin: 20px 0;
+}

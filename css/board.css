@@ -1,0 +1,104 @@
+/* Game board styles */
+.board-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow: auto;
+  height: 100%;
+}
+
+.game-board {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.board-row {
+  display: flex;
+  gap: 15px;
+}
+
+.board-row.reverse {
+  flex-direction: row-reverse;
+}
+
+.board-space {
+  position: relative;
+  width: 120px;
+  height: 80px;
+  padding: 10px;
+  background-color: #ecf0f1;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.board-space:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.space-name {
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+/* Player tokens on board */
+.player-tokens {
+  display: flex;
+  gap: 5px;
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+}
+
+.player-token {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Space type color coding */
+.space-type-setup {
+  background-color: #3498db;
+  color: white;
+}
+
+.space-type-design {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.space-type-funding {
+  background-color: #f1c40f;
+  color: #333;
+}
+
+.space-type-owner {
+  background-color: #9b59b6;
+  color: white;
+}
+
+.space-type-regulatory {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.space-type-construction {
+  background-color: #e67e22;
+  color: white;
+}
+
+.space-type-end {
+  background-color: #1abc9c;
+  color: white;
+}

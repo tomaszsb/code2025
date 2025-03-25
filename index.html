@@ -11,8 +11,55 @@
     <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        .server-warning {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            margin: 20px;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .server-warning code {
+            background-color: #f1f1f1;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        .server-warning a {
+            color: #721c24;
+            text-decoration: underline;
+        }
+    </style>
+    
+    <script>
+        // Check if we're running from a server or file protocol
+        window.addEventListener('DOMContentLoaded', function() {
+            if (window.location.protocol === 'file:') {
+                document.getElementById('server-warning').style.display = 'block';
+                document.getElementById('game-root').style.display = 'none';
+            }
+        });
+    </script>
 </head>
 <body>
+    <!-- Warning message when opened directly from file system -->
+    <div id="server-warning" class="server-warning">
+        <h2>⚠️ Local Server Required</h2>
+        <p>This application cannot run when opened directly as a file.</p>
+        <p>Please use a local web server to run this application. See <a href="docs/RUNNING_LOCALLY.md">RUNNING_LOCALLY.md</a> for instructions.</p>
+        <p>Quick options:</p>
+        <ul>
+            <li>Using Python: <code>python -m http.server</code></li>
+            <li>Using VS Code: Install "Live Server" extension and click "Go Live"</li>
+            <li>Using Node.js: <code>npx http-server</code></li>
+        </ul>
+    </div>
+    
+    <!-- Main game container -->
     <div id="game-root"></div>
     
     <!-- Game Components -->

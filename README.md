@@ -1,57 +1,31 @@
 # Project Management Game
 
-A digital board game that simulates the lifecycle of a construction project. The game is designed for educational purposes, targeting colleges and universities as a teaching tool for project management concepts.
+A digital board game that simulates the lifecycle of a construction project for educational purposes.
 
-## Project Overview
+## Documentation
 
-This game allows players to take on the role of project managers navigating through various phases of a construction project including:
+Please see the docs folder for full documentation:
 
-- Initial setup and scope definition
-- Design and planning
-- Funding and budgeting
-- Regulatory approvals
-- Construction and implementation
-
-Players navigate through a board-style interface, making decisions at various points that affect project outcomes, managing resources, and dealing with unexpected challenges.
-
-## Development Status
-
-The game is currently in Phase 1 development, focusing on establishing core board movement mechanics.
-
-### Current Phase: Core Movement System
-
-- [x] Project setup and structure
-- [ ] Basic board movement implementation
-- [ ] Player turn management
-- [ ] Simple game state persistence
-
-### Future Phases
-
-1. Card System (resource management)
-2. Dice and Outcomes (randomness and challenges)
-3. Project Management Elements (educational content)
-4. Polishing and Testing (user experience)
+- [Project Overview and Status](docs/README.md)
+- [Lessons Learned from Previous Implementations](docs/LESSONS_LEARNED.md)
+- [How to Run the Project Locally](docs/RUNNING_LOCALLY.md)
 
 ## Getting Started
 
-1. Open `index.html` in a web browser
-2. Set up players (1-4)
-3. Take turns moving around the board
-4. Follow the guidance and descriptions on each space
+**Important:** This project must be run on a local web server to avoid CORS issues.
 
-## Project Structure
+See [Running Locally](docs/RUNNING_LOCALLY.md) for detailed instructions on setting up a local server.
 
-- `css/` - Styling files
-- `js/` - JavaScript files
-   - `components/` - React-based UI components
-   - `data/` - Game state management
-   - `utils/` - Utility functions
-- `data/` - Game content data files (CSV)
+## Implementation Plan
 
-## Development Approach
+This project follows a phased implementation approach:
 
-See the `LESSONS_LEARNED.md` file for key insights from previous development attempts and the strategy for this implementation.
+1. **Phase 1 (Current)**: Core Movement System
+2. **Phase 2**: Card System
+3. **Phase 3**: Dice and Outcomes
+4. **Phase 4**: Project Management Elements
+5. **Phase 5**: Polishing and Testing
 
-## Educational Goal
+## License
 
-The primary goal of this game is to provide an engaging, interactive way for students to learn about project management principles in the context of construction projects. It aims to demonstrate real-world challenges, decision points, and the consequences of various choices throughout the project lifecycle.
+All rights reserved. This project is intended for educational purposes.

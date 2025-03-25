@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Test</title>
+    
+    <!-- React from CDN -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <h1>React Test Page</h1>
+    
+    <div id="test-root"></div>
+    
+    <script type="text/babel">
+        // A simple React component
+        function TestComponent() {
+            const [count, setCount] = React.useState(0);
+            
+            return (
+                <div style={{padding: '20px', backgroundColor: '#f0f0f0', border: '1px solid #ccc', borderRadius: '8px', margin: '20px'}}>
+                    <h2>React Test Component</h2>
+                    <p>If you can see this content, React is working correctly!</p>
+                    <p>Counter: {count}</p>
+                    <button 
+                        onClick={() => setCount(count + 1)}
+                        style={{padding: '10px', backgroundColor: 'blue', color: 'white', border: 'none', borderRadius: '4px'}}
+                    >
+                        Increment
+                    </button>
+                </div>
+            );
+        }
+        
+        // Render when the document is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM content loaded, attempting to render React component...');
+            
+            try {
+                ReactDOM.render(
+                    <TestComponent />,
+                    document.getElementById('test-root')
+                );
+                console.log('React component rendered successfully!');
+            } catch (error) {
+                console.error('Failed to render React component:', error);
+                document.getElementById('test-root').innerHTML = `
+                    <div style="color: red; padding: 20px; border: 1px solid red;">
+                        <h3>React Error</h3>
+                        <p>${error.message}</p>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

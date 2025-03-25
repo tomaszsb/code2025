@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Player Setup</title>
+    
+    <!-- React from CDN -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+        
+        .player-setup {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h2 {
+            margin-top: 0;
+            color: #2c3e50;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        select, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        .player-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .player-entry {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .start-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .error {
+            color: #e74c3c;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #fadbd8;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app-root"></div>
+    
+    <script type="text/babel">
+        function SimplePlayerSetup() {
+            const [playerCount, setPlayerCount] = React.useState(2);
+            const [playerNames, setPlayerNames] = React.useState(['Player 1', 'Player 2']);
+            const [playerColors, setPlayerColors] = React.useState(['#FF5733', '#33FF57']);
+            const [error, setError] = React.useState(null);
+            
+            // Handle player count change
+            const handlePlayerCountChange = (e) => {
+                const count = parseInt(e.target.value);
+                setPlayerCount(count);
+                
+                // Adjust arrays to match new count
+                const names = [...playerNames];
+                const colors = [...playerColors];
+                
+                // Default colors
+                const defaultColors = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3', '#33FFF3'];
+                
+                while (names.length < count) {
+                    names.push(`Player ${names.length + 1}`);
+                    colors.push(defaultColors[colors.length % defaultColors.length]);
+                }
+                
+                // Trim arrays if count decreased
+                setPlayerNames(names.slice(0, count));
+                setPlayerColors(colors.slice(0, count));
+            };
+            
+            // Handle name change
+            const handleNameChange = (index, e) => {
+                const newNames = [...playerNames];
+                newNames[index] = e.target.value;
+                setPlayerNames(newNames);
+            };
+            
+            // Handle color change
+            const handleColorChange = (index, e) => {
+                const newColors = [...playerColors];
+                newColors[index] = e.target.value;
+                setPlayerColors(newColors);
+            };
+            
+            // Handle form submission
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                
+                // Validate all players have names
+                if (playerNames.some(name => !name.trim())) {
+                    setError('All players must have names');
+                    return;
+                }
+                
+                // Show success message (in real app, would create players and start game)
+                setError(null);
+                alert(`Game starting with ${playerCount} players: ${playerNames.join(', ')}`);
+            };
+            
+            return (
+                <div className="player-setup">
+                    <h2>Player Setup</h2>
+                    
+                    {error && <div className="error">{error}</div>}
+                    
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label>Number of Players:</label>
+                            <select value={playerCount} onChange={handlePlayerCountChange}>
+                                <option value="1">1 Player</option>
+                                <option value="2">2 Players</option>
+                                <option value="3">3 Players</option>
+                                <option value="4">4 Players</option>
+                            </select>
+                        </div>
+                        
+                        <div className="player-list">
+                            {Array.from({ length: playerCount }).map((_, index) => (
+                                <div key={index} className="player-entry">
+                                    <input
+                                        type="text"
+                                        value={playerNames[index]}
+                                        onChange={(e) => handleNameChange(index, e)}
+                                        placeholder={`Player ${index + 1} Name`}
+                                    />
+                                    <input
+                                        type="color"
+                                        value={playerColors[index]}
+                                        onChange={(e) => handleColorChange(index, e)}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <button type="submit" className="start-btn">
+                            Start Game
+                        </button>
+                    </form>
+                </div>
+            );
+        }
+        
+        // Render the component
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Rendering SimplePlayerSetup...');
+            
+            try {
+                ReactDOM.render(
+                    <SimplePlayerSetup />,
+                    document.getElementById('app-root')
+                );
+                console.log('SimplePlayerSetup rendered successfully!');
+            } catch (error) {
+                console.error('Failed to render SimplePlayerSetup:', error);
+                document.getElementById('app-root').innerHTML = `
+                    <div style="color: red; padding: 20px; border: 1px solid red; margin: 50px auto; max-width: 600px;">
+                        <h3>React Rendering Error</h3>
+                        <p>${error.message}</p>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -2,14 +2,41 @@
 class GameBoard extends React.Component {
   constructor(props) {
     super(props);
+    console.log('GameBoard constructor called');
+    
+    // Check if GameState is defined and accessible
+    if (typeof GameState === 'undefined') {
+      console.error('GameState is not defined in GameBoard constructor');
+      this.state = {
+        error: 'GameState not available',
+        showSetup: true,
+        players: [],
+        currentPlayerIndex: 0,
+        spaces: [],
+        selectedSpace: null,
+        availableMoves: []
+      };
+      return;
+    }
+    
+    console.log('GameState.gameStarted:', GameState.gameStarted);
+    console.log('GameState.players:', GameState.players);
+    console.log('GameState.spaces:', GameState.spaces);
+    
+    // Always show setup for testing purposes if there are no players
+    const showSetup = !GameState.gameStarted || GameState.players.length === 0;
+    console.log('showSetup is set to:', showSetup);
+    
     this.state = {
-      showSetup: !GameState.gameStarted,
-      players: GameState.players,
-      currentPlayerIndex: GameState.currentPlayerIndex,
-      spaces: GameState.spaces,
+      showSetup: showSetup,
+      players: GameState.players || [],
+      currentPlayerIndex: GameState.currentPlayerIndex || 0,
+      spaces: GameState.spaces || [],
       selectedSpace: null,
       availableMoves: []
     };
+    
+    console.log('GameBoard initial state:', this.state);
   }
   
   componentDidMount() {
@@ -89,15 +116,43 @@ class GameBoard extends React.Component {
   }
   
   render() {
+    console.log('GameBoard render called');
     const { 
       showSetup, players, spaces, currentPlayerIndex,
-      selectedSpace, availableMoves
+      selectedSpace, availableMoves, error
     } = this.state;
+    
+    console.log('GameBoard render state:', { showSetup, playerCount: players ? players.length : 0, error });
+    
+    // If there was an error initializing GameState
+    if (error) {
+      return (
+        <div className="error-screen">
+          <h2>Game Initialization Error</h2>
+          <p>{error}</p>
+          <button onClick={() => window.location.reload()}>Reload Page</button>
+        </div>
+      );
+    }
     
     // Show setup screen if needed
     if (showSetup) {
-      return <PlayerSetup onSetupComplete={this.handleSetupComplete} />;
+      console.log('Showing PlayerSetup component');
+      try {
+        return <PlayerSetup onSetupComplete={this.handleSetupComplete} />;
+      } catch (error) {
+        console.error('Error rendering PlayerSetup:', error);
+        return (
+          <div className="error-screen">
+            <h2>Player Setup Error</h2>
+            <p>{error.message}</p>
+            <button onClick={() => window.location.reload()}>Reload</button>
+          </div>
+        );
+      }
     }
+    
+    console.log('Showing main game board');
     
     const currentPlayer = players[currentPlayerIndex];
     const selectedSpaceObj = spaces.find(space => space.id === selectedSpace);

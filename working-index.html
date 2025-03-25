@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Management Game</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/board.css">
+    
+    <!-- React from CDN -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <!-- Debug controls -->
+    <div style="position:fixed; top:10px; right:10px; z-index:9999; background-color:rgba(255,255,255,0.8); padding:10px; border:1px solid #ccc;">
+      <button id="reset-game-btn">Reset Game</button>
+      <button id="log-state-btn">Log State</button>
+      <button id="toggle-setup-btn">Toggle Setup View</button>
+    </div>
+    
+    <!-- Main game container -->
+    <div id="game-root"></div>
+    
+    <!-- Integrated game component -->
+    <script type="text/babel">
+        // Simple CSV Parser
+        function parseCSV(csvText) {
+            // Split by lines
+            const lines = csvText.split('\n');
+            // Extract headers
+            const headers = lines[0].split(',').map(h => h.trim());
+            
+            // Parse rows
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue; // Skip empty lines
+                
+                const values = lines[i].split(',').map(v => v.trim());
+                const row = {};
+                
+                headers.forEach((header, index) => {
+                    row[header] = values[index];
+                });
+                
+                data.push(row);
+            }
+            
+            return data;
+        }
+
+        // Game State - simplified version
+        const GameState = {
+            players: [],
+            currentPlayerIndex: 0,
+            spaces: [],
+            gameStarted: false,
+            
+            // Initialize the game
+            initialize(spacesData) {
+                console.log('GameState.initialize called with', spacesData.length, 'spaces');
+                
+                this.spaces = spacesData.map(row => {
+                    return {
+                        id: row['Space Name'] ? row['Space Name'].replace(/\s+/g, '-').toLowerCase() : 'unknown',
+                        name: row['Space Name'] || 'Unknown',
+                        type: row['Phase'] || 'Unknown',
+                        description: row['Event'] || '',
+                        nextSpaces: [
+                            row['Space 1'], 
+                            row['Space 2'], 
+                            row['Space 3'],
+                            row['Space 4'],
+                            row['Space 5']
+                        ].filter(s => s && s.trim() !== '')
+                    };
+                });
+                
+                this.loadSavedState();
+            },
+            
+            // Add a new player
+            addPlayer(name, color) {
+                const id = `player-${this.players.length + 1}`;
+                this.players.push({
+                    id,
+                    name,
+                    color,
+                    position: this.spaces[0]?.id || 'start',
+                    resources: {
+                        money: 1000,
+                        time: 0
+                    }
+                });
+                this.saveState();
+            },
+            
+            // Save state to localStorage
+            saveState() {
+                localStorage.setItem('game_players', JSON.stringify(this.players));
+                localStorage.setItem('game_currentPlayer', this.currentPlayerIndex);
+                localStorage.setItem('game_status', JSON.stringify({
+                    started: this.gameStarted
+                }));
+            },
+            
+            // Load state from localStorage
+            loadSavedState() {
+                try {
+                    const savedPlayers = localStorage.getItem('game_players');
+                    const savedCurrentPlayer = localStorage.getItem('game_currentPlayer');
+                    const savedStatus = localStorage.getItem('game_status');
+                    
+                    if (savedPlayers) {
+                        this.players = JSON.parse(savedPlayers);
+                    }
+                    
+                    if (savedCurrentPlayer) {
+                        this.currentPlayerIndex = parseInt(savedCurrentPlayer);
+                    }
+                    
+                    if (savedStatus) {
+                        const status = JSON.parse(savedStatus);
+                        this.gameStarted = status.started;
+                    } else {
+                        this.gameStarted = false;
+                    }
+                } catch (error) {
+                    console.error('Error loading saved game:', error);
+                    this.gameStarted = false;
+                }
+            },
+            
+            // Start a new game
+            startNewGame() {
+                this.players = [];
+                this.currentPlayerIndex = 0;
+                this.gameStarted = false;
+                localStorage.removeItem('game_players');
+                localStorage.removeItem('game_currentPlayer');
+                localStorage.removeItem('game_status');
+            }
+        };
+        
+        // Main Game Component
+        class GameBoard extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = {
+                    loading: true,
+                    error: null,
+                    showSetup: true,
+                    spaces: [],
+                    players: []
+                };
+            }
+            
+            componentDidMount() {
+                this.loadGameData();
+            }
+            
+            loadGameData = async () => {
+                try {
+                    // Load spaces from CSV
+                    const response = await fetch('data/Spaces.csv');
+                    const csvText = await response.text();
+                    const spacesData = parseCSV(csvText);
+                    
+                    // Initialize game state
+                    GameState.initialize(spacesData);
+                    
+                    this.setState({ 
+                        loading: false,
+                        spaces: GameState.spaces,
+                        players: GameState.players,
+                        showSetup: !GameState.gameStarted
+                    });
+                } catch (error) {
+                    console.error('Error loading game data:', error);
+                    this.setState({ 
+                        loading: false, 
+                        error: error.message 
+                    });
+                }
+            }
+            
+            startGame = () => {
+                // Add sample players for testing
+                GameState.addPlayer('Player 1', '#FF5733');
+                GameState.addPlayer('Player 2', '#33FF57');
+                GameState.gameStarted = true;
+                GameState.saveState();
+                
+                this.setState({ 
+                    showSetup: false,
+                    players: GameState.players
+                });
+            }
+            
+            resetGame = () => {
+                GameState.startNewGame();
+                this.setState({ 
+                    showSetup: true,
+                    players: []
+                });
+            }
+            
+            renderPlayerSetup() {
+                return (
+                    <div style={{ maxWidth: '600px', margin: '50px auto', padding: '20px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
+                        <h2 style={{ textAlign: 'center' }}>Player Setup</h2>
+                        <p>Click the button below to start a game with default players.</p>
+                        <button 
+                            onClick={this.startGame}
+                            style={{ width: '100%', padding: '12px', backgroundColor: '#3498db', color: 'white', border: 'none', borderRadius: '4px', fontSize: '16px', cursor: 'pointer' }}
+                        >
+                            Start Game
+                        </button>
+                    </div>
+                );
+            }
+            
+            renderGameBoard() {
+                // Simple board display
+                return (
+                    <div>
+                        <h2>Game Board</h2>
+                        <p>Players: {this.state.players.map(p => p.name).join(', ')}</p>
+                        <p>Spaces: {this.state.spaces.length} loaded</p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '20px' }}>
+                            {this.state.spaces.slice(0, 10).map(space => (
+                                <div key={space.id} style={{ 
+                                    width: '120px', 
+                                    height: '80px',
+                                    padding: '10px',
+                                    backgroundColor: '#f0f0f0',
+                                    borderRadius: '5px',
+                                    boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                                }}>
+                                    <div style={{ fontWeight: 'bold' }}>{space.name}</div>
+                                    <div style={{ fontSize: '12px' }}>{space.type}</div>
+                                </div>
+                            ))}
+                        </div>
+                        <button 
+                            onClick={this.resetGame}
+                            style={{ marginTop: '20px', padding: '8px 16px', backgroundColor: '#e74c3c', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                            Reset Game
+                        </button>
+                    </div>
+                );
+            }
+            
+            render() {
+                const { loading, error, showSetup } = this.state;
+                
+                if (loading) {
+                    return <div>Loading game data...</div>;
+                }
+                
+                if (error) {
+                    return (
+                        <div style={{ color: 'red', padding: '20px' }}>
+                            <h2>Error</h2>
+                            <p>{error}</p>
+                            <button onClick={() => window.location.reload()}>Reload Page</button>
+                        </div>
+                    );
+                }
+                
+                return showSetup ? this.renderPlayerSetup() : this.renderGameBoard();
+            }
+        }
+        
+        // Initialize the buttons
+        document.getElementById('reset-game-btn').addEventListener('click', function() {
+            GameState.startNewGame();
+            window.location.reload();
+        });
+        
+        document.getElementById('log-state-btn').addEventListener('click', function() {
+            console.log('Game State:', GameState);
+        });
+        
+        document.getElementById('toggle-setup-btn').addEventListener('click', function() {
+            GameState.startNewGame();
+            window.location.reload();
+        });
+        
+        // Render the game component
+        ReactDOM.render(<GameBoard />, document.getElementById('game-root'));
+    </script>
+</body>
+</html>

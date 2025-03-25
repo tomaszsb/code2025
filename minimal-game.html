@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal Game Implementation</title>
+    
+    <!-- React from CDN -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        
+        .player-setup {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        
+        .player-input {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        
+        .player-input input[type="text"] {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .player-input input[type="color"] {
+            margin-left: 10px;
+        }
+        
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .game-board {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .space {
+            width: 100px;
+            height: 80px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            padding: 10px;
+            position: relative;
+        }
+        
+        .player-token {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 5px;
+            border: 1px solid #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Minimal Game Implementation</h1>
+        <div id="game-root"></div>
+    </div>
+    
+    <script type="text/babel">
+        // Minimal Game Component
+        class MinimalGame extends React.Component {
+            constructor(props) {
+                super(props);
+                
+                // Initialize with default spaces for testing
+                const defaultSpaces = [
+                    { id: 'start', name: 'Start', type: 'setup' },
+                    { id: 'space-1', name: 'Space 1', type: 'design' },
+                    { id: 'space-2', name: 'Space 2', type: 'funding' },
+                    { id: 'space-3', name: 'Space 3', type: 'owner' },
+                    { id: 'space-4', name: 'Space 4', type: 'regulatory' },
+                    { id: 'space-5', name: 'Space 5', type: 'construction' },
+                    { id: 'space-6', name: 'Space 6', type: 'design' },
+                    { id: 'space-7', name: 'Space 7', type: 'owner' },
+                    { id: 'space-8', name: 'Space 8', type: 'funding' },
+                    { id: 'finish', name: 'Finish', type: 'end' },
+                ];
+                
+                // Try to load state from localStorage
+                let savedPlayers = [];
+                let gameStarted = false;
+                
+                try {
+                    const savedPlayersString = localStorage.getItem('game_players');
+                    const savedStatusString = localStorage.getItem('game_status');
+                    
+                    if (savedPlayersString) {
+                        savedPlayers = JSON.parse(savedPlayersString);
+                    }
+                    
+                    if (savedStatusString) {
+                        const status = JSON.parse(savedStatusString);
+                        gameStarted = status.started;
+                    }
+                } catch (error) {
+                    console.error('Error loading saved game:', error);
+                }
+                
+                this.state = {
+                    players: savedPlayers,
+                    currentPlayerIndex: 0,
+                    spaces: defaultSpaces,
+                    gameStarted: gameStarted,
+                    playerName: '',
+                    playerColor: '#FF5733'
+                };
+            }
+            
+            handleNameChange = (e) => {
+                this.setState({ playerName: e.target.value });
+            }
+            
+            handleColorChange = (e) => {
+                this.setState({ playerColor: e.target.value });
+            }
+            
+            handleAddPlayer = () => {
+                if (!this.state.playerName.trim()) return;
+                
+                const newPlayer = {
+                    id: `player-${this.state.players.length + 1}`,
+                    name: this.state.playerName,
+                    color: this.state.playerColor,
+                    position: 'start',
+                    resources: {
+                        money: 1000,
+                        time: 0
+                    }
+                };
+                
+                this.setState(prevState => ({
+                    players: [...prevState.players, newPlayer],
+                    playerName: '',
+                    playerColor: this.getNextColor(prevState.playerColor)
+                }));
+            }
+            
+            getNextColor = (currentColor) => {
+                const colors = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33'];
+                const currentIndex = colors.indexOf(currentColor);
+                return colors[(currentIndex + 1) % colors.length];
+            }
+            
+            handleStartGame = () => {
+                this.setState({ gameStarted: true });
+                
+                // Save to localStorage
+                localStorage.setItem('game_players', JSON.stringify(this.state.players));
+                localStorage.setItem('game_status', JSON.stringify({ started: true }));
+            }
+            
+            handleResetGame = () => {
+                this.setState({
+                    players: [],
+                    currentPlayerIndex: 0,
+                    gameStarted: false,
+                    playerName: '',
+                    playerColor: '#FF5733'
+                });
+                
+                // Clear localStorage
+                localStorage.removeItem('game_players');
+                localStorage.removeItem('game_status');
+            }
+            
+            handleMovePlayer = (spaceId) => {
+                const { players, currentPlayerIndex } = this.state;
+                
+                const updatedPlayers = [...players];
+                updatedPlayers[currentPlayerIndex].position = spaceId;
+                
+                this.setState({
+                    players: updatedPlayers,
+                    currentPlayerIndex: (currentPlayerIndex + 1) % players.length
+                });
+                
+                // Save to localStorage
+                localStorage.setItem('game_players', JSON.stringify(updatedPlayers));
+            }
+            
+            renderPlayerSetup() {
+                return (
+                    <div className="player-setup">
+                        <h2>Player Setup</h2>
+                        <div>
+                            <div className="player-input">
+                                <input
+                                    type="text"
+                                    value={this.state.playerName}
+                                    onChange={this.handleNameChange}
+                                    placeholder="Player Name"
+                                />
+                                <input
+                                    type="color"
+                                    value={this.state.playerColor}
+                                    onChange={this.handleColorChange}
+                                />
+                            </div>
+                            <button onClick={this.handleAddPlayer}>Add Player</button>
+                        </div>
+                        
+                        <div style={{ marginTop: '20px' }}>
+                            <h3>Players</h3>
+                            {this.state.players.map(player => (
+                                <div key={player.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+                                    <div style={{ 
+                                        width: '20px', 
+                                        height: '20px', 
+                                        backgroundColor: player.color,
+                                        borderRadius: '50%',
+                                        marginRight: '10px'
+                                    }}></div>
+                                    <span>{player.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <button 
+                            onClick={this.handleStartGame}
+                            disabled={this.state.players.length === 0}
+                            style={{ marginTop: '20px', width: '100%' }}
+                        >
+                            Start Game
+                        </button>
+                    </div>
+                );
+            }
+            
+            renderGameBoard() {
+                const { spaces, players, currentPlayerIndex } = this.state;
+                const currentPlayer = players[currentPlayerIndex];
+                
+                return (
+                    <div>
+                        <h2>Game Board</h2>
+                        <div>
+                            <p>Current Player: <strong>{currentPlayer.name}</strong></p>
+                        </div>
+                        
+                        <div className="game-board">
+                            {spaces.map(space => {
+                                // Find players on this space
+                                const playersOnSpace = players.filter(player => player.position === space.id);
+                                
+                                return (
+                                    <div 
+                                        key={space.id} 
+                                        className="space"
+                                        onClick={() => this.handleMovePlayer(space.id)}
+                                        style={{ 
+                                            cursor: 'pointer',
+                                            backgroundColor: space.id === currentPlayer.position ? '#e0f7fa' : '#f0f0f0'
+                                        }}
+                                    >
+                                        <div style={{ fontWeight: 'bold' }}>{space.name}</div>
+                                        <div style={{ fontSize: '12px', color: '#666' }}>{space.type}</div>
+                                        
+                                        {/* Player tokens */}
+                                        {playersOnSpace.map((player, idx) => (
+                                            <div 
+                                                key={player.id}
+                                                className="player-token"
+                                                style={{ 
+                                                    backgroundColor: player.color,
+                                                    left: 5 + (idx * 20)
+                                                }}
+                                                title={player.name}
+                                            ></div>
+                                        ))}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        
+                        <button 
+                            onClick={this.handleResetGame}
+                            style={{ backgroundColor: '#f44336', marginTop: '20px' }}
+                        >
+                            Reset Game
+                        </button>
+                    </div>
+                );
+            }
+            
+            render() {
+                const { gameStarted } = this.state;
+                
+                return (
+                    <div>
+                        {gameStarted ? this.renderGameBoard() : this.renderPlayerSetup()}
+                    </div>
+                );
+            }
+        }
+        
+        // Render the game component
+        ReactDOM.render(<MinimalGame />, document.getElementById('game-root'));
+    </script>
+</body>
+</html>

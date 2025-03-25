@@ -8,21 +8,32 @@ const GameState = {
   
   // Initialize the game
   initialize(spacesData) {
-    this.spaces = spacesData.map(row => ({
-      id: row['Space Name'].replace(/\s+/g, '-').toLowerCase(),
-      name: row['Space Name'],
-      type: row['Phase'],
-      description: row['Event'],
-      nextSpaces: [
-        row['Space 1'], 
-        row['Space 2'], 
-        row['Space 3'],
-        row['Space 4'],
-        row['Space 5']
-      ].filter(s => s && s.trim() !== '')
-    }));
+    console.log('GameState.initialize called with', spacesData.length, 'spaces');
     
+    this.spaces = spacesData.map(row => {
+      const spaceObj = {
+        id: row['Space Name'].replace(/\s+/g, '-').toLowerCase(),
+        name: row['Space Name'],
+        type: row['Phase'],
+        description: row['Event'],
+        nextSpaces: [
+          row['Space 1'], 
+          row['Space 2'], 
+          row['Space 3'],
+          row['Space 4'],
+          row['Space 5']
+        ].filter(s => s && s.trim() !== '')
+      };
+      return spaceObj;
+    });
+    
+    console.log('Spaces processed, now loading saved state');
     this.loadSavedState();
+    console.log('State after initialization:', {
+      gameStarted: this.gameStarted,
+      players: this.players, 
+      currentPlayerIndex: this.currentPlayerIndex
+    });
   },
   
   // Create a new player
@@ -86,27 +97,53 @@ const GameState = {
   
   // Load state from localStorage
   loadSavedState() {
+    console.log('loadSavedState called');
     try {
       const savedPlayers = localStorage.getItem('game_players');
       const savedCurrentPlayer = localStorage.getItem('game_currentPlayer');
       const savedStatus = localStorage.getItem('game_status');
       
+      console.log('Raw localStorage values:', {
+        savedPlayers,
+        savedCurrentPlayer,
+        savedStatus
+      });
+      
       if (savedPlayers) {
+        console.log('Parsing saved players');
         this.players = JSON.parse(savedPlayers);
+        console.log('Players loaded:', this.players.length);
+      } else {
+        console.log('No saved players found');
       }
       
       if (savedCurrentPlayer) {
+        console.log('Setting current player index');
         this.currentPlayerIndex = parseInt(savedCurrentPlayer);
       }
       
       if (savedStatus) {
+        console.log('Parsing game status');
         const status = JSON.parse(savedStatus);
+        console.log('Loaded status:', status);
         this.gameStarted = status.started;
         this.gameEnded = status.ended;
+      } else {
+        console.log('No saved game status found');
+        // Force gameStarted to false if no status is found
+        this.gameStarted = false;
       }
+      
+      console.log('Final state after loading:', {
+        gameStarted: this.gameStarted,
+        playerCount: this.players.length,
+        currentPlayerIndex: this.currentPlayerIndex
+      });
     } catch (error) {
       console.error('Error loading saved game:', error);
       // Continue with default state if load fails
+      // Force gameStarted to false on error
+      this.gameStarted = false;
     }
   },
   

@@ -20,6 +20,7 @@
 .board-row {
   display: flex;
   gap: 15px;
+  justify-content: center;
 }
 
 .board-row.reverse {
@@ -41,6 +42,27 @@
 .board-space:hover {
   transform: translateY(-5px);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.board-space.selected {
+  transform: translateY(-5px);
+  box-shadow: 0 0 0 3px #f39c12, 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Connector lines for the snake layout */
+.board-row:not(:last-child):after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 15px;
+  background-color: #ddd;
+  bottom: -15px;
+  right: 60px;
+}
+
+.board-row.reverse:not(:last-child):after {
+  right: auto;
+  left: 60px;
 }
 
 .space-name {

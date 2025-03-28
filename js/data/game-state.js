@@ -1,5 +1,5 @@
-// Game state management
-const GameState = {
+// Game state management (Simplified)
+window.GameState = {
   players: [],
   currentPlayerIndex: 0,
   spaces: [],
@@ -8,48 +8,95 @@ const GameState = {
   
   // Initialize the game
   initialize(spacesData) {
-    console.log('GameState.initialize called with', spacesData.length, 'spaces');
+    if (!spacesData || spacesData.length === 0) {
+      throw new Error('No spaces data provided or empty array!');
+    }
     
-    this.spaces = spacesData.map(row => {
+    // Filter out invalid spaces
+    const validSpaces = spacesData.filter(row => row['Space Name'] && row['Space Name'].trim() !== '');
+    
+    this.spaces = validSpaces.map((row, index) => {
+      // Get the space name
+      const spaceName = row['Space Name'] || `Space ${index}`;
+      
+      // Normalize the ID by removing special characters and converting to lowercase
+      const normalizedId = spaceName
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .toLowerCase();
+      
+      // Extract next spaces
+      let nextSpaces = [];
+      if (row['Space 1']) nextSpaces.push(row['Space 1']);
+      if (row['Space 2']) nextSpaces.push(row['Space 2']);
+      if (row['Space 3']) nextSpaces.push(row['Space 3']);
+      
+      // Filter out empty or invalid spaces
+      nextSpaces = nextSpaces
+        .filter(s => s && s.trim() !== '' && s !== 'n/a')
+        .map(spaceName => {
+          // Handle cases where there are explanations after the space name
+          const parts = spaceName.split('-');
+          return parts[0].trim();
+        });
+      
       const spaceObj = {
-        id: row['Space Name'].replace(/\s+/g, '-').toLowerCase(),
-        name: row['Space Name'],
-        type: row['Phase'],
-        description: row['Event'],
-        nextSpaces: [
-          row['Space 1'], 
-          row['Space 2'], 
-          row['Space 3'],
-          row['Space 4'],
-          row['Space 5']
-        ].filter(s => s && s.trim() !== '')
+        id: normalizedId,
+        name: spaceName,
+        type: (row['Phase'] || 'Default').toUpperCase(),
+        description: row['Event'] || '',
+        nextSpaces: nextSpaces,
+        visit: {
+          first: {
+            description: row['Event'] || ''
+          },
+          subsequent: {
+            description: row['Action'] || ''
+          }
+        }
       };
+      
       return spaceObj;
     });
     
-    console.log('Spaces processed, now loading saved state');
     this.loadSavedState();
-    console.log('State after initialization:', {
-      gameStarted: this.gameStarted,
-      players: this.players, 
-      currentPlayerIndex: this.currentPlayerIndex
-    });
   },
   
   // Create a new player
   addPlayer(name, color) {
+    const startSpaceId = this.findStartSpaceId();
+    
     const id = `player-${this.players.length + 1}`;
     this.players.push({
       id,
       name,
       color,
-      position: this.spaces[0]?.id || 'start',
+      position: startSpaceId,
       resources: {
         money: 1000, // Starting money
         time: 0      // Starting time (days)
       }
     });
+    
+    this.gameStarted = true;
     this.saveState();
+  },
+  
+  // Find the starting space ID
+  findStartSpaceId() {
+    // First look for a space with 'start' in the ID
+    const startSpace = this.spaces.find(s => s.id.includes('start'));
+    if (startSpace) {
+      return startSpace.id;
+    }
+    
+    // If not found, use the first space in the array
+    if (this.spaces.length > 0) {
+      return this.spaces[0].id;
+    }
+    
+    // Fallback to a default value
+    return 'start';
   },
   
   // Get current player
@@ -68,6 +115,13 @@ const GameState = {
     const player = this.players.find(p => p.id === playerId);
     if (player) {
       player.position = spaceId;
+      
+      // Check if this is the finish space
+      const space = this.spaces.find(s => s.id === spaceId);
+      if (space && space.type === 'END') {
+        this.gameEnded = true;
+      }
+      
       this.saveState();
     }
   },
@@ -75,14 +129,31 @@ const GameState = {
   // Get available moves for current player
   getAvailableMoves() {
     const currentPlayer = this.getCurrentPlayer();
-    if (!currentPlayer) return [];
+    if (!currentPlayer) {
+      return [];
+    }
     
     const currentSpace = this.spaces.find(s => s.id === currentPlayer.position);
-    if (!currentSpace) return [];
+    if (!currentSpace) {
+      return [];
+    }
     
-    return currentSpace.nextSpaces
-      .map(spaceName => this.spaces.find(s => s.name === spaceName))
+    // For simplicity, just return the next spaces directly
+    const availableMoves = currentSpace.nextSpaces
+      .map(spaceName => {
+        // Try to find by exact name first
+        let space = this.spaces.find(s => s.name === spaceName);
+        
+        // If not found, try to find by partial match
+        if (!space) {
+          space = this.spaces.find(s => s.name.includes(spaceName));
+        }
+        
+        return space;
+      })
       .filter(space => space); // Remove undefined spaces
+    
+    return availableMoves;
   },
   
   // Save state to localStorage
@@ -97,53 +168,30 @@ const GameState = {
   
   // Load state from localStorage
   loadSavedState() {
-    console.log('loadSavedState called');
     try {
       const savedPlayers = localStorage.getItem('game_players');
       const savedCurrentPlayer = localStorage.getItem('game_currentPlayer');
       const savedStatus = localStorage.getItem('game_status');
       
-      console.log('Raw localStorage values:', {
-        savedPlayers,
-        savedCurrentPlayer,
-        savedStatus
-      });
-      
       if (savedPlayers) {
-        console.log('Parsing saved players');
         this.players = JSON.parse(savedPlayers);
-        console.log('Players loaded:', this.players.length);
-      } else {
-        console.log('No saved players found');
       }
       
       if (savedCurrentPlayer) {
-        console.log('Setting current player index');
         this.currentPlayerIndex = parseInt(savedCurrentPlayer);
       }
       
       if (savedStatus) {
-        console.log('Parsing game status');
         const status = JSON.parse(savedStatus);
-        console.log('Loaded status:', status);
-        this.gameStarted = status.started;
-        this.gameEnded = status.ended;
-      } else {
-        console.log('No saved game status found');
-        // Force gameStarted to false if no status is found
-        this.gameStarted = false;
+        this.gameStarted = status.started || false;
+        this.gameEnded = status.ended || false;
       }
-      
-      console.log('Final state after loading:', {
-        gameStarted: this.gameStarted,
-        playerCount: this.players.length,
-        currentPlayerIndex: this.currentPlayerIndex
-      });
     } catch (error) {
-      console.error('Error loading saved game:', error);
       // Continue with default state if load fails
-      // Force gameStarted to false on error
+      this.players = [];
+      this.currentPlayerIndex = 0;
       this.gameStarted = false;
+      this.gameEnded = false;
     }
   },
   

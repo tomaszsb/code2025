@@ -1,7 +1,7 @@
 // BoardDisplay component
-class BoardDisplay extends React.Component {
+window.BoardDisplay = class BoardDisplay extends React.Component {
   renderSpace = (space, index) => {
-    const { players, onSpaceClick } = this.props;
+    const { players, selectedSpace, onSpaceClick } = this.props;
     
     // Find players on this space
     const playersOnSpace = players.filter(player => player.position === space.id);
@@ -9,6 +9,7 @@ class BoardDisplay extends React.Component {
     // Determine CSS classes
     const classes = ['board-space'];
     if (space.type) classes.push(`space-type-${space.type.toLowerCase()}`);
+    if (selectedSpace === space.id) classes.push('selected');
     
     return (
       <div 
@@ -46,7 +47,7 @@ class BoardDisplay extends React.Component {
     
     // Group spaces into rows
     for (let i = 0; i < spaces.length; i += spacesPerRow) {
-      const rowSpaces = spaces.slice(i, i + spacesPerRow);
+      const rowSpaces = spaces.slice(i, Math.min(i + spacesPerRow, spaces.length));
       rows.push(rowSpaces);
     }
     

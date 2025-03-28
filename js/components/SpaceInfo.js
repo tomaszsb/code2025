@@ -1,5 +1,5 @@
 // SpaceInfo component
-class SpaceInfo extends React.Component {
+window.SpaceInfo = class SpaceInfo extends React.Component {
   render() {
     const { space, visitType } = this.props;
     

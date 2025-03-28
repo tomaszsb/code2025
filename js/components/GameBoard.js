@@ -1,55 +1,19 @@
 // GameBoard component - Main controller component
-class GameBoard extends React.Component {
+window.GameBoard = class GameBoard extends React.Component {
   constructor(props) {
     super(props);
-    console.log('GameBoard constructor called');
-    
-    // Check if GameState is defined and accessible
-    if (typeof GameState === 'undefined') {
-      console.error('GameState is not defined in GameBoard constructor');
-      this.state = {
-        error: 'GameState not available',
-        showSetup: true,
-        players: [],
-        currentPlayerIndex: 0,
-        spaces: [],
-        selectedSpace: null,
-        availableMoves: []
-      };
-      return;
-    }
-    
-    console.log('GameState.gameStarted:', GameState.gameStarted);
-    console.log('GameState.players:', GameState.players);
-    console.log('GameState.spaces:', GameState.spaces);
-    
-    // Always show setup for testing purposes if there are no players
-    const showSetup = !GameState.gameStarted || GameState.players.length === 0;
-    console.log('showSetup is set to:', showSetup);
     
     this.state = {
-      showSetup: showSetup,
       players: GameState.players || [],
       currentPlayerIndex: GameState.currentPlayerIndex || 0,
       spaces: GameState.spaces || [],
       selectedSpace: null,
       availableMoves: []
     };
-    
-    console.log('GameBoard initial state:', this.state);
   }
   
   componentDidMount() {
     // Update available moves
-    this.updateAvailableMoves();
-  }
-  
-  handleSetupComplete = () => {
-    this.setState({ 
-      showSetup: false,
-      players: GameState.players,
-      currentPlayerIndex: GameState.currentPlayerIndex
-    });
     this.updateAvailableMoves();
   }
   
@@ -105,54 +69,54 @@ class GameBoard extends React.Component {
   }
   
   isVisitingFirstTime = () => {
-    const currentPlayer = this.getCurrentPlayer();
-    const selectedSpace = this.getSelectedSpace();
-    
-    if (!currentPlayer || !selectedSpace) return true;
-    
-    // Check player history to see if they've been here before
     // For MVP, always return 'first' visit
     return true;
   }
   
   render() {
-    console.log('GameBoard render called');
     const { 
-      showSetup, players, spaces, currentPlayerIndex,
-      selectedSpace, availableMoves, error
+      players, spaces, currentPlayerIndex,
+      selectedSpace, availableMoves
     } = this.state;
     
-    console.log('GameBoard render state:', { showSetup, playerCount: players ? players.length : 0, error });
-    
-    // If there was an error initializing GameState
-    if (error) {
+    // Check if game is ended
+    if (GameState.gameEnded) {
       return (
-        <div className="error-screen">
-          <h2>Game Initialization Error</h2>
-          <p>{error}</p>
-          <button onClick={() => window.location.reload()}>Reload Page</button>
+        <div className="game-container">
+          <div className="game-header">
+            <h1>Project Management Game</h1>
+            <div className="game-end-message">Game Completed!</div>
+          </div>
+          <div className="game-content">
+            <div className="game-end-screen">
+              <h2>Congratulations!</h2>
+              <p>You have completed the project management game.</p>
+              <div className="player-scores">
+                <h3>Final Scores:</h3>
+                <ul>
+                  {players.map(player => (
+                    <li key={player.id}>
+                      <span style={{color: player.color}}>{player.name}</span>: 
+                      <strong>${player.resources.money}</strong> remaining, 
+                      <strong>{player.resources.time}</strong> days spent
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <button 
+                onClick={() => {
+                  GameState.startNewGame();
+                  window.location.reload();
+                }}
+                className="new-game-btn"
+              >
+                Start New Game
+              </button>
+            </div>
+          </div>
         </div>
       );
     }
-    
-    // Show setup screen if needed
-    if (showSetup) {
-      console.log('Showing PlayerSetup component');
-      try {
-        return <PlayerSetup onSetupComplete={this.handleSetupComplete} />;
-      } catch (error) {
-        console.error('Error rendering PlayerSetup:', error);
-        return (
-          <div className="error-screen">
-            <h2>Player Setup Error</h2>
-            <p>{error.message}</p>
-            <button onClick={() => window.location.reload()}>Reload</button>
-          </div>
-        );
-      }
-    }
-    
-    console.log('Showing main game board');
     
     const currentPlayer = players[currentPlayerIndex];
     const selectedSpaceObj = spaces.find(space => space.id === selectedSpace);
@@ -194,6 +158,7 @@ class GameBoard extends React.Component {
             <BoardDisplay 
               spaces={spaces}
               players={players}
+              selectedSpace={selectedSpace}
               onSpaceClick={this.handleSpaceClick}
             />
           </div>
@@ -203,7 +168,7 @@ class GameBoard extends React.Component {
             <div className="available-moves">
               <h3>Available Moves</h3>
               {availableMoves.length > 0 ? (
-                <ul>
+                <ul className="move-list">
                   {availableMoves.map(move => (
                     <li 
                       key={move.id}

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Management Game (Debug)</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/board.css">
+    <link rel="stylesheet" href="css/debug.css">
+    
+    <!-- React from CDN -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <!-- Main game container -->
+    <div id="game-root">
+        <div class="loading-placeholder">
+            <h2>Loading Game...</h2>
+            <p>Please wait while the game initializes</p>
+        </div>
+    </div>
+    
+    <!-- Debug Panel -->
+    <div class="debug-panel">
+        <div class="debug-title">Game Debug Info</div>
+        <div class="debug-status">
+            <div class="debug-status-item">
+                <span class="debug-status-label">React:</span>
+                <span class="debug-status-value status-ok">✓</span>
+            </div>
+            <div class="debug-status-item">
+                <span class="debug-status-label">Spaces:</span>
+                <span class="debug-status-value" id="debug-spaces-count">0</span>
+            </div>
+            <div class="debug-status-item">
+                <span class="debug-status-label">Players:</span>
+                <span class="debug-status-value" id="debug-players-count">0</span>
+            </div>
+            <div class="debug-status-item">
+                <span class="debug-status-label">Game started:</span>
+                <span class="debug-status-value" id="debug-game-started">false</span>
+            </div>
+        </div>
+        <button onclick="localStorage.clear(); window.location.reload();">Clear Storage & Reload</button>
+        <button onclick="window.location.reload();">Force Refresh</button>
+    </div>
+    
+    <!-- Load utilities with Babel -->
+    <script type="text/babel" src="js/utils/csv-parser.js"></script>
+    <script type="text/babel" src="js/data/game-state.js"></script>
+    
+    <!-- Load components with Babel -->
+    <script type="text/babel" src="js/components/PlayerInfo.js"></script>
+    <script type="text/babel" src="js/components/SpaceInfo.js"></script>
+    <script type="text/babel" src="js/components/BoardDisplay.js"></script>
+    <script type="text/babel" src="js/components/PlayerSetup.js"></script>
+    <script type="text/babel" src="js/components/GameBoard.js"></script>
+    <script type="text/babel" src="js/components/App.js"></script>
+    
+    <!-- Load main script last -->
+    <script type="text/babel" src="js/main.js"></script>
+    
+    <!-- Debug update script -->
+    <script>
+        // Update debug info periodically
+        setInterval(function() {
+            if (window.GameState) {
+                document.getElementById('debug-spaces-count').textContent = GameState.spaces.length;
+                document.getElementById('debug-players-count').textContent = GameState.players.length;
+                document.getElementById('debug-game-started').textContent = GameState.gameStarted;
+                
+                // Update status classes
+                if (GameState.spaces.length > 0) {
+                    document.getElementById('debug-spaces-count').className = 'debug-status-value status-ok';
+                } else {
+                    document.getElementById('debug-spaces-count').className = 'debug-status-value status-error';
+                }
+                
+                if (GameState.gameStarted) {
+                    document.getElementById('debug-game-started').className = 'debug-status-value status-ok';
+                } else {
+                    document.getElementById('debug-game-started').className = 'debug-status-value';
+                }
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 // PlayerSetup component
-class PlayerSetup extends React.Component {
+window.PlayerSetup = class PlayerSetup extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -62,10 +62,7 @@ class PlayerSetup extends React.Component {
       GameState.addPlayer(name, this.state.playerColors[index]);
     });
     
-    GameState.gameStarted = true;
-    GameState.saveState();
-    
-    // Notify parent component
+    // Notify parent component if provided
     if (this.props.onSetupComplete) {
       this.props.onSetupComplete();
     }

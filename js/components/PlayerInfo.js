@@ -1,5 +1,5 @@
 // PlayerInfo component
-class PlayerInfo extends React.Component {
+window.PlayerInfo = class PlayerInfo extends React.Component {
   render() {
     const { player, isCurrentPlayer } = this.props;
     

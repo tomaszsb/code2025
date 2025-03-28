@@ -1,4 +1,6 @@
 // PlayerSetup component
+console.log('PlayerSetup.js file is being processed');
+
 window.PlayerSetup = class PlayerSetup extends React.Component {
   constructor(props) {
     super(props);
@@ -114,3 +116,5 @@ window.PlayerSetup = class PlayerSetup extends React.Component {
     );
   }
 }
+
+console.log('PlayerSetup.js execution complete');

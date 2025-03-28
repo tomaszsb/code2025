@@ -8,19 +8,28 @@ Please see the docs folder for full documentation:
 
 - [Project Overview and Status](docs/README.md)
 - [Lessons Learned from Previous Implementations](docs/LESSONS_LEARNED.md)
-- [How to Run the Project Locally](docs/RUNNING_LOCALLY.md)
+- [Game Architecture](docs/GAME_ARCHITECTURE.md)
+- [Visit Tracking System](docs/VISIT_TRACKING.md)
+- [Current Roadmap](docs/Project%20Roadmap%20with%20Current%20Status.md)
 
 ## Getting Started
 
-**Important:** This project must be run on a local web server to avoid CORS issues.
+**Important:** This project requires a proper hosting environment to run correctly.
 
-See [Running Locally](docs/RUNNING_LOCALLY.md) for detailed instructions on setting up a local server.
+## Recent Updates
+
+- Added game instructions panel accessible via button at the bottom of the screen
+- Enhanced space information display to show all available data from CSV
+- Fixed filtering of instruction spaces from the game board
+- Optimized UI spacing and layout for better information density
+- Ensured players start on the correct space (OWNER-SCOPE-INITIATION)
 
 ## Implementation Plan
 
 This project follows a phased implementation approach:
 
-1. **Phase 1 (Current)**: Core Movement System
+1. **Phase 1 (Completed)**: Core Movement System
+   - Includes board movement, turn management, state persistence, end game condition, and instruction display
 2. **Phase 2**: Card System
 3. **Phase 3**: Dice and Outcomes
 4. **Phase 4**: Project Management Elements

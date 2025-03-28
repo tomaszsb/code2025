@@ -1,4 +1,6 @@
 // PlayerInfo component
+console.log('PlayerInfo.js file is being processed');
+
 window.PlayerInfo = class PlayerInfo extends React.Component {
   render() {
     const { player, isCurrentPlayer } = this.props;
@@ -30,3 +32,5 @@ window.PlayerInfo = class PlayerInfo extends React.Component {
     );
   }
 }
+
+console.log('PlayerInfo.js execution complete');

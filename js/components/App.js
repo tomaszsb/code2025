@@ -1,4 +1,6 @@
 // Main App Component (Simplified)
+console.log('App.js file is being processed');
+
 window.App = class App extends React.Component {
     constructor(props) {
         super(props);
@@ -45,3 +47,5 @@ window.App = class App extends React.Component {
         }
     }
 }
+
+console.log('App.js execution complete');

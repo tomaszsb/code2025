@@ -15,7 +15,8 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  height: 100vh;
+  min-height: 800px;
+  height: auto;
 }
 
 .game-header {
@@ -44,13 +45,6 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-}
-
-.right-panel {
-  width: 250px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
 }
 
 .game-controls {
@@ -197,11 +191,14 @@ body {
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  font-size: 14px;
 }
 
 .space-info h3 {
   margin-top: 0;
+  margin-bottom: 8px;
   color: #2c3e50;
+  font-size: 18px;
 }
 
 .space-type {
@@ -214,64 +211,48 @@ body {
   margin-bottom: 10px;
 }
 
+.space-section {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.space-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.space-section-label {
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 3px;
+  font-size: 13px;
+}
+
 .space-description {
-  margin-bottom: 15px;
+  margin-bottom: 5px;
+  line-height: 1.4;
 }
 
-.visit-info h4 {
-  margin: 10px 0 5px;
-  color: #2c3e50;
-}
-
-/* Available moves styles */
-.available-moves {
-  padding: 15px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.available-moves h3 {
-  margin-top: 0;
-  color: #2c3e50;
-}
-
-.move-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.move-option {
-  padding: 8px 12px;
-  margin: 5px 0;
-  background-color: #ecf0f1;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  font-size: 14px;
-}
-
-.move-option:hover {
-  background-color: #3498db;
-  color: white;
-}
-
-.move-option:active {
-  background-color: #2980b9;
-  transform: translateY(1px);
+.space-info-value {
+  line-height: 1.4;
 }
 
 /* Game control buttons */
-.end-turn-btn {
+.end-turn-btn, .instructions-btn {
   padding: 10px 20px;
-  background-color: #2ecc71;
   color: white;
   border: none;
   border-radius: 4px;
   font-size: 16px;
   cursor: pointer;
   transition: background-color 0.3s;
+  margin: 0 10px;
+}
+
+.end-turn-btn {
+  background-color: #2ecc71;
 }
 
 .end-turn-btn:hover {
@@ -281,6 +262,14 @@ body {
 .end-turn-btn:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+}
+
+.instructions-btn {
+  background-color: #3498db;
+}
+
+.instructions-btn:hover {
+  background-color: #2980b9;
 }
 
 /* Error screen */
@@ -299,8 +288,6 @@ body {
   margin: 20px 0;
 }
 
-
-
 /* Loading indicator */
 .loading {
   text-align: center;
@@ -309,92 +296,11 @@ body {
 }
 
 /* Player list styles */
-.player-list {
-  margin-top: 20px;
-}
-
-.player-item {
+.players-list {
+  margin-top: 0;
   display: flex;
-  align-items: center;
-  padding: 8px;
-  margin-bottom: 5px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
-}
-
-.player-icon {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  margin-right: 10px;
-}
-
-/* Game container */
-.game-board-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-/* Player info area */
-.player-info-area {
-  margin-bottom: 20px;
-}
-
-.player-info-list {
-  display: flex;
+  flex-direction: column;
   gap: 10px;
-  flex-wrap: wrap;
-}
-
-.player-info-card {
-  padding: 10px;
-  background-color: white;
-  border-radius: 4px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-}
-
-/* Button styles */
-.start-game-btn, .new-game-btn {
-  width: 100%;
-  margin-top: 20px;
-  padding: 10px;
-  background-color: #2196F3;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.new-game-btn {
-  background-color: #4CAF50;
-  font-size: 18px;
-  padding: 15px;
-  max-width: 300px;
-  margin: 30px auto;
-  display: block;
-}
-
-.start-game-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.reset-game-btn {
-  margin-top: 20px;
-  padding: 10px 20px;
-  background-color: #f44336;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-/* Board area */
-.board-display-area {
-  margin-top: 20px;
 }
 
 /* Game end screen */
@@ -433,4 +339,107 @@ body {
   background-color: #f5f5f5;
   border-radius: 4px;
   font-size: 16px;
+}
+
+/* Instructions panel */
+.instructions-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.instructions-content {
+  width: 80%;
+  max-width: 800px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background-color: white;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.instructions-content h2 {
+  color: #2c3e50;
+  margin-top: 0;
+  margin-bottom: 10px;
+  text-align: center;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #eee;
+}
+
+.instruction-section {
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.instruction-section h3 {
+  color: #3498db;
+  margin-bottom: 8px;
+  padding: 4px 0;
+  font-size: 18px;
+  border-bottom: 1px solid #eee;
+}
+
+.instruction-item {
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+  padding: 8px 10px;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.instruction-item h4 {
+  color: #2c3e50;
+  margin-top: 0;
+  margin-bottom: 4px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.instruction-item p {
+  line-height: 1.5;
+  margin-bottom: 0;
+  margin-top: 0;
+  font-size: 13px;
+}
+
+.close-instructions-btn {
+  display: block;
+  margin: 10px auto 0;
+  padding: 6px 12px;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.close-instructions-btn:hover {
+  background-color: #c0392b;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+  .game-content {
+    flex-direction: column;
+  }
+  
+  .left-panel {
+    width: 100%;
+  }
+  
+  .main-panel {
+    width: 100%;
+  }
 }

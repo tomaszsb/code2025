@@ -59,6 +59,29 @@
   box-shadow: 0 0 0 2px #27ae60, 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
+/* Selected move destination indicator */
+.board-space.selected-move {
+  transform: translateY(-3px);
+  box-shadow: 0 0 0 3px #e74c3c, 0 5px 15px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+/* Add a visual indicator for the selected move */
+.board-space.selected-move::after {
+  content: 'DESTINATION';
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #e74c3c;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
 @keyframes pulse {
   0% {
     box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.7), 0 5px 15px rgba(0, 0, 0, 0.2);

@@ -14,25 +14,32 @@ window.DiceRoll = class DiceRoll extends React.Component {
   }
 
   componentDidMount() {
+    console.log('DiceRoll: Component is being mounted and initialized');
     // Load dice roll data for current space
     this.loadDiceOutcomes();
+    console.log('DiceRoll: Component mount completed');
   }
 
   componentDidUpdate(prevProps) {
     // If the space or visit type has changed, reload the dice outcomes
     if (prevProps.space?.name !== this.props.space?.name || 
         prevProps.visitType !== this.props.visitType) {
+      console.log('DiceRoll: Props changed, reloading dice outcomes');
       this.loadDiceOutcomes();
     }
   }
 
   // Load dice roll outcomes for the current space
   loadDiceOutcomes = () => {
+    console.log('DiceRoll: Loading dice outcomes starting');
     const { space, visitType, diceData } = this.props;
     
     if (!space || !diceData) {
+      console.log('DiceRoll: No space or dice data available, skipping outcome loading');
       return;
     }
+    
+    console.log('DiceRoll: Searching for outcomes for space:', space.name, 'visit type:', visitType);
     
     // Find dice outcomes that match this space and visit type
     const outcomes = diceData.filter(data => 
@@ -40,22 +47,28 @@ window.DiceRoll = class DiceRoll extends React.Component {
       data['Visit Type'].toLowerCase() === visitType.toLowerCase()
     );
     
+    console.log('DiceRoll: Found', outcomes.length, 'matching dice outcomes');
+    
     // Store outcomes in state to use when dice is rolled
     this.setState({ diceOutcomes: outcomes });
+    console.log('DiceRoll: Loading dice outcomes completed');
   }
 
   rollDice = () => {
+    console.log('DiceRoll: Rolling dice starting');
     // Start rolling animation
     this.setState({ rolling: true, result: null });
     
     // Generate random number between 1 and 6
     setTimeout(() => {
       const result = Math.floor(Math.random() * 6) + 1;
+      console.log('DiceRoll: Dice roll result:', result);
       
       // Add result to history
       const diceHistory = [...this.state.diceHistory, result];
       
       // Process result to determine outcomes
+      console.log('DiceRoll: Processing roll outcome');
       const outcomes = this.processRollOutcome(result);
       
       this.setState({ 
@@ -67,17 +80,24 @@ window.DiceRoll = class DiceRoll extends React.Component {
       
       // Call the callback with the results
       if (this.props.onRollComplete) {
+        console.log('DiceRoll: Notifying parent component of roll completion');
         this.props.onRollComplete(result, outcomes);
       }
       
+      console.log('DiceRoll: Rolling dice completed');
     }, 1000); // Animation time
   }
 
   // Process the dice roll result to determine game outcomes
   processRollOutcome = (rollResult) => {
     const { diceOutcomes } = this.state;
+    const { space, visitType } = this.props;
+    
+    console.log('DiceRoll: Processing roll', rollResult, 'for space', space.name, 'visit type', visitType);
+    console.log('DiceRoll: Available outcomes:', diceOutcomes);
     
     if (!diceOutcomes || diceOutcomes.length === 0) {
+      console.log('DiceRoll: No outcomes available');
       return { moves: [] };
     }
     
@@ -88,10 +108,14 @@ window.DiceRoll = class DiceRoll extends React.Component {
       const dieRollType = outcomeData['Die Roll'];
       const outcomeValue = outcomeData[rollResult.toString()];
       
+      console.log('DiceRoll: Processing outcome type', dieRollType, 'value:', outcomeValue);
+      
       if (outcomeValue && outcomeValue.trim() !== '') {
         outcomes[dieRollType] = outcomeValue;
       }
     }
+    
+    console.log('DiceRoll: Processed outcomes:', outcomes);
     
     // If there's a "Next Step" outcome, convert it to available moves
     if (outcomes['Next Step']) {
@@ -105,18 +129,23 @@ window.DiceRoll = class DiceRoll extends React.Component {
         nextSpaceName = nextSpaceName.split(' - ')[0].trim();
       }
       
+      console.log('DiceRoll: Finding spaces for', nextSpaceName);
+      
       // Find the specified space
       const availableMoves = this.findAvailableSpace(nextSpaceName);
+      console.log('DiceRoll: Found available moves:', availableMoves.map(m => m.name));
       outcomes.moves = availableMoves;
     } else {
       outcomes.moves = [];
     }
     
+    console.log('DiceRoll: processRollOutcome completed');
     return outcomes;
   }
   
   // Find a space for movement based on dice outcome
   findAvailableSpace = (spaceName) => {
+    console.log('DiceRoll: Finding available spaces for', spaceName);
     // Special case handling for multiple potential destinations in one outcome
     if (spaceName.includes(' or ')) {
       const spaceOptions = spaceName.split(' or ').map(name => name.trim());
@@ -125,24 +154,29 @@ window.DiceRoll = class DiceRoll extends React.Component {
       const availableMoves = [];
       
       for (const option of spaceOptions) {
+        console.log('DiceRoll: Processing option', option);
         const spaces = this.findSpacesWithName(option);
         availableMoves.push(...spaces);
       }
       
+      console.log('DiceRoll: findAvailableSpace completed with multiple options');
       return availableMoves;
     }
     
     // Regular single destination
+    console.log('DiceRoll: findAvailableSpace completed for single destination');
     return this.findSpacesWithName(spaceName);
   }
   
   // Find spaces with a matching name
   findSpacesWithName = (name) => {
+    console.log('DiceRoll: Finding spaces matching name:', name);
     const { visitType } = this.props;
     const currentPlayer = window.GameState.getCurrentPlayer();
     
     // Clean the name to remove explanatory text
     const cleanedName = window.GameState.extractSpaceName(name);
+    console.log('DiceRoll: Cleaned space name:', cleanedName);
     
     // Find all spaces that match this name
     const matchingSpaces = window.GameState.spaces.filter(space => {
@@ -150,20 +184,26 @@ window.DiceRoll = class DiceRoll extends React.Component {
       return spaceName === cleanedName;
     });
     
+    console.log('DiceRoll: Found', matchingSpaces.length, 'matching spaces');
+    
     // If no matches found, return empty array
     if (matchingSpaces.length === 0) {
+      console.log('DiceRoll: No matching spaces found, returning empty array');
       return [];
     }
     
     // Determine if player has visited this space before
     const hasVisitedSpace = window.GameState.hasPlayerVisitedSpace(currentPlayer, cleanedName);
     const targetVisitType = hasVisitedSpace ? 'subsequent' : 'first';
+    console.log('DiceRoll: Target visit type for', cleanedName, 'is', targetVisitType);
     
     // Find the space with the right visit type, or use first one as fallback
     const destinationSpace = matchingSpaces.find(space => 
       space.visitType.toLowerCase() === targetVisitType.toLowerCase()
     ) || matchingSpaces[0];
     
+    console.log('DiceRoll: Selected destination space:', destinationSpace.id);
+    console.log('DiceRoll: findSpacesWithName completed');
     return [destinationSpace];
   }
 
@@ -188,13 +228,32 @@ window.DiceRoll = class DiceRoll extends React.Component {
   }
 
   render() {
-    const { rolling, result, diceHistory, availableMoves } = this.state;
+    console.log('DiceRoll: Rendering component');
+    const { rolling, result, diceHistory, availableMoves, diceOutcomes } = this.state;
     const { visible } = this.props;
     
     if (!visible) {
+      console.log('DiceRoll: Component not visible, skipping render');
       return null;
     }
     
+    // If we have a result, process the outcomes to display
+    let displayOutcomes = {};
+    if (result) {
+      // Find outcomes in diceOutcomes for this result
+      displayOutcomes = diceOutcomes.reduce((outcomes, outcomeData) => {
+        const dieRollType = outcomeData['Die Roll'];
+        const outcomeValue = outcomeData[result.toString()];
+        
+        if (outcomeValue && outcomeValue.trim() !== '' && outcomeValue !== 'n/a') {
+          outcomes[dieRollType] = outcomeValue;
+        }
+        
+        return outcomes;
+      }, {});
+    }
+    
+    console.log('DiceRoll: Preparing to render dice UI');
     return (
       <div className="dice-roll-container">
         <h3>Roll the Dice</h3>
@@ -221,6 +280,21 @@ window.DiceRoll = class DiceRoll extends React.Component {
         {!result && !rolling && (
           <div className="dice-instruction">
             <p>Click the Roll Dice button to determine your move.</p>
+          </div>
+        )}
+        
+        {/* Show dice roll outcomes */}
+        {result && Object.keys(displayOutcomes).length > 0 && (
+          <div className="dice-outcomes">
+            <h4>Dice Roll Results</h4>
+            <ul>
+              {Object.entries(displayOutcomes).map(([type, value]) => (
+                <li key={type} className="dice-outcome-item">
+                  <span className="outcome-type">{type}:</span> 
+                  <span className="outcome-value">{value}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
         
@@ -257,12 +331,13 @@ window.DiceRoll = class DiceRoll extends React.Component {
         {/* Show message if no moves available after roll */}
         {result && availableMoves.length === 0 && (
           <div className="no-moves-message">
-            <p>No moves available from this roll.</p>
-            <p>You may need to end your turn.</p>
+            <p>This roll determines game effects but doesn't change your movement.</p>
+            <p>You can still select an available move from the board.</p>
           </div>
         )}
       </div>
     );
+    console.log('DiceRoll: Render completed');
   }
 }
 

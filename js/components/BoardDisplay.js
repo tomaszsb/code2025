@@ -17,13 +17,16 @@ window.BoardDisplay = class BoardDisplay extends React.Component {
   }
 
   renderSpace = (space, index) => {
-    const { players, selectedSpace, onSpaceClick, availableMoves, diceRollData } = this.props;
+    const { players, selectedSpace, selectedMove, onSpaceClick, availableMoves, diceRollData } = this.props;
     
     // Find players on this space
     const playersOnSpace = players.filter(player => player.position === space.id);
     
     // Check if this space is an available move
     const isAvailableMove = availableMoves.some(move => move.id === space.id);
+    
+    // Check if this is the selected destination for the current turn
+    const isSelectedMove = selectedMove === space.id;
     
     // Check if this space has dice roll options
     const hasDiceRoll = this.hasDiceRollOptions(space);
@@ -33,6 +36,7 @@ window.BoardDisplay = class BoardDisplay extends React.Component {
     if (space.type) classes.push(`space-type-${space.type.toLowerCase()}`);
     if (selectedSpace === space.id) classes.push('selected');
     if (isAvailableMove) classes.push('available-move');
+    if (isSelectedMove) classes.push('selected-move');
     if (hasDiceRoll) classes.push('has-dice-roll');
     
     // Format the visit type text

@@ -5,14 +5,16 @@ window.GameBoard = class GameBoard extends React.Component {
   constructor(props) {
     super(props);
     
-    // Create a ref to the DiceRoll component
+    // Create refs to components
     this.diceRollRef = React.createRef();
+    this.cardDisplayRef = React.createRef();
     
     this.state = {
       players: GameState.players || [],
       currentPlayerIndex: GameState.currentPlayerIndex || 0,
       spaces: GameState.spaces || [],
       selectedSpace: null,
+      selectedMove: null,      // Store selected destination without moving player
       availableMoves: [],
       showInstructions: false,
       instructionsData: null,
@@ -20,7 +22,11 @@ window.GameBoard = class GameBoard extends React.Component {
       showDiceRoll: false,     // Flag to show/hide dice roll component
       diceRollSpace: null,     // Space data for dice rolling
       diceRollVisitType: null, // Visit type for dice rolling
-      diceRollData: window.diceRollData || [] // Dice roll outcome data from CSV
+      diceRollData: window.diceRollData || [], // Dice roll outcome data from CSV
+      showCardDisplay: true,   // Flag to show/hide card display component
+      cardDrawAnimation: false, // Flag for card draw animation
+      newCardData: null,       // Data for newly drawn card
+      hasRolledDice: false     // Track if player has rolled dice this turn
     };
   }
   
@@ -111,7 +117,8 @@ window.GameBoard = class GameBoard extends React.Component {
         showDiceRoll: true, 
         diceRollSpace: result.spaceName,
         diceRollVisitType: result.visitType,
-        availableMoves: []
+        availableMoves: [],
+        hasRolledDice: false     // Reset dice roll status
       });
     } else {
       // Normal case - array of available moves
@@ -127,32 +134,37 @@ window.GameBoard = class GameBoard extends React.Component {
   
   handleSpaceClick = (spaceId) => {
     // Check if this space is a valid move
-    const { availableMoves } = this.state;
+    const { availableMoves, hasSelectedMove } = this.state;
     const isValidMove = availableMoves.some(space => space.id === spaceId);
     
-    if (isValidMove) {
-      // Move the player
-      const currentPlayer = GameState.getCurrentPlayer();
-      GameState.movePlayer(currentPlayer.id, spaceId);
-      
-      // Update state
+    if (isValidMove && !hasSelectedMove) {
+      // Don't move the player yet, just store the selected move
+      // Only allow selecting one move per turn
       this.setState({
-        players: [...GameState.players], // Create new array to trigger re-render
         selectedSpace: spaceId,
-        hasSelectedMove: true  // Player has performed the move action
+        selectedMove: spaceId,   // Store the destination space
+        hasSelectedMove: true    // Mark that player has selected their move for this turn
       });
       
-      // Update available moves after moving
-      this.updateAvailableMoves();
+      console.log('Move selected:', spaceId, '- Will be executed on End Turn');
     } else {
-      // Just select the space without moving
+      // Just select the space without marking it as a move
       this.setState({ selectedSpace: spaceId });
     }
     
-    console.log('Space clicked:', spaceId, 'Is valid move:', isValidMove);
+    console.log('Space clicked:', spaceId, 'Is valid move:', isValidMove, 'Already selected move:', hasSelectedMove);
   }
   
   handleEndTurn = () => {
+    const { selectedMove } = this.state;
+    const currentPlayer = GameState.getCurrentPlayer();
+    
+    // If a move was selected, execute it now when ending the turn
+    if (selectedMove && currentPlayer) {
+      console.log('Executing selected move:', selectedMove);
+      GameState.movePlayer(currentPlayer.id, selectedMove);
+    }
+    
     // Move to next player's turn
     GameState.nextPlayerTurn();
     
@@ -161,9 +173,11 @@ window.GameBoard = class GameBoard extends React.Component {
       players: [...GameState.players],
       currentPlayerIndex: GameState.currentPlayerIndex,
       selectedSpace: null,
-      hasSelectedMove: false,  // Reset flag for the next player's turn
-      showDiceRoll: false,     // Hide dice roll component
-      diceRollSpace: null      // Clear dice roll space info
+      selectedMove: null,       // Clear the selected move
+      hasSelectedMove: false,   // Reset flag for the next player's turn
+      showDiceRoll: false,      // Hide dice roll component
+      diceRollSpace: null,      // Clear dice roll space info
+      hasRolledDice: false      // Reset dice roll status
     });
     
     // Update available moves for new player
@@ -176,19 +190,81 @@ window.GameBoard = class GameBoard extends React.Component {
   handleDiceRollComplete = (result, outcomes) => {
     console.log('GameBoard: Dice roll completed with result:', result);
     console.log('GameBoard: Outcomes:', outcomes);
+    console.log('GameBoard: Detailed outcomes:', JSON.stringify(outcomes));
+    
+    // Hide the dice roll component after completion
+    this.setState({ 
+      showDiceRoll: false,
+      hasRolledDice: true  // Mark that player has rolled dice
+    });
     
     // If outcomes include available moves, update state
     if (outcomes.moves && outcomes.moves.length > 0) {
+      console.log('GameBoard: Available moves from dice roll:', outcomes.moves.map(m => m.name).join(', '));
       this.setState({ 
         availableMoves: outcomes.moves,
-        hasSelectedMove: false  // Allow player to select a move from dice outcomes
+        hasSelectedMove: false,  // Allow player to select a move from dice outcomes
+        selectedMove: null       // Clear any previously selected move
       });
     } else {
-      // No valid moves from dice roll
-      this.setState({ 
-        availableMoves: [],
-        hasSelectedMove: true   // Force player to end turn since no valid moves
-      });
+      // No valid moves from dice roll - but if we already have available moves, keep them
+      // This allows the player to still select from the available moves after rolling dice
+      // for spaces that only have card/fee/time outcomes from dice rolls
+      if (this.state.availableMoves && this.state.availableMoves.length > 0) {
+        console.log('GameBoard: No moves from dice roll, but keeping existing available moves:', 
+                   this.state.availableMoves.map(m => m.name).join(', '));
+        // Just keep existing available moves and don't reset hasSelectedMove
+        if (this.state.hasSelectedMove && this.state.selectedMove) {
+          console.log('GameBoard: Player already selected a move:', this.state.selectedMove);
+        }
+      } else {
+        console.log('GameBoard: No valid moves available from dice roll');
+        this.setState({ 
+          availableMoves: [],
+          hasSelectedMove: true,   // Force player to end turn since no valid moves
+          selectedMove: null       // Clear any previously selected move
+        });
+      }
+    }
+    
+    // Check if dice roll should trigger card draw
+    const currentPlayer = this.getCurrentPlayer();
+    if (currentPlayer) {
+      // Check for card outcomes based on roll result
+      const cardTypes = ['W', 'B', 'I', 'L', 'E'];
+      
+      for (const cardType of cardTypes) {
+        const cardOutcome = outcomes[`${cardType}CardOutcome`];
+        
+        if (cardOutcome && cardOutcome !== 'n/a' && cardOutcome !== '0') {
+          // Parse the outcome to determine number of cards to draw
+          const cardCount = parseInt(cardOutcome) || 1;
+          
+          // Draw the specified number of cards
+          for (let i = 0; i < cardCount; i++) {
+            const drawnCard = window.GameState.drawCard(currentPlayer.id, cardType);
+            
+            if (drawnCard) {
+              // Trigger card draw animation
+              this.setState({
+                cardDrawAnimation: true,
+                newCardData: {
+                  type: cardType,
+                  data: drawnCard
+                }
+              });
+              
+              // Hide animation after delay
+              setTimeout(() => {
+                this.setState({
+                  cardDrawAnimation: false,
+                  newCardData: null
+                });
+              }, 2000);
+            }
+          }
+        }
+      }
     }
   }
   
@@ -196,20 +272,90 @@ window.GameBoard = class GameBoard extends React.Component {
   handleDiceRollMoveSelect = (space) => {
     console.log('GameBoard: Move selected from dice roll outcomes:', space.name);
     
-    // Get current player and move them to the selected space
-    const currentPlayer = GameState.getCurrentPlayer();
-    GameState.movePlayer(currentPlayer.id, space.id);
-    
+    // Don't move the player immediately, just store the selection
     // Update state
     this.setState({
-      players: [...GameState.players],
       selectedSpace: space.id,
-      hasSelectedMove: true,  // Player has performed their move
-      showDiceRoll: false     // Hide dice roll component
+      selectedMove: space.id,    // Store the selected move to be executed on End Turn
+      hasSelectedMove: true,     // Player has selected their move
+      showDiceRoll: false        // Hide dice roll component
     });
     
-    // Update available moves after move is complete
-    this.updateAvailableMoves();
+    console.log('GameBoard: Dice roll move selected:', space.id, '- Will be executed on End Turn');
+  }
+  
+  // Handle card played by player
+  handleCardPlayed = (card) => {
+    console.log('GameBoard: Card played:', card);
+    
+    // Get current player
+    const currentPlayer = this.getCurrentPlayer();
+    if (!currentPlayer) return;
+    
+    // Process card effects based on type
+    switch (card.type) {
+      case 'W': // Work card
+        // Example: Work cards might provide money
+        if (card['Estimated Job Costs']) {
+          const amount = parseInt(card['Estimated Job Costs']) || 0;
+          currentPlayer.resources.money += amount;
+          console.log(`Player earned $${amount} from work card`);
+        }
+        break;
+        
+      case 'B': // Business card
+        // Business cards might have different effects
+        break;
+        
+      case 'I': // Innovation card
+        // Innovation cards might reduce time
+        currentPlayer.resources.time -= 5;
+        if (currentPlayer.resources.time < 0) currentPlayer.resources.time = 0;
+        break;
+        
+      // Add case handlers for other card types
+      
+      default:
+        console.log('Unknown card type:', card.type);
+    }
+    
+    // Update players to reflect changes
+    this.setState({
+      players: [...GameState.players]
+    });
+    
+    // Save game state
+    GameState.saveState();
+  }
+  
+  // Handle card discarded by player
+  handleCardDiscarded = (card) => {
+    console.log('GameBoard: Card discarded:', card);
+    // No specific actions needed for discarded cards currently
+  }
+  
+  // Toggle card display visibility
+  toggleCardDisplay = () => {
+    this.setState(prevState => ({
+      showCardDisplay: !prevState.showCardDisplay
+    }));
+  }
+  
+  // Check if the current space requires a dice roll
+  hasDiceRollSpace = () => {
+    const currentPlayer = this.getCurrentPlayer();
+    if (!currentPlayer) return false;
+    
+    // If we've already rolled dice this turn, we don't need to roll again
+    if (this.state.hasRolledDice) return false;
+    
+    // Check if the current space has a dice roll in the CSV data
+    const currentSpaceId = currentPlayer.position;
+    const currentSpace = this.state.spaces.find(s => s.id === currentSpaceId);
+    if (!currentSpace) return false;
+    
+    // Use the same logic as in the BoardDisplay component
+    return this.state.diceRollData.some(data => data['Space Name'] === currentSpace.name);
   }
   
   getSelectedSpace = () => {
@@ -295,8 +441,10 @@ window.GameBoard = class GameBoard extends React.Component {
   render() {
     const { 
       players, spaces, currentPlayerIndex,
-      selectedSpace, availableMoves, showDiceRoll,
-      diceRollSpace, diceRollVisitType, diceRollData
+      selectedSpace, selectedMove, availableMoves, showDiceRoll,
+      diceRollSpace, diceRollVisitType, diceRollData,
+      showCardDisplay, cardDrawAnimation, newCardData,
+      hasRolledDice
     } = this.state;
     
     // Check if game is ended
@@ -364,6 +512,17 @@ window.GameBoard = class GameBoard extends React.Component {
               ))}
             </div>
             
+            {/* Card display component */}
+            {currentPlayer && showCardDisplay && (
+              <CardDisplay
+                playerId={currentPlayer.id}
+                visible={true}
+                onCardPlayed={this.handleCardPlayed}
+                onCardDiscarded={this.handleCardDiscarded}
+                ref={this.cardDisplayRef}
+              />
+            )}
+            
             {/* Space information */}
             {selectedSpaceObj && (
               <SpaceInfo 
@@ -379,6 +538,7 @@ window.GameBoard = class GameBoard extends React.Component {
               spaces={spaces}
               players={players}
               selectedSpace={selectedSpace}
+              selectedMove={this.state.selectedMove}  // Pass the selected move to BoardDisplay
               availableMoves={availableMoves}
               onSpaceClick={this.handleSpaceClick}
               diceRollData={diceRollData}
@@ -415,10 +575,24 @@ window.GameBoard = class GameBoard extends React.Component {
           {/* End Turn button */}
           <button 
             onClick={this.handleEndTurn}
-            disabled={!currentPlayer || (!this.state.hasSelectedMove && !showDiceRoll)}
+            disabled={
+              !currentPlayer || 
+              // Player must select a move
+              !this.state.hasSelectedMove ||
+              // If dice roll is visible or was required (space icon shows), they must have rolled
+              (this.hasDiceRollSpace() && !hasRolledDice)
+            }
             className="end-turn-btn"
           >
             End Turn
+          </button>
+          
+          {/* Toggle Cards button */}
+          <button
+            onClick={this.toggleCardDisplay}
+            className="toggle-cards-btn"
+          >
+            {showCardDisplay ? 'Hide Cards' : 'Show Cards'}
           </button>
           
           {/* Game instructions button */}
@@ -429,6 +603,37 @@ window.GameBoard = class GameBoard extends React.Component {
             Game Instructions
           </button>
         </div>
+        
+        {/* Card draw animation */}
+        {cardDrawAnimation && newCardData && (
+          <div className="game-card-draw-animation">
+            <div className="card-animation-container">
+              <div
+                className="animated-card"
+                style={{ borderColor: this.getCardTypeColor(newCardData.type) }}
+              >
+                <div 
+                  className="animated-card-header"
+                  style={{ backgroundColor: this.getCardTypeColor(newCardData.type) }}
+                >
+                  {this.getCardTypeName(newCardData.type)}
+                </div>
+                <div className="animated-card-content">
+                  {newCardData.data['Work Type'] && (
+                    <div className="animated-card-field">
+                      {newCardData.data['Work Type']}
+                    </div>
+                  )}
+                  {newCardData.data['Job Description'] && (
+                    <div className="animated-card-description">
+                      {newCardData.data['Job Description']}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Instructions Panel */}
         {this.state.showInstructions && this.state.instructionsData && (
@@ -598,6 +803,30 @@ window.GameBoard = class GameBoard extends React.Component {
         )}
       </div>
     );
+  }
+
+  // Get color for card type
+  getCardTypeColor = (cardType) => {
+    switch (cardType) {
+      case 'W': return '#4285f4'; // Blue for Work
+      case 'B': return '#ea4335'; // Red for Business
+      case 'I': return '#fbbc05'; // Yellow for Innovation
+      case 'L': return '#34a853'; // Green for Leadership
+      case 'E': return '#8e44ad'; // Purple for Environment
+      default: return '#777777';  // Gray for unknown
+    }
+  }
+  
+  // Get full name for card type
+  getCardTypeName = (cardType) => {
+    switch (cardType) {
+      case 'W': return 'Work Type';
+      case 'B': return 'Bank';
+      case 'I': return 'Investor';
+      case 'L': return 'Life';
+      case 'E': return 'Expeditor';
+      default: return 'Unknown';
+    }
   }
 }
 

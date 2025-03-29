@@ -6,13 +6,18 @@ async function initializeGame() {
   console.log('Initializing game...');
   
   try {
-    // Load both CSV files concurrently for better performance
-    const [spacesResponse, diceRollResponse] = await Promise.all([
+    // Load all necessary CSV files concurrently for better performance
+    const [spacesResponse, diceRollResponse, wCardsResponse, bCardsResponse, iCardsResponse, lCardsResponse, eCardsResponse] = await Promise.all([
       fetch('data/Spaces.csv'),
-      fetch('data/DiceRoll Info.csv')
+      fetch('data/DiceRoll Info.csv'),
+      fetch('data/W-cards.csv'),
+      fetch('data/B-cards.csv'),
+      fetch('data/I-cards.csv'),
+      fetch('data/L-cards.csv'),
+      fetch('data/E-cards.csv')
     ]);
     
-    // Check responses
+    // Check responses for required files
     if (!spacesResponse.ok) {
       throw new Error(`Failed to load spaces data: ${spacesResponse.status} ${spacesResponse.statusText}`);
     }
@@ -21,7 +26,7 @@ async function initializeGame() {
       throw new Error(`Failed to load dice roll data: ${diceRollResponse.status} ${diceRollResponse.statusText}`);
     }
     
-    // Parse both CSV files
+    // Process required CSV files
     const spacesCsvText = await spacesResponse.text();
     const diceRollCsvText = await diceRollResponse.text();
     
@@ -49,6 +54,46 @@ async function initializeGame() {
     } else {
       console.warn('DiceRollLogic not found. Dice roll functionality will not be available.');
     }
+    
+    // Process card CSV files and handle any that fail to load
+    const cardResponses = {
+      W: wCardsResponse,
+      B: bCardsResponse,
+      I: iCardsResponse,
+      L: lCardsResponse,
+      E: eCardsResponse
+    };
+    
+    // Load each card type data
+    for (const [cardType, response] of Object.entries(cardResponses)) {
+      if (response.ok) {
+        try {
+          const cardCsvText = await response.text();
+          const cardData = parseCSV(cardCsvText);
+          
+          if (cardData && cardData.length > 0) {
+            // Initialize card data in game state
+            window.GameState.loadCardData(cardType, cardData);
+            console.log(`Loaded ${cardData.length} ${cardType} cards`);
+          } else {
+            console.warn(`No valid data found in ${cardType}-cards.csv`);
+          }
+        } catch (cardError) {
+          console.warn(`Error parsing ${cardType}-cards.csv:`, cardError);
+        }
+      } else {
+        console.warn(`Failed to load ${cardType}-cards.csv: ${response.status} ${response.statusText}`);
+      }
+    }
+    
+    // Store card data on window for component access
+    window.cardCollections = {
+      W: window.GameState.cardCollections.W,
+      B: window.GameState.cardCollections.B,
+      I: window.GameState.cardCollections.I,
+      L: window.GameState.cardCollections.L,
+      E: window.GameState.cardCollections.E
+    };
     
     // Render the App component
     ReactDOM.render(
@@ -90,6 +135,7 @@ function showErrorScreen(error) {
     typeof window.BoardDisplay === 'function' &&
     typeof window.SpaceInfo === 'function' &&
     typeof window.PlayerInfo === 'function' &&
+    typeof window.CardDisplay === 'function' &&
     typeof window.GameState === 'object' &&
     typeof window.parseCSV === 'function'
   ) {

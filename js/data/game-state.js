@@ -8,6 +8,15 @@ window.GameState = {
   gameStarted: false,
   gameEnded: false,
   
+  // Card collections for the game
+  cardCollections: {
+    W: [], // Work cards
+    B: [], // Business cards
+    I: [], // Innovation cards
+    L: [], // Leadership cards
+    E: []  // Environment cards
+  },
+  
   // Initialize the game
   initialize(spacesData) {
     if (!spacesData || spacesData.length === 0) {
@@ -98,6 +107,7 @@ window.GameState = {
       position: startSpaceId,
       visitedSpaces: [], // Empty array to track spaces the player has visited
       previousPosition: null, // Track the previous position
+      cards: [], // Initialize empty cards array for card management
       resources: {
         money: 1000, // Starting money
         time: 0      // Starting time (days)
@@ -340,6 +350,144 @@ window.GameState = {
     localStorage.removeItem('game_players');
     localStorage.removeItem('game_currentPlayer');
     localStorage.removeItem('game_status');
+  },
+  
+  // Load card data from CSV
+  loadCardData(cardType, cardData) {
+    if (!cardData || cardData.length === 0) {
+      console.error(`GameState: No ${cardType} card data provided!`);
+      return;
+    }
+    
+    // Store card data in the appropriate collection
+    this.cardCollections[cardType] = cardData;
+    console.log(`GameState: Loaded ${cardData.length} ${cardType} cards`);
+  },
+  
+  // Draw a card of the specified type
+  drawCard(playerId, cardType) {
+    // Validate inputs
+    if (!playerId || !cardType || !this.cardCollections[cardType]) {
+      console.error('GameState: Invalid parameters for drawCard');
+      return null;
+    }
+    
+    // Find the player
+    const player = this.players.find(p => p.id === playerId);
+    if (!player) {
+      console.error('GameState: Player not found for drawing card');
+      return null;
+    }
+    
+    // Check if there are cards available
+    if (this.cardCollections[cardType].length === 0) {
+      console.log(`GameState: No ${cardType} cards available to draw`);
+      return null;
+    }
+    
+    // Draw a random card
+    const randomIndex = Math.floor(Math.random() * this.cardCollections[cardType].length);
+    const drawnCard = { ...this.cardCollections[cardType][randomIndex] };
+    
+    // Add a unique ID and card type to the card
+    drawnCard.id = `${cardType}-card-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    drawnCard.type = cardType;
+    
+    // Add the card to the player's hand
+    if (!player.cards) {
+      player.cards = [];
+    }
+    player.cards.push(drawnCard);
+    
+    // Save the updated state
+    this.saveState();
+    
+    console.log(`GameState: Player ${player.name} drew a ${cardType} card`);
+    
+    // Return the drawn card for UI feedback
+    return drawnCard;
+  },
+  
+  // Play a card from a player's hand
+  playCard(playerId, cardId) {
+    // Validate inputs
+    if (!playerId || !cardId) {
+      console.error('GameState: Invalid parameters for playCard');
+      return null;
+    }
+    
+    // Find the player
+    const player = this.players.find(p => p.id === playerId);
+    if (!player || !player.cards) {
+      console.error('GameState: Player not found or has no cards');
+      return null;
+    }
+    
+    // Find the card in the player's hand
+    const cardIndex = player.cards.findIndex(card => card.id === cardId);
+    if (cardIndex === -1) {
+      console.error('GameState: Card not found in player\'s hand');
+      return null;
+    }
+    
+    // Remove the card from the player's hand
+    const playedCard = { ...player.cards[cardIndex] };
+    player.cards.splice(cardIndex, 1);
+    
+    // Save the updated state
+    this.saveState();
+    
+    console.log(`GameState: Player ${player.name} played a ${playedCard.type} card`);
+    
+    // Return the played card for effects processing
+    return playedCard;
+  },
+  
+  // Discard a card from a player's hand
+  discardCard(playerId, cardId) {
+    // Validate inputs
+    if (!playerId || !cardId) {
+      console.error('GameState: Invalid parameters for discardCard');
+      return null;
+    }
+    
+    // Find the player
+    const player = this.players.find(p => p.id === playerId);
+    if (!player || !player.cards) {
+      console.error('GameState: Player not found or has no cards');
+      return null;
+    }
+    
+    // Find the card in the player's hand
+    const cardIndex = player.cards.findIndex(card => card.id === cardId);
+    if (cardIndex === -1) {
+      console.error('GameState: Card not found in player\'s hand');
+      return null;
+    }
+    
+    // Remove the card from the player's hand
+    const discardedCard = { ...player.cards[cardIndex] };
+    player.cards.splice(cardIndex, 1);
+    
+    // Save the updated state
+    this.saveState();
+    
+    console.log(`GameState: Player ${player.name} discarded a ${discardedCard.type} card`);
+    
+    // Return the discarded card for any side effects
+    return discardedCard;
+  },
+  
+  // Get a player's cards
+  getPlayerCards(playerId) {
+    // Find the player
+    const player = this.players.find(p => p.id === playerId);
+    if (!player) {
+      return [];
+    }
+    
+    // Return a copy of the cards array or an empty array if null
+    return player.cards ? [...player.cards] : [];
   },
   
   // Start a new game

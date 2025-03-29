@@ -1,0 +1,197 @@
+/* Dice roll styles */
+.dice-roll-container {
+  padding: 15px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.dice-roll-container h3 {
+  margin-top: 0;
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.dice-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 15px 0;
+}
+
+/* Dice styles */
+.dice-face {
+  width: 60px;
+  height: 60px;
+  background-color: white;
+  border: 2px solid #3498db;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0 auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+/* Dice dots styling */
+.dots-1 .dot-1 { display: block; }
+.dots-2 .dot-2, .dots-2 .dot-3 { display: block; }
+.dots-3 .dot-1, .dots-3 .dot-2, .dots-3 .dot-3 { display: block; }
+.dots-4 .dot-2, .dots-4 .dot-3, .dots-4 .dot-4, .dots-4 .dot-5 { display: block; }
+.dots-5 .dot-1, .dots-5 .dot-2, .dots-5 .dot-3, .dots-5 .dot-4, .dots-5 .dot-5 { display: block; }
+.dots-6 .dot-2, .dots-6 .dot-3, .dots-6 .dot-4, .dots-6 .dot-5, .dots-6 .dot-6, .dots-6 .dot-7 { display: block; }
+
+.dice-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: #3498db;
+  border-radius: 50%;
+  display: none;
+}
+
+/* Dot positions */
+.dot-1 { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.dot-2 { top: 25%; left: 25%; }
+.dot-3 { bottom: 25%; right: 25%; }
+.dot-4 { top: 25%; right: 25%; }
+.dot-5 { bottom: 25%; left: 25%; }
+.dot-6 { top: 50%; left: 25%; transform: translateY(-50%); }
+.dot-7 { top: 50%; right: 25%; transform: translateY(-50%); }
+
+/* Button styles */
+.roll-dice-btn {
+  padding: 12px 20px;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin: 15px auto;
+  display: block;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+  box-shadow: 0 3px 0 #c0392b;
+}
+
+.roll-dice-btn:hover {
+  background-color: #c0392b;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 #962d22;
+}
+
+.roll-dice-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #962d22;
+}
+
+.roll-dice-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+/* Animation for rolling dice */
+@keyframes rolling {
+  0% { transform: rotate(0deg); }
+  20% { transform: rotate(-20deg); }
+  40% { transform: rotate(15deg); }
+  60% { transform: rotate(-10deg); }
+  80% { transform: rotate(5deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.dice-face.rolling {
+  animation: rolling 0.5s ease-in-out infinite;
+}
+
+/* Dice history */
+.dice-history {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+.dice-history h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.dice-history ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 13px;
+}
+
+.dice-history li {
+  padding: 4px 0;
+  color: #555;
+}
+
+/* Dice instruction message */
+.dice-instruction {
+  margin: 15px 0;
+  padding: 10px 15px;
+  background-color: #f8f9fa;
+  border-left: 3px solid #e74c3c;
+  font-size: 14px;
+  color: #333;
+  font-weight: bold;
+  border-radius: 3px;
+  text-align: center;
+}
+
+.dice-instruction p {
+  margin: 0;
+}
+
+/* Dice outcome moves */
+.dice-moves {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+.dice-moves h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.dice-moves ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dice-move-option {
+  padding: 8px 12px;
+  margin: 5px 0;
+  background-color: #ecf0f1;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 13px;
+}
+
+.dice-move-option:hover {
+  background-color: #3498db;
+  color: white;
+}
+
+.no-moves-message {
+  font-size: 13px;
+  color: #e74c3c;
+  padding: 5px 0;
+}

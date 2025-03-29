@@ -7,8 +7,17 @@ window.BoardDisplay = class BoardDisplay extends React.Component {
     return window.MoveLogic.getMoveDetails(space);
   }
 
+  // Check if a space has dice roll options
+  hasDiceRollOptions = (space) => {
+    const { diceRollData } = this.props;
+    if (!diceRollData || diceRollData.length === 0 || !space) return false;
+    
+    // Check if there are entries for this space in the dice roll data
+    return diceRollData.some(data => data['Space Name'] === space.name);
+  }
+
   renderSpace = (space, index) => {
-    const { players, selectedSpace, onSpaceClick, availableMoves } = this.props;
+    const { players, selectedSpace, onSpaceClick, availableMoves, diceRollData } = this.props;
     
     // Find players on this space
     const playersOnSpace = players.filter(player => player.position === space.id);
@@ -16,11 +25,15 @@ window.BoardDisplay = class BoardDisplay extends React.Component {
     // Check if this space is an available move
     const isAvailableMove = availableMoves.some(move => move.id === space.id);
     
+    // Check if this space has dice roll options
+    const hasDiceRoll = this.hasDiceRollOptions(space);
+    
     // Determine CSS classes
     const classes = ['board-space'];
     if (space.type) classes.push(`space-type-${space.type.toLowerCase()}`);
     if (selectedSpace === space.id) classes.push('selected');
     if (isAvailableMove) classes.push('available-move');
+    if (hasDiceRoll) classes.push('has-dice-roll');
     
     // Format the visit type text
     const visitTypeText = space.visitType ? 
@@ -35,6 +48,13 @@ window.BoardDisplay = class BoardDisplay extends React.Component {
         <div className="space-content">
           <div className="space-name">{space.name}</div>
           {visitTypeText && <div className="visit-type">{visitTypeText}</div>}
+          
+          {/* Show dice roll indicator */}
+          {hasDiceRoll && (
+            <div className="dice-roll-indicator" title="This space requires a dice roll">
+              <div className="dice-icon"></div>
+            </div>
+          )}
           
           {/* Show available move indicator with details */}
           {isAvailableMove && (

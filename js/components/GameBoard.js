@@ -5,6 +5,9 @@ window.GameBoard = class GameBoard extends React.Component {
   constructor(props) {
     super(props);
     
+    // Create a ref to the DiceRoll component
+    this.diceRollRef = React.createRef();
+    
     this.state = {
       players: GameState.players || [],
       currentPlayerIndex: GameState.currentPlayerIndex || 0,
@@ -13,7 +16,11 @@ window.GameBoard = class GameBoard extends React.Component {
       availableMoves: [],
       showInstructions: false,
       instructionsData: null,
-      hasSelectedMove: false  // Track if player has selected a move this turn
+      hasSelectedMove: false,  // Track if player has selected a move this turn
+      showDiceRoll: false,     // Flag to show/hide dice roll component
+      diceRollSpace: null,     // Space data for dice rolling
+      diceRollVisitType: null, // Visit type for dice rolling
+      diceRollData: window.diceRollData || [] // Dice roll outcome data from CSV
     };
   }
   
@@ -23,6 +30,8 @@ window.GameBoard = class GameBoard extends React.Component {
     
     // Load instructions data from the START space
     this.loadInstructionsData();
+    
+    console.log("GameBoard mounted successfully");
   }
   
   // Load instructions data from the START space
@@ -31,13 +40,13 @@ window.GameBoard = class GameBoard extends React.Component {
     
     // Find the START - Quick play guide spaces (first and subsequent)
     const firstVisitInstructionsSpace = spaces.find(space => {
-      return space.name.includes('START - Quick play guide') && 
-             space.id.toLowerCase().includes('first');
+      return space.name && space.name.includes('START - Quick play guide') && 
+             space.id && space.id.toLowerCase().includes('first');
     });
     
     const subsequentVisitInstructionsSpace = spaces.find(space => {
-      return space.name.includes('START - Quick play guide') && 
-             space.id.toLowerCase().includes('subsequent');
+      return space.name && space.name.includes('START - Quick play guide') && 
+             space.id && space.id.toLowerCase().includes('subsequent');
     });
     
     // Log what we found for debugging
@@ -82,6 +91,7 @@ window.GameBoard = class GameBoard extends React.Component {
       });
     }
   }
+  
   // Toggle instructions panel
   toggleInstructions = () => {
     this.setState(prevState => ({
@@ -90,9 +100,29 @@ window.GameBoard = class GameBoard extends React.Component {
   }
   
   updateAvailableMoves = () => {
-    const availableMoves = GameState.getAvailableMoves();
-    this.setState({ availableMoves });
-    console.log('Available moves updated:', availableMoves.length, 'moves available');
+    const result = GameState.getAvailableMoves();
+    
+    // Check if the result indicates that a dice roll is needed
+    if (result && typeof result === 'object' && result.requiresDiceRoll) {
+      console.log('GameBoard: Dice roll required for this space');
+      
+      // Store the space info and show dice roll component
+      this.setState({ 
+        showDiceRoll: true, 
+        diceRollSpace: result.spaceName,
+        diceRollVisitType: result.visitType,
+        availableMoves: []
+      });
+    } else {
+      // Normal case - array of available moves
+      this.setState({ 
+        availableMoves: result, 
+        showDiceRoll: false,
+        diceRollSpace: null,
+        diceRollVisitType: null
+      });
+      console.log('Available moves updated:', result.length, 'moves available');
+    }
   }
   
   handleSpaceClick = (spaceId) => {
@@ -131,13 +161,55 @@ window.GameBoard = class GameBoard extends React.Component {
       players: [...GameState.players],
       currentPlayerIndex: GameState.currentPlayerIndex,
       selectedSpace: null,
-      hasSelectedMove: false  // Reset flag for the next player's turn
+      hasSelectedMove: false,  // Reset flag for the next player's turn
+      showDiceRoll: false,     // Hide dice roll component
+      diceRollSpace: null      // Clear dice roll space info
     });
     
     // Update available moves for new player
     this.updateAvailableMoves();
     
     console.log('Turn ended, next player:', GameState.currentPlayerIndex);
+  }
+
+  // Handle dice roll completion
+  handleDiceRollComplete = (result, outcomes) => {
+    console.log('GameBoard: Dice roll completed with result:', result);
+    console.log('GameBoard: Outcomes:', outcomes);
+    
+    // If outcomes include available moves, update state
+    if (outcomes.moves && outcomes.moves.length > 0) {
+      this.setState({ 
+        availableMoves: outcomes.moves,
+        hasSelectedMove: false  // Allow player to select a move from dice outcomes
+      });
+    } else {
+      // No valid moves from dice roll
+      this.setState({ 
+        availableMoves: [],
+        hasSelectedMove: true   // Force player to end turn since no valid moves
+      });
+    }
+  }
+  
+  // Handle move selection from dice roll outcomes
+  handleDiceRollMoveSelect = (space) => {
+    console.log('GameBoard: Move selected from dice roll outcomes:', space.name);
+    
+    // Get current player and move them to the selected space
+    const currentPlayer = GameState.getCurrentPlayer();
+    GameState.movePlayer(currentPlayer.id, space.id);
+    
+    // Update state
+    this.setState({
+      players: [...GameState.players],
+      selectedSpace: space.id,
+      hasSelectedMove: true,  // Player has performed their move
+      showDiceRoll: false     // Hide dice roll component
+    });
+    
+    // Update available moves after move is complete
+    this.updateAvailableMoves();
   }
   
   getSelectedSpace = () => {
@@ -161,10 +233,70 @@ window.GameBoard = class GameBoard extends React.Component {
     return !hasVisited;
   }
   
+  // Handle roll dice button click
+  handleRollDiceClick = () => {
+    // First try to use the selected space
+    const selectedSpace = this.getSelectedSpace();
+    let spaceName;
+    let visitType;
+    let spaceId;
+    
+    if (selectedSpace && selectedSpace.name) {
+      // If a space is selected, use it
+      spaceName = selectedSpace.name;
+      visitType = selectedSpace.visitType || (this.isVisitingFirstTime() ? 'first' : 'subsequent');
+      spaceId = selectedSpace.id;
+    } else {
+      // If no space is selected, use the current player's position
+      const currentPlayer = this.getCurrentPlayer();
+      if (currentPlayer) {
+        spaceId = currentPlayer.position;
+        const currentSpace = this.state.spaces.find(s => s.id === spaceId);
+        if (currentSpace) {
+          spaceName = currentSpace.name;
+          visitType = currentSpace.visitType || 'first';
+          console.log('GameBoard: Using current player position for dice roll:', spaceName, 'Visit type:', visitType);
+        } else {
+          // Fallback only if we can't find the current space
+          spaceName = "ARCH-INITIATION";
+          visitType = 'first';
+          console.log('GameBoard: Falling back to ARCH-INITIATION for dice roll');
+        }
+      } else {
+        // Fallback if no current player
+        spaceName = "ARCH-INITIATION";
+        visitType = 'first';
+      }
+    }
+    
+    // Make sure we always have a valid visit type
+    if (!visitType || (visitType !== 'first' && visitType !== 'subsequent')) {
+      // Extract visit type from ID as a last resort
+      if (spaceId && (spaceId.endsWith('-first') || spaceId.includes('-first-'))) {
+        visitType = 'first';
+      } else if (spaceId && (spaceId.endsWith('-subsequent') || spaceId.includes('-subsequent-'))) {
+        visitType = 'subsequent';
+      } else {
+        // Final fallback
+        visitType = 'first';
+      }
+    }
+    
+    // Show the dice roll component
+    this.setState({
+      showDiceRoll: true,
+      diceRollSpace: spaceName,
+      diceRollVisitType: visitType
+    });
+    
+    console.log('GameBoard: Showing dice roll for', spaceName, visitType);
+  }
+  
   render() {
     const { 
       players, spaces, currentPlayerIndex,
-      selectedSpace, availableMoves
+      selectedSpace, availableMoves, showDiceRoll,
+      diceRollSpace, diceRollVisitType, diceRollData
     } = this.state;
     
     // Check if game is ended
@@ -219,7 +351,7 @@ window.GameBoard = class GameBoard extends React.Component {
           </div>
         </div>
         
-        <div className="game-content" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div className="game-content">
           <div className="left-panel">
             {/* Player status for all players */}
             <div className="players-list">
@@ -239,15 +371,6 @@ window.GameBoard = class GameBoard extends React.Component {
                 visitType={visitType}
               />
             )}
-            
-            {/* Game instructions button */}
-            <button
-              onClick={this.toggleInstructions}
-              className="instructions-btn"
-              style={{ marginTop: '10px', width: '100%' }}
-            >
-              Game Instructions
-            </button>
           </div>
           
           <div className="main-panel">
@@ -258,17 +381,52 @@ window.GameBoard = class GameBoard extends React.Component {
               selectedSpace={selectedSpace}
               availableMoves={availableMoves}
               onSpaceClick={this.handleSpaceClick}
+              diceRollData={diceRollData}
             />
           </div>
         </div>
         
+        {/* Dice Roll component - show when active */}
+        {showDiceRoll && (
+          <div className="dice-roll-wrapper">
+            <DiceRoll
+              visible={true}
+              space={{ name: diceRollSpace }}
+              visitType={diceRollVisitType}
+              diceData={diceRollData}
+              onRollComplete={this.handleDiceRollComplete}
+              onMoveSelect={this.handleDiceRollMoveSelect}
+              ref={this.diceRollRef}
+            />
+          </div>
+        )}
+        
         <div className="game-controls">
+          {/* Always show Roll Dice button */}
+          {!showDiceRoll && (
+            <button 
+              onClick={this.handleRollDiceClick}
+              className="roll-dice-btn"
+            >
+              Roll Dice
+            </button>
+          )}
+          
+          {/* End Turn button */}
           <button 
             onClick={this.handleEndTurn}
-            disabled={!currentPlayer || !this.state.hasSelectedMove}
+            disabled={!currentPlayer || (!this.state.hasSelectedMove && !showDiceRoll)}
             className="end-turn-btn"
           >
             End Turn
+          </button>
+          
+          {/* Game instructions button */}
+          <button
+            onClick={this.toggleInstructions}
+            className="instructions-btn"
+          >
+            Game Instructions
           </button>
         </div>
         

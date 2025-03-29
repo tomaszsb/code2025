@@ -2,41 +2,67 @@
 console.log('Main.js file is being processed');
 
 // Main initialization function
-function initializeGame() {
+async function initializeGame() {
   console.log('Initializing game...');
   
-  // Load CSV file
-  fetch('data/Spaces.csv')
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`Failed to load game data: ${response.status} ${response.statusText}`);
-      }
-      return response.text();
-    })
-    .then(csvText => {
-      const spacesData = parseCSV(csvText);
-      
-      if (!spacesData || spacesData.length === 0) {
-        throw new Error('No valid spaces found in CSV file');
-      }
-      
-      // Initialize game state
-      GameState.initialize(spacesData);
-      
-      // Render the App component
-      ReactDOM.render(
-        React.createElement(window.App),
-        document.getElementById('game-root')
-      );
-      
-      console.log('Game initialization completed successfully');
-    })
-    .catch(error => {
-      console.error('Error during game initialization:', error);
-      
-      // Show error message
-      showErrorScreen(error);
-    });
+  try {
+    // Load both CSV files concurrently for better performance
+    const [spacesResponse, diceRollResponse] = await Promise.all([
+      fetch('data/Spaces.csv'),
+      fetch('data/DiceRoll Info.csv')
+    ]);
+    
+    // Check responses
+    if (!spacesResponse.ok) {
+      throw new Error(`Failed to load spaces data: ${spacesResponse.status} ${spacesResponse.statusText}`);
+    }
+    
+    if (!diceRollResponse.ok) {
+      throw new Error(`Failed to load dice roll data: ${diceRollResponse.status} ${diceRollResponse.statusText}`);
+    }
+    
+    // Parse both CSV files
+    const spacesCsvText = await spacesResponse.text();
+    const diceRollCsvText = await diceRollResponse.text();
+    
+    const spacesData = parseCSV(spacesCsvText);
+    const diceRollData = parseCSV(diceRollCsvText);
+    
+    if (!spacesData || spacesData.length === 0) {
+      throw new Error('No valid spaces found in CSV file');
+    }
+    
+    if (!diceRollData || diceRollData.length === 0) {
+      throw new Error('No valid dice roll data found in CSV file');
+    }
+    
+    console.log('Loaded', spacesData.length, 'spaces and', diceRollData.length, 'dice roll outcomes');
+    
+    // Initialize game state
+    GameState.initialize(spacesData);
+    
+    // Initialize dice roll logic if available
+    if (window.DiceRollLogic) {
+      window.DiceRollLogic.initialize(diceRollData);
+      window.diceRollData = diceRollData; // Store on window for component access
+      console.log('Dice roll logic initialized');
+    } else {
+      console.warn('DiceRollLogic not found. Dice roll functionality will not be available.');
+    }
+    
+    // Render the App component
+    ReactDOM.render(
+      React.createElement(window.App),
+      document.getElementById('game-root')
+    );
+    
+    console.log('Game initialization completed successfully');
+  } catch (error) {
+    console.error('Error during game initialization:', error);
+    
+    // Show error message
+    showErrorScreen(error);
+  }
 }
 
 // Show error screen to user

@@ -10,6 +10,19 @@ window.MoveLogic = {
     
     console.log('MoveLogic: Getting moves for space:', currentSpace.name);
     
+    // Special case for ARCH-INITIATION on subsequent visit - force dice roll
+    if (currentSpace.name === 'ARCH-INITIATION') {
+      // Check if this is a subsequent visit
+      const hasVisited = gameState.hasPlayerVisitedSpace(player, currentSpace.name);
+      const visitType = hasVisited ? 'subsequent' : 'first';
+      
+      // Force dice roll for ARCH-INITIATION on subsequent visit for testing
+      if (visitType === 'subsequent') {
+        console.log('MoveLogic: ARCH-INITIATION on subsequent visit - forcing dice roll');
+        return { requiresDiceRoll: true, spaceName: currentSpace.name, visitType: visitType };
+      }
+    }
+    
     // Check for special case spaces that have custom logic
     if (this.hasSpecialCaseLogic(currentSpace.name)) {
       console.log('MoveLogic: Using special case logic for', currentSpace.name);
@@ -17,10 +30,17 @@ window.MoveLogic = {
     }
     
     // Get standard moves from CSV data
-    const availableMoves = this.getSpaceDependentMoves(gameState, player, currentSpace);
-    console.log('MoveLogic: Space-dependent moves count:', availableMoves.length);
+    const result = this.getSpaceDependentMoves(gameState, player, currentSpace);
     
-    return availableMoves;
+    // Check if result indicates that dice roll is needed
+    if (result && typeof result === 'object' && result.requiresDiceRoll) {
+      console.log('MoveLogic: Space requires dice roll for movement');
+      return { requiresDiceRoll: true, spaceName: result.spaceName, visitType: result.visitType };
+    }
+    
+    // Standard case - array of available moves
+    console.log('MoveLogic: Space-dependent moves count:', result.length);
+    return result;
   },
   
   // Helper method to determine if a space has special case logic
@@ -73,6 +93,7 @@ window.MoveLogic = {
     
     const availableMoves = [];
     let hasSpecialPattern = false;
+    let isDiceRollSpace = false;
     
     // Process each next space
     for (const nextSpaceName of spaceToUse.nextSpaces) {
@@ -83,6 +104,13 @@ window.MoveLogic = {
       if (specialPatterns.some(pattern => nextSpaceName.includes(pattern))) {
         hasSpecialPattern = true;
         console.log('MoveLogic: Found special pattern in next space:', nextSpaceName);
+        
+        // Check if this is a dice roll space
+        if (nextSpaceName.includes('Outcome from rolled dice')) {
+          isDiceRollSpace = true;
+          console.log('MoveLogic: This is a dice roll space');
+        }
+        
         continue; // Skip this entry
       }
       
@@ -116,11 +144,17 @@ window.MoveLogic = {
       }
     }
     
+    // Handle special case for dice roll spaces
+    if (isDiceRollSpace) {
+      console.log('MoveLogic: This space requires a dice roll to determine next moves');
+      // Mark this space as requiring a dice roll
+      return { requiresDiceRoll: true, spaceName: currentSpace.name, visitType: visitType };
+    }
+    
     // Handle special case where we had special patterns but no valid moves
-    if (hasSpecialPattern && availableMoves.length === 0) {
+    if (hasSpecialPattern && availableMoves.length === 0 && !isDiceRollSpace) {
       console.log('MoveLogic: Special case detected with no valid moves - applying fallback logic');
       // For now, just return an empty array
-      // In a full implementation, we might have dice-rolling logic here
     }
     
     return availableMoves;

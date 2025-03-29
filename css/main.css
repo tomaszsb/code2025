@@ -53,6 +53,8 @@ body {
   border-top: 2px solid #ddd;
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 15px;
 }
 
 /* Player setup styles */
@@ -240,7 +242,7 @@ body {
 }
 
 /* Game control buttons */
-.end-turn-btn, .instructions-btn {
+.end-turn-btn, .instructions-btn, .roll-dice-btn {
   padding: 10px 20px;
   color: white;
   border: none;
@@ -270,6 +272,22 @@ body {
 
 .instructions-btn:hover {
   background-color: #2980b9;
+}
+
+.roll-dice-btn {
+  background-color: #e74c3c;
+}
+
+.roll-dice-btn:hover {
+  background-color: #c0392b;
+}
+
+/* Dice roll wrapper */
+.dice-roll-wrapper {
+  width: 100%;
+  margin: 0 0 20px 0;
+  display: flex;
+  justify-content: center;
 }
 
 /* Error screen */

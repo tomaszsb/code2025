@@ -30,8 +30,8 @@ async function initializeGame() {
     const spacesCsvText = await spacesResponse.text();
     const diceRollCsvText = await diceRollResponse.text();
     
-    const spacesData = parseCSV(spacesCsvText);
-    const diceRollData = parseCSV(diceRollCsvText);
+    const spacesData = parseCSV(spacesCsvText, 'spaces');
+    const diceRollData = parseCSV(diceRollCsvText, 'generic');
     
     if (!spacesData || spacesData.length === 0) {
       throw new Error('No valid spaces found in CSV file');
@@ -69,7 +69,7 @@ async function initializeGame() {
       if (response.ok) {
         try {
           const cardCsvText = await response.text();
-          const cardData = parseCSV(cardCsvText);
+          const cardData = parseCSV(cardCsvText, 'cards');
           
           if (cardData && cardData.length > 0) {
             // Initialize card data in game state

@@ -385,4 +385,4 @@ window.MoveLogic = {
   }
 };
 
-console.log('MoveLogic.js execution complete');
+console.log('MoveLogic.js execution finished');

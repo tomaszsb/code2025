@@ -13,7 +13,8 @@ App
     ├── PlayerInfo
     ├── SpaceInfo
     ├── BoardDisplay
-    └── DiceRoll
+    ├── DiceRoll
+    └── CardDisplay
 ```
 
 ### 1. App Component
@@ -30,6 +31,7 @@ App
   - Handles player turns
   - Controls space selection and player movement
   - Manages dice rolling interface
+  - Controls card drawing and management
   - Detects end game condition
   - Displays game instructions
 
@@ -44,6 +46,8 @@ App
 - **Responsibilities**:
   - Shows space name, type, and description
   - Displays different information based on visit type (first vs. subsequent)
+  - Shows dice roll outcomes in categorized format
+  - Provides context for card drawings and other space effects
 
 ### 5. BoardDisplay Component
 - **Purpose**: Renders the game board
@@ -52,14 +56,26 @@ App
   - Shows player tokens on their current spaces
   - Highlights available moves
   - Handles space click events
+  - Dynamically adjusts layout based on space count
 
 ### 6. DiceRoll Component
 - **Purpose**: Handles dice rolling mechanics
 - **Responsibilities**:
-  - Renders dice with animation
-  - Processes roll outcomes
+  - Renders 3D dice with animations
+  - Provides realistic rolling experience
+  - Processes roll outcomes into categories
   - Displays available moves based on roll
   - Maintains roll history
+  - Shows outcomes directly on space info card
+
+### 7. CardDisplay Component
+- **Purpose**: Manages player cards
+- **Responsibilities**:
+  - Displays player's hand of cards
+  - Supports card filtering by type
+  - Provides detailed card view
+  - Allows playing and discarding cards
+  - Shows animations for card drawing
 
 ## Key Utilities
 
@@ -70,6 +86,8 @@ App
   - Handles player movement
   - Tracks visited spaces
   - Manages persistence via localStorage
+  - Manages card collections and player cards
+  - Handles card drawing, playing, and discarding
 
 ### 2. MoveLogic
 - **Purpose**: Handles complex move calculations
@@ -82,21 +100,22 @@ App
 - **Purpose**: Processes dice roll outcomes
 - **Responsibilities**:
   - Loads dice roll data from CSV
-  - Maps roll results to outcomes
+  - Maps roll results to categorized outcomes
   - Determines next spaces based on rolls
-  - Processes different outcome types (next step, time, fees, etc.)
+  - Processes different outcome types (next step, time, fees, cards, etc.)
 
 ### 4. CSV Parser
 - **Purpose**: Parses CSV data files
 - **Responsibilities**:
   - Converts CSV text to JavaScript objects
   - Handles header mapping
+  - Processes different file types (spaces, cards, dice roll data)
 
 ## Data Flow
 
 1. **Initialization**:
-   - Main.js loads CSV data for spaces and dice rolls
-   - GameState initializes with space data
+   - Main.js loads CSV data for spaces, cards, and dice rolls
+   - GameState initializes with space and card data
    - DiceRollLogic initializes with dice roll data
    - App component renders based on saved game state
 
@@ -110,15 +129,27 @@ App
 3. **Dice Rolling**:
    - When required, DiceRoll component is displayed
    - Player clicks to roll the dice
+   - 3D dice animation shows the rolling process
    - DiceRoll component generates a random number
    - DiceRollLogic processes the outcome
+   - Outcomes are categorized (movement, cards, resources, other)
    - Available moves are updated based on the roll
+   - SpaceInfo displays the categorized outcomes
    - Player selects a move or ends their turn
 
-4. **Visit Types**:
+4. **Card Management**:
+   - Cards are drawn based on space requirements or dice roll outcomes
+   - CardDisplay shows the player's hand of cards
+   - Player can filter cards by type (W, B, I, L, E)
+   - Player can view card details, play, or discard cards
+   - GameState updates the player's cards
+   - Card effects are applied to gameplay
+
+5. **Visit Types**:
    - When a player moves to a space, GameState determines if it's a first or subsequent visit
    - Different outcomes and available moves may result based on visit type
    - SpaceInfo displays information relevant to the visit type
+   - Dice roll outcomes and card drawings are affected by visit type
 
 ## Key Subsystems
 
@@ -133,9 +164,12 @@ The game distinguishes between first and subsequent visits to spaces:
   - Card drawing
 
 ### 2. Dice Rolling System
-The dice rolling mechanic:
-- Uses a 6-sided die
+The enhanced dice rolling mechanic:
+- Uses a 3D animated 6-sided die with realistic appearance
+- Provides smooth rolling animations with proper CSS transforms
 - Maps roll results to outcomes based on CSV data
+- Categorizes outcomes for clear presentation (movement, cards, resources, other)
+- Integrates directly with the space information display
 - Supports multiple outcome types:
   - Next Step (movement)
   - Time outcomes
@@ -145,17 +179,29 @@ The dice rolling mechanic:
   - Multiplier outcomes
 
 ### 3. Card System
-The card system is partially implemented:
+The card system is fully implemented:
 - Card data is defined in CSV files
-- Five card types are supported (W, B, I, L, E)
-- Card drawing is triggered by specific spaces
-- Card UI display is not yet implemented
+- Five card types are supported:
+  - W Cards (Work Type): Represent different types of work in the project
+  - B Cards (Bank): Related to financial aspects of the project
+  - I Cards (Investor): Represent investor-related events
+  - L Cards (Leadership): Focus on team and leadership challenges
+  - E Cards (Environment): Address external factors affecting the project
+- Card drawing is triggered by specific spaces and dice roll outcomes
+- CardDisplay component provides a full UI for:
+  - Viewing cards in hand
+  - Filtering by card type
+  - Examining card details
+  - Playing and discarding cards
+- Animated card drawing provides visual feedback
+- Card effects are integrated with gameplay
 
 ### 4. Space Navigation
 Movement between spaces follows these rules:
 - Each space defines its potential next spaces
 - Available moves are filtered based on game state and visit type
 - Special case spaces have custom logic in MoveLogic
+- Dice roll outcomes can affect available moves
 
 ## Data Structure
 
@@ -168,6 +214,7 @@ Movement between spaces follows these rules:
   position: String,     // ID of current space
   visitedSpaces: [],    // Array of spaces the player has visited
   previousPosition: String, // Previous position for tracking movement
+  cards: [],            // Array of card objects in player's hand
   resources: {
     money: Number,      // Amount of money
     time: Number        // Time spent (days)
@@ -204,6 +251,34 @@ Movement between spaces follows these rules:
 }
 ```
 
+### 3. Card Object
+```javascript
+{
+  id: String,           // Unique identifier
+  type: String,         // Card type (W, B, I, L, E)
+  'Work Type': String,  // Type of work (for W cards)
+  'Job Description': String, // Description of the job
+  'Estimated Job Costs': Number, // Cost estimate
+  // Additional properties based on card type
+  // B, I, L, E cards have their own specific properties
+}
+```
+
+### 4. Dice Outcome Object
+```javascript
+{
+  'Space Name': String,  // Name of the space this outcome applies to
+  'Visit Type': String,  // 'first' or 'subsequent'
+  'Die Roll': String,    // Type of outcome (Next Step, WCards, Time, Fee, etc.)
+  '1': String,           // Outcome for rolling 1
+  '2': String,           // Outcome for rolling 2
+  '3': String,           // Outcome for rolling 3
+  '4': String,           // Outcome for rolling 4
+  '5': String,           // Outcome for rolling 5
+  '6': String            // Outcome for rolling 6
+}
+```
+
 ## Known Issues and Areas for Improvement
 
 ### 1. Performance Concerns
@@ -217,7 +292,8 @@ Movement between spaces follows these rules:
 - Dice roll outcome processing is complex
 
 ### 3. Feature Gaps
-- Card UI is not yet implemented
+- ~~Card UI is not yet implemented~~ ✓ COMPLETED!
+- ~~Dice roll visuals lack engaging 3D effects~~ ✓ COMPLETED!
 - Negotiation mechanics are defined in data but not fully implemented
 - Full educational content integration is pending
 
@@ -229,13 +305,16 @@ Movement between spaces follows these rules:
 4. When working with cards, ensure both data structure and UI are updated
 5. Follow the established pattern of logging at the beginning and end of files
 6. Use the GameState utility for managing game state instead of component state where possible
+7. When modifying dice roll functionality, ensure outcome categorization is maintained
+8. Test card interactions thoroughly, including filtering, playing, and discarding
 
 ## Planned Enhancements
 
-1. Complete the card UI implementation
-2. Refine the dice roll outcome processing
-3. Add animations and improved visual feedback
-4. Implement the negotiation mechanic
+1. ~~Complete the card UI implementation~~ ✓ COMPLETED!
+2. ~~Refine the dice roll outcome processing~~ ✓ COMPLETED!
+3. Implement the negotiation mechanic
+4. Add animations and improved visual feedback for player movement
 5. Enhance the educational content
+6. Optimize performance for larger game boards
 
 This document reflects the current state of the codebase and will be updated as development progresses.

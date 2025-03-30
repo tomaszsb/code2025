@@ -50,6 +50,23 @@ If you have Node.js installed:
 3. Run: `http-server -p 8000`
 4. Open your web browser and go to: `http://localhost:8000`
 
+## Game Features Overview
+
+The Project Management Game includes the following features that require proper local server setup:
+
+### CSV Data Loading
+The game loads several CSV files to populate:
+- Game spaces and their properties
+- Card data for different card types (W, B, I, L, E)
+- Dice roll outcomes based on spaces and visit types
+
+### Interactive Features
+The game includes interactive elements that rely on proper JavaScript execution:
+- 3D dice rolling with animations
+- Card management system with filtering and interactions
+- Dynamic board display with space filtering
+- Player movement and resource tracking
+
 ## Troubleshooting
 
 ### Still Seeing CORS Errors?
@@ -65,8 +82,17 @@ If you have Node.js installed:
 - Ensure you have the necessary permissions to run a server on your machine
 - Verify that Python or Node.js is installed correctly and accessible in your PATH
 
+### Game Features Not Working?
+
+- Check the browser console for JavaScript errors
+- Verify that all CSV files are properly loaded
+- Make sure you're using a modern browser with CSS3 and ES6 support
+- Check that 3D transforms are supported for the dice rolling feature
+
 ## Development Notes
 
 - Any changes you make to your files will be immediately available when using most development servers
 - If using VS Code Live Server, it will automatically reload the page when files are saved
 - For other servers, you may need to manually refresh the browser to see changes
+- The 3D dice rolling feature uses CSS transforms which work best in modern browsers
+- The card system uses CSS animations which might behave differently across browsers

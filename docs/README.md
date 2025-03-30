@@ -1,74 +1,136 @@
 # Project Management Game
 
-A digital board game that simulates the lifecycle of a construction project. The game is designed for educational purposes, targeting colleges and universities as a teaching tool for project management concepts.
+## Overview
 
-## Project Overview
+This project is an educational board game that simulates the project management journey, teaching players about the challenges and decisions involved in managing projects from initiation to completion.
 
-This game allows players to take on the role of project managers navigating through various phases of a construction project including:
+## Key Features
 
-- Initial setup and scope definition
-- Design and planning
-- Funding and budgeting
-- Regulatory approvals
-- Construction and implementation
+- Interactive board game with turn-based play
+- Dynamic space visibility based on player's visit history
+- 3D animated dice rolling system with categorized outcomes
+- Complete card management system with filtering and interactions
+- Visit tracking system for different space behaviors
+- Persistent game state with localStorage
+- Data-driven design using CSV files for game content
 
-Players navigate through a board-style interface, making decisions at various points that affect project outcomes, managing resources, and dealing with unexpected challenges.
+## Documentation
 
-## Development Status
+This project includes comprehensive documentation:
 
-The game is currently in Phase 1 development, focusing on establishing core board movement mechanics.
-
-### Current Phase: Core Movement System
-
-- [x] Project setup and structure
-- [x] Basic board movement implementation
-- [x] Player turn management
-- [x] Simple game state persistence
-- [x] End game condition
-- [x] Instructions panel with comprehensive game information
-- [x] Detailed space information display
-
-### Recent Updates
-
-- Added a dedicated Instructions button that shows complete game instructions
-- Enhanced space information panel to show all relevant data from each space
-- Improved user interface for better readability and information density
-- Fixed filtering of instruction spaces from the game board
-- Ensured players start on the correct space (OWNER-SCOPE-INITIATION)
-
-### Future Phases
-
-1. Card System (resource management)
-2. Dice and Outcomes (randomness and challenges)
-3. Project Management Elements (educational content)
-4. Polishing and Testing (user experience)
-
-## Getting Started
-
-1. **Set up a local web server** - Important: This project must be run on a local web server to avoid CORS issues
-   - Using Python: `python -m http.server 8000` (then visit http://localhost:8000)
-   - Using Node.js: Install http-server (`npm install -g http-server`) then run `http-server` in the project directory
-   - Using VS Code: Install the "Live Server" extension and click "Go Live"
-
-2. Set up players (1-4)
-3. Take turns moving around the board
-4. Follow the guidance and descriptions on each space
-5. Use the Instructions button to view comprehensive game information
+- [Game Documentation](./game_documentation.md) - Overview of game structure and functionality
+- [Technical Architecture](./tech-architecture.md) - Detailed technical architecture and component relationships
+- [Current Status](./current-status.md) - Current implementation status and recommendations
+- [Next Steps](./next-steps-handoff.md) - Future development priorities and approach
+- [Running Locally](./RUNNING_LOCALLY.md) - Instructions for running the game locally
+- [Dice Roll Improvements](./dice-roll-improvements.md) - Details about dice roll system enhancements
+- [Optimization Recommendations](./optimization-recommendations.md) - Performance improvement suggestions
 
 ## Project Structure
 
-- `css/` - Styling files
-- `js/` - JavaScript files
-   - `components/` - React-based UI components
-   - `data/` - Game state management
-   - `utils/` - Utility functions
-- `data/` - Game content data files (CSV)
-- `docs/` - Documentation files
+```
+code2025/
+├── css/                   # CSS stylesheets
+│   ├── board.css          # Board styling
+│   ├── cards.css          # Card styling
+│   ├── dice.css           # Dice styling
+│   └── main.css           # Main application styles
+├── data/                  # CSV data files
+│   ├── Spaces.csv         # Space definitions
+│   ├── DiceRoll Info.csv  # Dice roll outcomes
+│   └── *-cards.csv        # Card definitions
+├── docs/                  # Documentation
+├── js/                    # JavaScript files
+│   ├── components/        # UI components
+│   │   ├── App.js
+│   │   ├── BoardDisplay.js
+│   │   ├── CardDisplay.js
+│   │   ├── DiceRoll.js
+│   │   ├── GameBoard.js
+│   │   ├── PlayerInfo.js
+│   │   ├── PlayerSetup.js
+│   │   └── SpaceInfo.js
+│   ├── data/              # Data management
+│   │   └── game-state.js
+│   ├── utils/             # Utility functions
+│   │   ├── csv-parser.js
+│   │   ├── DiceRollLogic.js
+│   │   └── MoveLogic.js
+│   └── main.js            # Application entry point
+├── Index.html             # Main application HTML
+└── Index-debug.html       # Debug version with additional tools
+```
 
-## Development Approach
+## Running the Game
 
-See the `docs/LESSONS_LEARNED.md` file for key insights from previous development attempts and the strategy for this implementation.
+To run the game locally:
 
-## Educational Goal
+1. Clone this repository
+2. Set up a local server (see [Running Locally](./RUNNING_LOCALLY.md))
+3. Open Index.html through your local server
+4. Create players and start the game
 
-The primary goal of this game is to provide an engaging, interactive way for students to learn about project management principles in the context of construction projects. It aims to demonstrate real-world challenges, decision points, and the consequences of various choices throughout the project lifecycle.
+## Game Components
+
+### Spaces
+
+Spaces represent different phases of project management:
+- SETUP - Initial project setup
+- OWNER - Owner-related activities
+- FUNDING - Funding and budget activities
+- DESIGN - Design and planning activities
+- REGULATORY - Regulatory compliance activities
+- CONSTRUCTION - Implementation activities
+- END - Project completion
+
+### Cards
+
+Five types of cards affect gameplay:
+- W (Work Type) - Different types of project work
+- B (Bank) - Financial aspects of the project
+- I (Investor) - Investor-related events
+- L (Leadership) - Team and leadership challenges
+- E (Environment) - External factors affecting the project
+
+### Dice Rolling
+
+The 3D dice rolling system provides outcome randomization:
+- Determines next moves
+- Affects resources (time, money)
+- Triggers card drawing
+- Creates unexpected events
+
+## Current Status
+
+As of the latest update:
+- The core movement system is fully implemented
+- The card system is fully implemented with UI
+- The dice roll system features 3D visuals and outcome categorization
+- The game correctly tracks space visits and player progress
+- End game detection is implemented
+
+See [Current Status](./current-status.md) for more details.
+
+## Next Steps
+
+Priority development tasks:
+1. Implement negotiation mechanics
+2. Enhance visual feedback
+3. Optimize performance
+4. Create comprehensive testing
+5. Expand educational content
+
+See [Next Steps](./next-steps-handoff.md) for the detailed development plan.
+
+## Development Guidelines
+
+When working on this project:
+1. Add console logging at the beginning and end of each file
+2. Avoid inline CSS
+3. Test thoroughly when modifying move logic
+4. Follow established component patterns
+5. Update documentation when making significant changes
+
+## License
+
+This project is proprietary and confidential.

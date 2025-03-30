@@ -1,0 +1,258 @@
+/* Available moves section styling */
+.space-available-moves {
+  margin: 15px 0;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #34a853; /* Green for "go" */
+}
+
+.available-moves-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.move-button {
+  padding: 8px 12px;
+  background-color: #34a853;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.move-button:hover {
+  background-color: #2d9249;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.move-button:active {
+  transform: translateY(0);
+}
+
+/* Space Info Card Styles */
+
+/* Main container */
+.space-info {
+  background-color: white;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.space-info h3 {
+  margin-top: 0;
+  margin-bottom: 5px;
+  color: #2c3e50;
+  font-size: 18px;
+}
+
+.space-type {
+  font-size: 12px;
+  padding: 3px 6px;
+  background-color: #f8f9fa;
+  border-radius: 3px;
+  color: #666;
+  display: inline-block;
+  margin-bottom: 12px;
+}
+
+/* Section styling */
+.space-section {
+  margin-bottom: 12px;
+}
+
+.space-section-label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #2c3e50;
+}
+
+.space-description {
+  line-height: 1.5;
+  color: #333;
+}
+
+.space-info-value {
+  line-height: 1.4;
+  color: #444;
+}
+
+/* Card and resources sections */
+.space-cards-section,
+.space-resources-section {
+  margin-top: 15px;
+}
+
+/* Card section styling */
+.card-section {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+}
+
+.card-section .space-section-label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #2c3e50;
+}
+
+.card-value {
+  padding: 8px 10px;
+  background-color: white;
+  border-radius: 4px;
+  border-left: 3px solid #3498db;
+  font-size: 14px;
+}
+
+/* Resource section styling */
+.resource-section {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+}
+
+.resource-section .space-section-label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #2c3e50;
+}
+
+.resource-value {
+  padding: 8px 10px;
+  background-color: white;
+  border-radius: 4px;
+  border-left: 3px solid #34a853;
+  font-size: 14px;
+}
+
+/* Dice outcomes styling */
+.dice-outcomes-display {
+  margin: 15px 0;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.dice-outcome-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.dice-result-title h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+/* Compact dice face styling */
+.dice-face-compact {
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  border: 2px solid #3498db;
+  border-radius: 6px;
+  position: relative;
+  margin-left: 15px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Dice dots styling */
+.dice-dot {
+  width: 8px;
+  height: 8px;
+  background: #3498db;
+  border-radius: 50%;
+  position: absolute;
+  display: none;
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.2);
+}
+
+.dice-dot.visible {
+  display: block;
+}
+
+/* Dot positions in a 3x3 grid - scaled down for compact display */
+.dice-dot-1 { top: 7px; left: 7px; }
+.dice-dot-2 { top: 7px; left: calc(50% - 4px); }
+.dice-dot-3 { top: 7px; right: 7px; }
+.dice-dot-4 { top: calc(50% - 4px); left: 7px; }
+.dice-dot-5 { top: calc(50% - 4px); left: calc(50% - 4px); }
+.dice-dot-6 { top: calc(50% - 4px); right: 7px; }
+.dice-dot-7 { bottom: 7px; left: 7px; }
+.dice-dot-8 { bottom: 7px; left: calc(50% - 4px); }
+.dice-dot-9 { bottom: 7px; right: 7px; }
+
+.dice-outcome-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.outcome-category {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px;
+  background-color: white;
+  border-radius: 4px;
+  border-left: 3px solid #3498db;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.outcome-category-title {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.outcome-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.outcome-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 13px;
+  border-bottom: 1px dashed #e9ecef;
+}
+
+.outcome-item:last-child {
+  border-bottom: none;
+}
+
+.outcome-type {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.outcome-value {
+  color: #3498db;
+  font-weight: 500;
+}
+
+/* Empty space info */
+.space-info.empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+}

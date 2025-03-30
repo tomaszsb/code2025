@@ -1,7 +1,7 @@
 // CSV Parser utility function
 console.log('csv-parser.js file is being processed');
 
-window.parseCSV = function(csvText) {
+window.parseCSV = function(csvText, type = 'generic') {
   console.log('CSV parsing started');
   
   // Remove UTF-8 BOM if present
@@ -36,8 +36,8 @@ window.parseCSV = function(csvText) {
       // Simple split by comma
       const values = line.split(',');
       
-      // Skip if we don't have enough values
-      if (values.length < 3) {
+      // Skip empty lines but don't require a minimum number of columns
+      if (values.length === 0 || (values.length === 1 && values[0].trim() === '')) {
         continue;
       }
       
@@ -49,9 +49,18 @@ window.parseCSV = function(csvText) {
         row[header] = value;
       });
       
-      // Only add rows with a valid Space Name
-      if (row['Space Name'] && row['Space Name'].trim() !== '') {
-        data.push(row);
+      // For spaces CSV, only add rows with a valid Space Name
+      // For other CSVs, add all non-empty rows
+      if (type === 'spaces') {
+        if (row['Space Name'] && row['Space Name'].trim() !== '') {
+          data.push(row);
+        }
+      } else {
+        // For card CSVs, check for at least one non-empty value
+        const hasValue = Object.values(row).some(val => val && val.trim() !== '');
+        if (hasValue) {
+          data.push(row);
+        }
       }
     }
     
@@ -63,4 +72,4 @@ window.parseCSV = function(csvText) {
   }
 }
 
-console.log('csv-parser.js execution complete');
+console.log('csv-parser.js execution finished');

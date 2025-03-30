@@ -10,11 +10,11 @@ window.GameState = {
   
   // Card collections for the game
   cardCollections: {
-    W: [], // Work cards
-    B: [], // Business cards
-    I: [], // Innovation cards
-    L: [], // Leadership cards
-    E: []  // Environment cards
+    W: [], // Work Type cards
+    B: [], // Bank cards
+    I: [], // Investor cards
+    L: [], // Life cards
+    E: []  // Expeditor cards
   },
   
   // Initialize the game
@@ -109,8 +109,8 @@ window.GameState = {
       previousPosition: null, // Track the previous position
       cards: [], // Initialize empty cards array for card management
       resources: {
-        money: 1000, // Starting money
-        time: 0      // Starting time (days)
+      money: 0, // Starting money (players don't get money at beginning)
+      time: 0      // Starting time (days)
       }
     });
     
@@ -151,6 +151,11 @@ window.GameState = {
   nextPlayerTurn() {
     this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
     this.saveState();
+    
+    // Dispatch a custom event to notify components of game state update
+    const event = new CustomEvent('gameStateUpdated');
+    window.dispatchEvent(event);
+    console.log('GameState: Dispatched gameStateUpdated event');
   },
   
   // Extract the space name from a display name (without visit type)
@@ -162,7 +167,7 @@ window.GameState = {
     return displayName;
   },
   
-  // Move a player to a new space
+  // Add the starting space to visited spaces if the player moves
   movePlayer(playerId, spaceId) {
     const player = this.players.find(p => p.id === playerId);
     if (!player) {
@@ -178,8 +183,46 @@ window.GameState = {
       return;
     }
     
+    // Get the current space before recording previous position
+    const currentSpace = this.spaces.find(s => s.id === player.position);
+    
     // Record the previous position before updating
     player.previousPosition = player.position;
+    
+    // Add the current space to visited spaces if not already there
+    if (currentSpace) {
+      const currentSpaceName = this.extractSpaceName(currentSpace.name);
+      // Initialize visitedSpaces array if it doesn't exist
+      if (!player.visitedSpaces) {
+        player.visitedSpaces = [];
+      }
+      // Add to visited spaces if not already there
+      if (!player.visitedSpaces.includes(currentSpaceName)) {
+        console.log('GameState: Adding current space to visited spaces before moving:', currentSpaceName);
+        player.visitedSpaces.push(currentSpaceName);
+      }
+    }
+    
+    // Add time to player's time counter when leaving a space
+    // Only do this if there is a current space (not for first move of the game)
+    if (currentSpace) {
+      // Try to get time value from the space and convert to number
+      let timeToAdd = 0;
+      if (currentSpace.Time && currentSpace.Time.trim() !== '') {
+        timeToAdd = parseInt(currentSpace.Time, 10);
+        // If parsing fails, default to 0
+        if (isNaN(timeToAdd)) {
+          console.log('GameState: Invalid time value in space', currentSpace.name, ':', currentSpace.Time);
+          timeToAdd = 0;
+        }
+      }
+      
+      // Add time to player's counter
+      if (timeToAdd > 0) {
+        console.log('GameState: Adding', timeToAdd, 'days to player time when leaving', currentSpace.name);
+        player.resources.time += timeToAdd;
+      }
+    }
     
     // Get information about the space being moved to
     const newSpace = this.spaces.find(s => s.id === spaceId);
@@ -220,6 +263,11 @@ window.GameState = {
     }
     
     this.saveState();
+    
+    // Dispatch a custom event to notify components of game state update
+    const event = new CustomEvent('gameStateUpdated');
+    window.dispatchEvent(event);
+    console.log('GameState: Dispatched gameStateUpdated event from movePlayer');
   },
   
   // Check if player has visited a space before
@@ -258,6 +306,16 @@ window.GameState = {
       return wasVisitedBefore;
     }
     
+    // NEW APPROACH: Check if this space is the player's previous position
+    // We don't need additional special cases since we now properly add all spaces to visitedSpaces
+    if (player.previousPosition) {
+      const previousSpace = this.spaces.find(s => s.id === player.previousPosition);
+      if (previousSpace && this.extractSpaceName(previousSpace.name) === normalizedSpaceName) {
+        console.log('GameState: Player previously occupied this space, treating as visited');
+        return true;
+      }
+    }
+    
     // Check if space is in the visitedSpaces array
     const hasVisited = player.visitedSpaces.includes(normalizedSpaceName);
     console.log('GameState: Has visited?', hasVisited);
@@ -274,6 +332,7 @@ window.GameState = {
     
     return hasVisited;
   },
+
   
   // Find a space by name (either exact match or partial match)
   findSpaceByName(name) {
@@ -500,4 +559,4 @@ window.GameState = {
   }
 };
 
-console.log('game-state.js execution complete');
+console.log('game-state.js execution finished');

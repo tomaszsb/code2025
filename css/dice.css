@@ -7,61 +7,196 @@
   margin-bottom: 20px;
 }
 
-.dice-roll-container h3 {
-  margin-top: 0;
+.dice-roll-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.dice-roll-header h3 {
+  margin: 0;
   color: #2c3e50;
-  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.toggle-display-btn {
+  padding: 4px 8px;
+  font-size: 12px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.dice-roll-content {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.dice-roll-content.ready {
+  min-height: 100px;
+}
+
+.dice-roll-content.rolling {
+  min-height: 150px;
+}
+
+.dice-roll-content.results {
+  min-height: 200px;
 }
 
 .dice-area {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 15px 0;
-}
-
-/* Dice styles */
-.dice-face {
-  width: 60px;
-  height: 60px;
-  background-color: white;
-  border: 2px solid #3498db;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  font-weight: bold;
-  margin: 0 auto;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  margin: 20px 0;
+  perspective: 600px;
   position: relative;
 }
 
-/* Dice dots styling */
-.dots-1 .dot-1 { display: block; }
-.dots-2 .dot-2, .dots-2 .dot-3 { display: block; }
-.dots-3 .dot-1, .dots-3 .dot-2, .dots-3 .dot-3 { display: block; }
-.dots-4 .dot-2, .dots-4 .dot-3, .dots-4 .dot-4, .dots-4 .dot-5 { display: block; }
-.dots-5 .dot-1, .dots-5 .dot-2, .dots-5 .dot-3, .dots-5 .dot-4, .dots-5 .dot-5 { display: block; }
-.dots-6 .dot-2, .dots-6 .dot-3, .dots-6 .dot-4, .dots-6 .dot-5, .dots-6 .dot-6, .dots-6 .dot-7 { display: block; }
-
-.dice-dot {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  background-color: #3498db;
-  border-radius: 50%;
-  display: none;
+/* Enhanced 3D Dice styles */
+.dice-3d {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.1s ease;
 }
 
-/* Dot positions */
-.dot-1 { top: 50%; left: 50%; transform: translate(-50%, -50%); }
-.dot-2 { top: 25%; left: 25%; }
-.dot-3 { bottom: 25%; right: 25%; }
-.dot-4 { top: 25%; right: 25%; }
-.dot-5 { bottom: 25%; left: 25%; }
-.dot-6 { top: 50%; left: 25%; transform: translateY(-50%); }
-.dot-7 { top: 50%; right: 25%; transform: translateY(-50%); }
+.dice-face-3d {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.5s ease;
+}
+
+/* Animation for rolling dice */
+@keyframes rolling-3d {
+  0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+  20% { transform: rotateX(180deg) rotateY(90deg) rotateZ(45deg); }
+  40% { transform: rotateX(90deg) rotateY(180deg) rotateZ(90deg); }
+  60% { transform: rotateX(270deg) rotateY(270deg) rotateZ(135deg); }
+  80% { transform: rotateX(360deg) rotateY(180deg) rotateZ(180deg); }
+  100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
+}
+
+/* CSS classes for different dice transformations */
+.dice-transform-0 { transform: rotateX(360deg) rotateY(0deg); }
+.dice-transform-1 { transform: rotateX(0deg) rotateY(360deg); }
+.dice-transform-2 { transform: rotateX(180deg) rotateY(180deg); }
+.dice-transform-3 { transform: rotateX(90deg) rotateY(270deg); }
+.dice-transform-4 { transform: rotateX(0deg) rotateY(0deg); }
+
+.dice-face-3d.rolling {
+  animation: rolling-3d 1.2s ease-in-out;
+}
+
+/* 3D dice faces */
+.dice-face-front, 
+.dice-face-back, 
+.dice-face-right, 
+.dice-face-left, 
+.dice-face-top, 
+.dice-face-bottom {
+  position: absolute;
+  width: 78px;
+  height: 78px;
+  background-color: white;
+  border: 2px solid #3498db;
+  border-radius: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.1);
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.dice-face-front {
+  transform: translateZ(40px);
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+}
+
+.dice-face-back {
+  transform: rotateY(180deg) translateZ(40px);
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+}
+
+.dice-face-right {
+  transform: rotateY(90deg) translateZ(40px);
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+}
+
+.dice-face-left {
+  transform: rotateY(-90deg) translateZ(40px);
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+}
+
+.dice-face-top {
+  transform: rotateX(90deg) translateZ(40px);
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+}
+
+.dice-face-bottom {
+  transform: rotateX(-90deg) translateZ(40px);
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+}
+
+/* Enhanced dice dots */
+.dice-dot {
+  width: 14px;
+  height: 14px;
+  background: #3498db;
+  border-radius: 50%;
+  position: absolute;
+  display: none;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.dice-dot.visible {
+  display: block;
+}
+
+/* Dot positions in a 3x3 grid */
+.dice-dot-1 { top: 14px; left: 14px; }
+.dice-dot-2 { top: 14px; left: calc(50% - 7px); }
+.dice-dot-3 { top: 14px; right: 14px; }
+.dice-dot-4 { top: calc(50% - 7px); left: 14px; }
+.dice-dot-5 { top: calc(50% - 7px); left: calc(50% - 7px); }
+.dice-dot-6 { top: calc(50% - 7px); right: 14px; }
+.dice-dot-7 { bottom: 14px; left: 14px; }
+.dice-dot-8 { bottom: 14px; left: calc(50% - 7px); }
+.dice-dot-9 { bottom: 14px; right: 14px; }
+
+/* Large result number display */
+.dice-result-display {
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  width: 36px;
+  height: 36px;
+  background-color: #e74c3c;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  animation: popIn 0.3s ease-out;
+}
+
+@keyframes popIn {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
 
 /* Button styles */
 .roll-dice-btn {
@@ -91,51 +226,12 @@
   box-shadow: 0 1px 0 #962d22;
 }
 
-.roll-dice-btn:disabled {
+.roll-dice-btn:disabled, .roll-dice-btn.disabled {
   background-color: #ccc;
   cursor: not-allowed;
   box-shadow: none;
   text-shadow: none;
-}
-
-/* Animation for rolling dice */
-@keyframes rolling {
-  0% { transform: rotate(0deg); }
-  20% { transform: rotate(-20deg); }
-  40% { transform: rotate(15deg); }
-  60% { transform: rotate(-10deg); }
-  80% { transform: rotate(5deg); }
-  100% { transform: rotate(0deg); }
-}
-
-.dice-face.rolling {
-  animation: rolling 0.5s ease-in-out infinite;
-}
-
-/* Dice history */
-.dice-history {
-  margin-top: 15px;
-  padding-top: 10px;
-  border-top: 1px solid #eee;
-}
-
-.dice-history h4 {
-  margin-top: 0;
-  margin-bottom: 8px;
-  color: #2c3e50;
-  font-size: 14px;
-}
-
-.dice-history ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  font-size: 13px;
-}
-
-.dice-history li {
-  padding: 4px 0;
-  color: #555;
+  transform: none;
 }
 
 /* Dice instruction message */
@@ -155,10 +251,138 @@
   margin: 0;
 }
 
-/* Dice outcome display */
+/* Space card with dice integration */
+.space-card-with-dice {
+  margin-top: 10px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.5s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Controls container */
+.dice-controls {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  align-items: center;
+  padding: 10px 0;
+}
+
+/* Outcomes section */
+.dice-outcomes-section {
+  width: 100%;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #e9ecef;
+}
+
+/* Space card with outcome display */
+.space-card-with-outcomes {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dice-result-summary {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.dice-result-badge {
+  width: 40px;
+  height: 40px;
+  background-color: #3498db;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15px;
+  font-weight: bold;
+  font-size: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.dice-result-text {
+  flex: 1;
+}
+
+.dice-result-text h4 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 16px;
+}
+
+.dice-outcome-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.outcome-category {
+  flex: 1;
+  min-width: 150px;
+  padding: 10px;
+  background-color: white;
+  border-radius: 4px;
+  border-left: 3px solid #3498db;
+}
+
+.outcome-category-title {
+  margin: 0 0 8px 0;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.outcome-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.outcome-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 13px;
+  border-bottom: 1px dashed #e9ecef;
+}
+
+.outcome-item:last-child {
+  border-bottom: none;
+}
+
+.outcome-type {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.outcome-value {
+  color: #3498db;
+}
+
+/* Original outcome display style */
 .dice-outcomes {
   margin-top: 15px;
-  padding: 10px;
+  padding: 15px;
   background-color: #f8f9fa;
   border-radius: 4px;
   border-left: 3px solid #3498db;
@@ -166,7 +390,7 @@
 
 .dice-outcomes h4 {
   margin-top: 0;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   color: #2c3e50;
   font-size: 14px;
 }
@@ -178,7 +402,7 @@
 }
 
 .dice-outcome-item {
-  padding: 5px 0;
+  padding: 6px 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -189,54 +413,90 @@
   border-bottom: none;
 }
 
-.outcome-type {
-  font-weight: bold;
-  color: #2c3e50;
-  font-size: 13px;
-}
-
-.outcome-value {
-  color: #3498db;
-  font-size: 13px;
-}
-
-/* Dice outcome moves */
+/* Dice moves section */
 .dice-moves {
-  margin-top: 15px;
-  padding-top: 10px;
-  border-top: 1px solid #eee;
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
 }
 
 .dice-moves h4 {
   margin-top: 0;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   color: #2c3e50;
   font-size: 14px;
+  font-weight: bold;
 }
 
 .dice-moves ul {
   list-style: none;
   padding: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .dice-move-option {
-  padding: 8px 12px;
-  margin: 5px 0;
+  padding: 10px 15px;
   background-color: #ecf0f1;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
   font-size: 13px;
+  border-left: 3px solid #3498db;
 }
 
 .dice-move-option:hover {
   background-color: #3498db;
   color: white;
+  transform: translateX(5px);
 }
 
 .no-moves-message {
+  margin-top: 15px;
+  padding: 10px 15px;
+  background-color: #f8f9fa;
+  border-left: 3px solid #e74c3c;
   font-size: 13px;
   color: #e74c3c;
-  padding: 5px 0;
+  border-radius: 4px;
+}
+
+.no-moves-message p {
+  margin: 5px 0;
+}
+
+/* Dice history */
+.dice-history {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.dice-history h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.dice-history ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 13px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dice-history li {
+  padding: 4px 8px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  color: #555;
+  font-size: 12px;
 }

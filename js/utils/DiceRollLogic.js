@@ -215,4 +215,4 @@ window.DiceRollLogic = {
   }
 };
 
-console.log('DiceRollLogic.js execution complete');
+console.log('DiceRollLogic.js execution finished');

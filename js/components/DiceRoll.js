@@ -9,8 +9,14 @@ window.DiceRoll = class DiceRoll extends React.Component {
       result: null,
       diceHistory: [],
       availableMoves: [],
-      diceOutcomes: []
+      diceOutcomes: [],
+      rollPhase: 'ready', // ready, rolling, results
+      animationStep: 0,   // For multi-step animations
+      animationClass: null // CSS class for animations
     };
+    
+    // Create a ref to the dice element for animations
+    this.diceRef = React.createRef();
   }
 
   componentDidMount() {
@@ -57,10 +63,33 @@ window.DiceRoll = class DiceRoll extends React.Component {
   rollDice = () => {
     console.log('DiceRoll: Rolling dice starting');
     // Start rolling animation
-    this.setState({ rolling: true, result: null });
+    this.setState({ 
+      rolling: true, 
+      result: null,
+      rollPhase: 'rolling',
+      animationStep: 0
+    });
     
-    // Generate random number between 1 and 6
+    // Create a more engaging dice roll animation with multiple steps
+    const rollAnimation = () => {
+      // Update animation step
+      this.setState(prevState => {
+        const newStep = prevState.animationStep + 1;
+        return {
+          animationStep: newStep,
+          // Use CSS classes for animations instead of direct style manipulation
+          animationClass: `dice-transform-${newStep % 5}`
+        };
+      });
+    };
+    
+    // Start animation interval
+    const animationInterval = setInterval(rollAnimation, 200);
+    
+    // Generate random number between 1 and 6 after animation
     setTimeout(() => {
+      clearInterval(animationInterval);
+      
       const result = Math.floor(Math.random() * 6) + 1;
       console.log('DiceRoll: Dice roll result:', result);
       
@@ -71,11 +100,13 @@ window.DiceRoll = class DiceRoll extends React.Component {
       console.log('DiceRoll: Processing roll outcome');
       const outcomes = this.processRollOutcome(result);
       
+      // Update state with result
       this.setState({ 
         rolling: false, 
         result,
         diceHistory,
-        availableMoves: outcomes.moves || []
+        availableMoves: outcomes.moves || [],
+        rollPhase: 'results'
       });
       
       // Call the callback with the results
@@ -85,37 +116,42 @@ window.DiceRoll = class DiceRoll extends React.Component {
       }
       
       console.log('DiceRoll: Rolling dice completed');
-    }, 1000); // Animation time
+    }, 1200); // Longer animation time for better visual effect
   }
 
   // Process the dice roll result to determine game outcomes
   processRollOutcome = (rollResult) => {
-    const { diceOutcomes } = this.state;
-    const { space, visitType } = this.props;
-    
-    console.log('DiceRoll: Processing roll', rollResult, 'for space', space.name, 'visit type', visitType);
-    console.log('DiceRoll: Available outcomes:', diceOutcomes);
-    
-    if (!diceOutcomes || diceOutcomes.length === 0) {
-      console.log('DiceRoll: No outcomes available');
-      return { moves: [] };
+  const { diceOutcomes } = this.state;
+  const { space, visitType, onShowOutcomes } = this.props;
+  
+  console.log('DiceRoll: Processing roll', rollResult, 'for space', space.name, 'visit type', visitType);
+  console.log('DiceRoll: Available outcomes:', diceOutcomes);
+  
+  if (!diceOutcomes || diceOutcomes.length === 0) {
+  console.log('DiceRoll: No outcomes available');
+  return { moves: [] };
+  }
+  
+  const outcomes = {};
+  
+  // Process each dice outcome data row
+  for (const outcomeData of diceOutcomes) {
+  const dieRollType = outcomeData['Die Roll'];
+  const outcomeValue = outcomeData[rollResult.toString()];
+  
+  console.log('DiceRoll: Processing outcome type', dieRollType, 'value:', outcomeValue);
+  
+  if (outcomeValue && outcomeValue.trim() !== '' && outcomeValue !== 'n/a') {
+  outcomes[dieRollType] = outcomeValue;
+  }
+  }
+  
+  console.log('DiceRoll: Processed outcomes:', outcomes);
+  
+  // Pass the outcomes to the SpaceInfo component if callback exists
+    if (onShowOutcomes && typeof onShowOutcomes === 'function') {
+      onShowOutcomes(rollResult, outcomes);
     }
-    
-    const outcomes = {};
-    
-    // Process each dice outcome data row
-    for (const outcomeData of diceOutcomes) {
-      const dieRollType = outcomeData['Die Roll'];
-      const outcomeValue = outcomeData[rollResult.toString()];
-      
-      console.log('DiceRoll: Processing outcome type', dieRollType, 'value:', outcomeValue);
-      
-      if (outcomeValue && outcomeValue.trim() !== '') {
-        outcomes[dieRollType] = outcomeValue;
-      }
-    }
-    
-    console.log('DiceRoll: Processed outcomes:', outcomes);
     
     // If there's a "Next Step" outcome, convert it to available moves
     if (outcomes['Next Step']) {
@@ -133,7 +169,7 @@ window.DiceRoll = class DiceRoll extends React.Component {
       
       // Find the specified space
       const availableMoves = this.findAvailableSpace(nextSpaceName);
-      console.log('DiceRoll: Found available moves:', availableMoves.map(m => m.name));
+      console.log('DiceRoll: Found available moves:', availableMoves.map(m => m.name).join(', '));
       outcomes.moves = availableMoves;
     } else {
       outcomes.moves = [];
@@ -207,35 +243,164 @@ window.DiceRoll = class DiceRoll extends React.Component {
     return [destinationSpace];
   }
 
-  // Render dice with dots based on the result
+  // Render enhanced 3D dice with dots based on the result
   renderDiceFace = (result) => {
-    if (!result) {
-      return <div className="dice-face">?</div>;
+    if (!result && !this.state.rolling) {
+      return (
+        <div className="dice-face dice-face-3d">
+          <div className="dice-face-front">?</div>
+          <div className="dice-face-back"></div>
+          <div className="dice-face-right"></div>
+          <div className="dice-face-left"></div>
+          <div className="dice-face-top"></div>
+          <div className="dice-face-bottom"></div>
+        </div>
+      );
     }
     
-    // Create an array of dots based on the result
-    const dots = [];
+    // Create dot layouts for each face of the dice
+    const generateDots = (count) => {
+      const dots = [];
+      
+      for (let i = 1; i <= 9; i++) {
+        // Only show dots that should be visible for this number
+        const visible = (
+          (count === 1 && i === 5) ||  // Center dot for 1
+          (count === 2 && (i === 1 || i === 9)) ||  // Diagonal corners for 2
+          (count === 3 && (i === 1 || i === 5 || i === 9)) ||  // Diagonal plus center for 3
+          (count === 4 && (i === 1 || i === 3 || i === 7 || i === 9)) ||  // Four corners for 4
+          (count === 5 && (i === 1 || i === 3 || i === 5 || i === 7 || i === 9)) ||  // Four corners and center for 5
+          (count === 6 && (i === 1 || i === 3 || i === 4 || i === 6 || i === 7 || i === 9))  // Six dots for 6
+        );
+        
+        dots.push(
+          <div 
+            key={i} 
+            className={`dice-dot dice-dot-${i} ${visible ? 'visible' : ''}`}
+          ></div>
+        );
+      }
+      
+      return dots;
+    };
     
-    for (let i = 1; i <= 7; i++) {
-      dots.push(<div key={i} className={`dice-dot dot-${i}`}></div>);
-    }
+    // During rolling animation or after result
+    const displayResult = this.state.rolling ? 
+      (Math.floor(Math.random() * 6) + 1) : result;
     
     return (
-      <div className={`dice-face dots-${result}`}>
-        {dots}
+      <div 
+        className={`dice-face dice-face-3d ${this.state.rolling ? 'rolling' : ''} ${this.state.animationClass || ''}`}
+        ref={this.diceRef}
+      >
+        <div className={`dice-face-front dice-value-${displayResult}`}>
+          {generateDots(displayResult)}
+        </div>
+        <div className="dice-face-back">
+          {generateDots(7 - displayResult)} {/* Opposite side */}
+        </div>
+        <div className="dice-face-right">
+          {generateDots(3)} {/* Right side */}
+        </div>
+        <div className="dice-face-left">
+          {generateDots(4)} {/* Left side */}
+        </div>
+        <div className="dice-face-top">
+          {generateDots(2)} {/* Top side */}
+        </div>
+        <div className="dice-face-bottom">
+          {generateDots(5)} {/* Bottom side */}
+        </div>
+      </div>
+    );
+  }
+
+  // Process and format outcomes for display
+
+  // Categorize and format outcomes for display
+  categorizeOutcomes = (displayOutcomes) => {
+    const categories = {
+      movement: { title: 'Movement', outcomes: {} },
+      cards: { title: 'Cards', outcomes: {} },
+      resources: { title: 'Resources', outcomes: {} },
+      other: { title: 'Other Effects', outcomes: {} }
+    };
+    
+    // Sort outcomes by category
+    Object.entries(displayOutcomes).forEach(([type, value]) => {
+      if (type === 'Next Step') {
+        categories.movement.outcomes[type] = value;
+      } else if (type.includes('Cards')) {
+        categories.cards.outcomes[type] = value;
+      } else if (type.includes('Time') || type.includes('Fee')) {
+        categories.resources.outcomes[type] = value;
+      } else {
+        categories.other.outcomes[type] = value;
+      }
+    });
+    
+    return categories;
+  }
+
+  // Render organized outcome sections
+  renderOutcomes = (categories) => {
+    return Object.values(categories).map(category => {
+      const outcomes = Object.entries(category.outcomes);
+      if (outcomes.length === 0) return null;
+      
+      return (
+        <div key={category.title} className="outcome-category">
+          <h5 className="outcome-category-title">{category.title}</h5>
+          <ul className="outcome-list">
+            {outcomes.map(([type, value]) => (
+              <li key={type} className="outcome-item">
+                <span className="outcome-type">{type.replace('Cards', '').trim()}:</span> 
+                <span className="outcome-value">{value}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }).filter(Boolean); // Remove null categories
+  }
+
+  // Render outcomes on the space card
+  renderOutcomesOnCard = (displayOutcomes, result) => {
+    const categories = this.categorizeOutcomes(displayOutcomes);
+    
+    return (
+      <div className="dice-space-outcomes">
+        <div className="dice-result-summary">
+          <div className="dice-result-badge">
+            <span className="dice-result-number">{result}</span>
+          </div>
+          <div className="dice-result-text">
+            <h4>Roll Outcome</h4>
+          </div>
+        </div>
+        
+        <div className="dice-outcome-categories">
+          {this.renderOutcomes(categories)}
+        </div>
       </div>
     );
   }
 
   render() {
     console.log('DiceRoll: Rendering component');
-    const { rolling, result, diceHistory, availableMoves, diceOutcomes } = this.state;
-    const { visible } = this.props;
+    const { 
+      rolling, result, diceHistory, availableMoves, 
+      diceOutcomes, rollPhase, showOutcomesOnCard 
+    } = this.state;
+    const { visible, space } = this.props;
     
     if (!visible) {
       console.log('DiceRoll: Component not visible, skipping render');
       return null;
     }
+    
+    // Check if the current space supports dice rolling
+    const hasDiceRoll = diceOutcomes && diceOutcomes.length > 0;
     
     // If we have a result, process the outcomes to display
     let displayOutcomes = {};
@@ -256,61 +421,69 @@ window.DiceRoll = class DiceRoll extends React.Component {
     console.log('DiceRoll: Preparing to render dice UI');
     return (
       <div className="dice-roll-container">
-        <h3>Roll the Dice</h3>
+        <div className="dice-roll-header">
+          <h3>Dice Roll - {space.name}</h3>
+        </div>
         
-        <div className="dice-area">
-          {/* Show dice result or animation */}
-          <div className={`dice ${rolling ? 'rolling' : ''}`}>
-            {this.renderDiceFace(result)}
+        <div className={`dice-roll-content ${rollPhase}`}>
+          {/* Integrated dice display inside the space card */}
+          <div className="space-card-with-dice">
+            {/* Only show dice area if we're rolling or have a result */}
+            {(rolling || result) && (
+              <div className="dice-area">
+                {/* Enhanced 3D dice */}
+                <div className={`dice dice-3d ${rolling ? 'rolling' : ''}`}>
+                  {this.renderDiceFace(result)}
+                </div>
+                
+                {/* Result number display */}
+                {result && !rolling && (
+                  <div className="dice-result-display">
+                    <span>{result}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Roll dice button - only show if space supports dice rolling */}
+            {!result && !rolling && hasDiceRoll && (
+              <div className="dice-controls">
+                <button 
+                  onClick={this.rollDice}
+                  disabled={rolling}
+                  className="roll-dice-btn"
+                >
+                  Roll Dice
+                </button>
+                
+                {/* Instructions */}
+                <div className="dice-instruction">
+                  <p>Click the Roll Dice button to determine your outcomes.</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Gray out Roll button if no dice outcomes available */}
+            {!result && !rolling && !hasDiceRoll && (
+              <button 
+                disabled={true}
+                className="roll-dice-btn disabled"
+                title="This space doesn't require a dice roll"
+              >
+                No Dice Roll Required
+              </button>
+            )}
+            
+            {/* Outcomes - integrated inside space card */}
+            {result && Object.keys(displayOutcomes).length > 0 && (
+              <div className="dice-outcomes-section">
+                {this.renderOutcomesOnCard(displayOutcomes, result)}
+              </div>
+            )}
           </div>
         </div>
         
-        {/* Roll dice button */}
-        {!result && !rolling && (
-          <button 
-            onClick={this.rollDice}
-            disabled={rolling}
-            className="roll-dice-btn"
-          >
-            Roll Dice
-          </button>
-        )}
-        
-        {/* Show message to use roll button when no result yet */}
-        {!result && !rolling && (
-          <div className="dice-instruction">
-            <p>Click the Roll Dice button to determine your move.</p>
-          </div>
-        )}
-        
-        {/* Show dice roll outcomes */}
-        {result && Object.keys(displayOutcomes).length > 0 && (
-          <div className="dice-outcomes">
-            <h4>Dice Roll Results</h4>
-            <ul>
-              {Object.entries(displayOutcomes).map(([type, value]) => (
-                <li key={type} className="dice-outcome-item">
-                  <span className="outcome-type">{type}:</span> 
-                  <span className="outcome-value">{value}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        
-        {/* Show dice history */}
-        {diceHistory.length > 0 && (
-          <div className="dice-history">
-            <h4>Previous Rolls</h4>
-            <ul>
-              {diceHistory.map((roll, index) => (
-                <li key={index}>Roll {index + 1}: {roll}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        
-        {/* Show available moves based on roll */}
+        {/* Available moves from dice roll - shown at bottom */}
         {result && availableMoves.length > 0 && (
           <div className="dice-moves">
             <h4>Available Moves</h4>
@@ -328,11 +501,23 @@ window.DiceRoll = class DiceRoll extends React.Component {
           </div>
         )}
         
-        {/* Show message if no moves available after roll */}
+        {/* Message for no moves available */}
         {result && availableMoves.length === 0 && (
           <div className="no-moves-message">
             <p>This roll determines game effects but doesn't change your movement.</p>
             <p>You can still select an available move from the board.</p>
+          </div>
+        )}
+        
+        {/* Dice history */}
+        {diceHistory.length > 1 && (
+          <div className="dice-history">
+            <h4>Previous Rolls</h4>
+            <ul>
+              {diceHistory.slice(0, -1).map((roll, index) => (
+                <li key={index}>Roll {index + 1}: {roll}</li>
+              ))}
+            </ul>
           </div>
         )}
       </div>
@@ -341,4 +526,4 @@ window.DiceRoll = class DiceRoll extends React.Component {
   }
 }
 
-console.log('DiceRoll.js execution complete');
+console.log('DiceRoll.js execution finished');

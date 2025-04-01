@@ -209,9 +209,12 @@
   justify-content: space-between;
 }
 
+/* Exploration highlight */
 .board-space:hover {
   transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 15px rgba(66, 133, 244, 0.5);
+  border: 2px solid #4285f4;
+  z-index: 10;
 }
 
 /* Special hover effect for enlarged spaces to prevent them from getting too big */

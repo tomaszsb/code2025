@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/dice.css">
     <link rel="stylesheet" href="css/cards.css">
     <link rel="stylesheet" href="css/space-info.css">
+    <link rel="stylesheet" href="css/space-explorer.css">
     
     <!-- React from CDN -->
     <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
@@ -31,7 +32,16 @@
     <script type="text/babel" src="js/utils/CardDrawUtil.js"></script>
     <script type="text/babel" src="js/data/game-state.js"></script>
     
-    <!-- Load components with Babel -->
+    <!-- Load card component utilities first -->
+    <script type="text/babel" src="js/components/CardTypeUtils.js"></script>
+    <script type="text/babel" src="js/components/CardActions.js"></script>
+    
+    <!-- Load card sub-components -->
+    <script type="text/babel" src="js/components/CardDetailView.js"></script>
+    <script type="text/babel" src="js/components/CardAnimations.js"></script>
+    <script type="text/babel" src="js/components/WorkCardDialogs.js"></script>
+    
+    <!-- Load main components -->
     <script type="text/babel" src="js/components/PlayerInfo.js"></script>
     <script type="text/babel" src="js/components/SpaceInfo.js"></script>
     <script type="text/babel" src="js/components/BoardDisplay.js"></script>

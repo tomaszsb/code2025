@@ -1,7 +1,76 @@
 // SpaceInfo component
-console.log('SpaceInfo.js file is being processed');
+console.log('SpaceInfo.js file is beginning to be used');
 
 window.SpaceInfo = class SpaceInfo extends React.Component {
+  // Constructor to handle state for used buttons
+  constructor(props) {
+    super(props);
+    this.state = {
+      usedButtons: [],
+      currentPlayerId: null // Store current player ID to detect changes
+    };
+  }
+  
+  // Reset used buttons when space or player changes
+  componentDidUpdate(prevProps) {
+    // Get current player
+    const currentPlayer = window.GameState?.getCurrentPlayer?.();
+    const currentPlayerId = currentPlayer?.id || null;
+    
+    // Check if the space has changed
+    if (prevProps.space?.id !== this.props.space?.id) {
+      // Reset used buttons when space changes
+      this.setState({ 
+        usedButtons: [],
+        currentPlayerId: currentPlayerId // Update player ID state
+      });
+      console.log('SpaceInfo: Space changed, resetting used buttons');
+      return; // Return early to avoid additional state updates
+    }
+    
+    // Check if the player has changed (without causing infinite loops)
+    if (currentPlayerId && this.state.currentPlayerId !== currentPlayerId) {
+      // Reset used buttons when player changes
+      this.setState({ 
+        usedButtons: [],
+        currentPlayerId: currentPlayerId // Update player ID state
+      });
+      console.log('SpaceInfo: Player changed, resetting used buttons');
+      return; // Return early to avoid additional state updates
+    }
+    
+    // Also log current state of used buttons for debugging
+    console.log('SpaceInfo: Current usedButtons state:', this.state.usedButtons);
+  }
+  
+  componentDidMount() {
+    // Initialize with current player ID
+    const currentPlayer = window.GameState?.getCurrentPlayer?.();
+    if (currentPlayer?.id) {
+      this.setState({ currentPlayerId: currentPlayer.id });
+    }
+    
+    // Log initial state of used buttons
+    console.log('SpaceInfo: Mounted with usedButtons:', this.state.usedButtons);
+  }
+  // Determine background color based on space type/phase
+  getPhaseColor(type) {
+    if (!type) return '#f8f9fa';
+    
+    // Define colors for different phases
+    const phaseColors = {
+      'SETUP': '#e3f2fd',     // Light blue
+      'OWNER': '#fce4ec',     // Light pink
+      'FUNDING': '#e8f5e9',   // Light green
+      'DESIGN': '#fff8e1',    // Light yellow
+      'REGULATORY': '#f3e5f5', // Light purple
+      'CONSTRUCTION': '#f1f8e9', // Light greenish
+      'END': '#e8eaf6'        // Light indigo
+    };
+    
+    // Return the color for the phase or default if not found
+    return phaseColors[type.toUpperCase()] || '#f8f9fa';
+  }
   // Render available moves
   renderAvailableMoves() {
     const { availableMoves, onMoveSelect } = this.props;
@@ -30,34 +99,87 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
   
   // Render a button to draw cards
   renderDrawCardsButton(cardType, amount) {
+    // Check if button has been used
+    const buttonId = `draw-${cardType}-${amount}`;
+    const isButtonUsed = this.state && this.state.usedButtons && this.state.usedButtons.includes(buttonId);
+    
+    // Log the button state for debugging
+    console.log(`SpaceInfo: Button ${buttonId} used status:`, isButtonUsed, ', usedButtons:', this.state.usedButtons);
+    
     // Only render for valid card types
     const validCardTypes = {
       'Work Type Card': 'W',
+      'Work Type': 'W',
+      'W Card': 'W',
+      'W Cards': 'W',
+      'W': 'W',
       'Bank Card': 'B',
+      'Bank': 'B',
+      'B Card': 'B',
+      'B Cards': 'B',
+      'B': 'B',
       'Investor Card': 'I',
+      'Investor': 'I',
+      'I Card': 'I',
+      'I Cards': 'I',
+      'I': 'I',
       'Life Card': 'L',
-      'Expeditor Card': 'E'
+      'Life': 'L',
+      'L Card': 'L',
+      'L Cards': 'L',
+      'L': 'L',
+      'Expeditor Card': 'E',
+      'Expeditor': 'E',
+      'E Card': 'E',
+      'E Cards': 'E',
+      'E': 'E'
     };
     
     const cardCode = validCardTypes[cardType];
-    if (!cardCode) return null;
+    if (!cardCode) {
+      console.log('SpaceInfo: No valid card type found for:', cardType);
+      return null;
+    }
     
-    // Parse amount (expecting "Draw X" format)
+    // Parse amount (expecting "Draw X" format or number format)
     let cardAmount = 1;
     if (amount && typeof amount === 'string') {
-      const matches = amount.match(/Draw (\d+)/);
-      if (matches && matches[1]) {
-        cardAmount = parseInt(matches[1], 10);
+      // Check for "Draw X" format
+      const drawMatches = amount.match(/Draw (\d+)/i);
+      if (drawMatches && drawMatches[1]) {
+        cardAmount = parseInt(drawMatches[1], 10);
+      } else {
+        // Check if it's a number like "3"
+        const numMatches = amount.match(/^\s*(\d+)\s*$/);
+        if (numMatches && numMatches[1]) {
+          cardAmount = parseInt(numMatches[1], 10);
+        } else if (amount.toLowerCase().includes('draw')) {
+          // Generic "Draw" without a number
+          cardAmount = 1;
+        }
       }
     }
     
+    console.log('SpaceInfo: Rendering draw button for', cardCode, 'cards, amount:', cardAmount);
+    
     // Use either the provided callback or the utility function
     const handleClick = () => {
+      console.log('SpaceInfo: Draw card button clicked for', cardType, 'amount:', cardAmount);
+      
+      // Add the button to the used buttons list
+      this.setState(prevState => {
+        const newUsedButtons = [...(prevState.usedButtons || []), buttonId];
+        console.log('SpaceInfo: Marking button as used:', buttonId, 'New usedButtons state:', newUsedButtons);
+        return { usedButtons: newUsedButtons };
+      });
+      
       if (this.props.onDrawCards) {
         // Use the callback if provided
+        console.log('SpaceInfo: Drawing cards using onDrawCards callback');
         this.props.onDrawCards(cardCode, cardAmount);
       } else if (window.CardDrawUtil) {
         // Otherwise use the utility function directly
+        console.log('SpaceInfo: Drawing cards using CardDrawUtil');
         const currentPlayer = window.GameState.getCurrentPlayer();
         if (currentPlayer) {
           const drawnCards = window.CardDrawUtil.drawCards(currentPlayer.id, cardCode, cardAmount);
@@ -66,12 +188,32 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
       }
     };
     
+    // Format the card type for display
+    let displayCardType = cardType;
+    if (cardType === 'W' || cardType === 'B' || cardType === 'I' || cardType === 'L' || cardType === 'E') {
+      displayCardType = {
+        'W': 'Work Type',
+        'B': 'Bank',
+        'I': 'Investor',
+        'L': 'Life',
+        'E': 'Expeditor'
+      }[cardType];
+    } else {
+      // Remove "Cards" suffix if present and replace with "Card"
+      displayCardType = displayCardType.replace(/\s*Cards$/i, ' Card');
+    }
+    
+    // Button class based on whether it's been used
+    const buttonClass = `draw-cards-btn ${isButtonUsed ? 'used' : ''}`;
+    
     return (
       <button 
-        className="draw-cards-btn"
+        className={buttonClass}
         onClick={handleClick}
+        disabled={isButtonUsed}
+        title={isButtonUsed ? 'Cards already drawn' : `Draw ${cardAmount} ${displayCardType}(s)`}
       >
-        Draw {cardAmount} {cardType}(s)
+        {isButtonUsed ? 'Cards Drawn' : `Draw ${cardAmount} ${displayCardType}(s)`}
       </button>
     );
   }
@@ -112,6 +254,75 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     );
   }
 
+  // Helper to determine if outcome value indicates drawing cards
+  shouldShowDrawCardButton(type, value) {
+    // Skip if no value or "n/a"
+    if (!value || value.toLowerCase() === 'n/a') {
+      return false;
+    }
+    
+    // If the value is "No change" but it's a card type, we still show the button if the type indicates it's a card
+    const isCardType = type.match(/w|b|i|l|e|card|work|bank|investor|life|expeditor/i);
+    
+    // Return true if value includes Draw, is a number, or is related to cards
+    const valueLC = value.toLowerCase();
+    return isCardType && (valueLC.includes('draw') || /^\d+$/.test(valueLC.trim()) || valueLC.includes('take'));
+  }
+
+  // Extract card type from outcome type
+  extractCardType(type) {
+    // Standardize card type names
+    if (type.toLowerCase().includes('w') || type.toLowerCase().includes('work')) {
+      return 'W';
+    } else if (type.toLowerCase().includes('b') || type.toLowerCase().includes('bank')) {
+      return 'B';
+    } else if (type.toLowerCase().includes('i') || type.toLowerCase().includes('investor')) {
+      return 'I';
+    } else if (type.toLowerCase().includes('l') || type.toLowerCase().includes('life')) {
+      return 'L';
+    } else if (type.toLowerCase().includes('e') || type.toLowerCase().includes('expeditor')) {
+      return 'E';
+    }
+    
+    // Default to returning original type if no match
+    return type;
+  }
+
+  // Render negotiate button
+renderNegotiateButton() {
+    const { space, onNegotiate } = this.props;
+    
+    // Check if current space has negotiate options
+    const hasNegotiateOption = space && space.rawNegotiate && space.rawNegotiate.trim() !== '' && space.rawNegotiate !== 'n/a';
+    
+    if (space && space.name) {
+      if (hasNegotiateOption) {
+        console.log(`SpaceInfo: Space has negotiate option: ${space.name}, option: ${space.rawNegotiate}`);
+      } else {
+        console.log(`SpaceInfo: Space does not have negotiate option: ${space.name}`);
+      }
+    }
+    
+    if (!hasNegotiateOption || !onNegotiate) {
+      return null;
+    }
+    
+    return (
+      <div className="space-negotiate-container">
+        <button 
+          onClick={onNegotiate}
+          className="negotiate-btn"
+          title="End your turn and stay on this space"
+        >
+          Negotiate
+        </button>
+        <div className="negotiate-info">
+          <p>End turn and stay on this space (only time is recorded)</p>
+        </div>
+      </div>
+    );
+  }
+  
   // Render dice outcomes if available
   renderDiceOutcomes() {
     const { diceOutcomes, diceRoll } = this.props;
@@ -132,13 +343,20 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     
     // Sort outcomes by category
     Object.entries(diceOutcomes).forEach(([type, value]) => {
-      if (type === 'Next Step') {
+      // Skip the moves array which isn't for display
+      if (type === 'moves') return; 
+      
+      // Categorize outcomes - make case-insensitive and flexible pattern matching
+      const typeLC = type.toLowerCase();
+      
+      if (type === 'Next Step' || typeLC.includes('step') || typeLC.includes('move')) {
         categories.movement.outcomes[type] = value;
-      } else if (type.includes('Cards')) {
+      } else if (typeLC.includes('card') || ['w', 'b', 'i', 'l', 'e'].includes(typeLC.charAt(0))) {
         categories.cards.outcomes[type] = value;
-      } else if (type.includes('Time') || type.includes('Fee')) {
+      } else if (typeLC.includes('time') || typeLC.includes('fee') || 
+                typeLC.includes('cost') || typeLC.includes('pay')) {
         categories.resources.outcomes[type] = value;
-      } else if (type !== 'moves') { // Skip the moves array which isn't for display
+      } else {
         categories.other.outcomes[type] = value;
       }
     });
@@ -173,12 +391,26 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
                 <div key={category.title} className="outcome-category">
                   <h5 className="outcome-category-title">{category.title}</h5>
                   <ul className="outcome-list">
-                    {outcomes.map(([type, value]) => (
-                      <li key={type} className="outcome-item">
-                        <span className="outcome-type">{type.replace('Cards', '').trim()}:</span> 
-                        <span className="outcome-value">{value}</span>
-                      </li>
-                    ))}
+                    {outcomes.map(([type, value]) => {
+                      // Prepare for card draw buttons
+                      const showDrawButton = this.shouldShowDrawCardButton(type, value);
+                      const cardType = this.extractCardType(type);
+                      
+                      console.log('SpaceInfo: Outcome:', type, '=', value, 
+                                'Show button:', showDrawButton, 'Card type:', cardType);
+                      
+                      return (
+                        <li key={type} className="outcome-item">
+                          <span className="outcome-type">{type.replace(/Cards|Card/i, '').trim()}:</span> 
+                          <span className="outcome-value">{value}</span>
+                          {showDrawButton && (
+                            <div className="outcome-action-button">
+                              {this.renderDrawCardsButton(cardType, value)}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               );
@@ -190,7 +422,7 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
   }
   
   render() {
-    const { space, visitType, diceOutcomes, diceRoll, availableMoves, onMoveSelect } = this.props;
+    const { space, visitType, diceOutcomes, diceRoll, availableMoves, onMoveSelect, onRollDice, hasRolledDice, hasDiceRollSpace } = this.props;
     
     console.log('SpaceInfo render - diceRoll:', diceRoll, 'diceOutcomes:', diceOutcomes);
     
@@ -220,10 +452,38 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     const highPriorityFields = fieldMappings.filter(field => field.priority === 'high');
     const normalPriorityFields = fieldMappings.filter(field => field.priority === 'normal');
     
+    // Get background color based on space phase/type
+    const phaseColor = this.getPhaseColor(space.type);
+    
+    // Create style for the space info card with the phase color
+    const spaceInfoStyle = {
+      backgroundColor: phaseColor,
+      borderLeft: `4px solid ${phaseColor === '#f8f9fa' ? '#3498db' : phaseColor}`,
+    };
+    
     return (
-      <div className="space-info">
+      <div className="space-info" style={spaceInfoStyle}>
         <h3>{space.name}</h3>
         <div className="space-type">{space.type}</div>
+        
+        {/* Add Roll Dice button inside the space info card */}
+        {onRollDice && (
+          <div className="space-roll-dice-container">
+            <button 
+              onClick={onRollDice}
+              className={`roll-dice-btn ${hasDiceRollSpace ? '' : 'disabled'} ${hasRolledDice ? 'used' : ''}`}
+              disabled={!hasDiceRollSpace || hasRolledDice}
+              title={hasDiceRollSpace ? 
+                    (hasRolledDice ? 'Already rolled dice this turn' : 'Roll dice for this space') : 
+                    'This space doesn\'t require a dice roll'}
+            >
+              {hasRolledDice ? 'Dice Rolled' : 'Roll Dice'}
+            </button>
+          </div>
+        )}
+        
+        {/* Add Negotiate button */}
+        {this.renderNegotiateButton()}
         
         {/* Main description */}
         <div className="space-section">
@@ -248,41 +508,8 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
         {/* Available moves section */}
         {this.renderAvailableMoves()}
         
-        {/* Display dice outcomes if available */}
-        {diceRoll && diceOutcomes ? (
-          <div className="dice-outcomes-display">
-            <div className="dice-outcome-header">
-              <div className="dice-result-title">
-                <h4>Dice Roll Outcome: {diceRoll}</h4>
-              </div>
-              {/* Render dice face after the text */}
-              {this.renderDiceFace(diceRoll)}
-            </div>
-            
-            <div className="simple-outcome">
-              {diceOutcomes['Next Step'] && (
-                <div className="outcome-item">
-                  <strong>Next Step:</strong> {diceOutcomes['Next Step']}
-                </div>
-              )}
-              {diceOutcomes['WCardOutcome'] && (
-                <div className="outcome-item">
-                  <strong>Work Type Card:</strong> {diceOutcomes['WCardOutcome']}
-                </div>
-              )}
-              {diceOutcomes['Time'] && (
-                <div className="outcome-item">
-                  <strong>Time:</strong> {diceOutcomes['Time']}
-                </div>
-              )}
-              {diceOutcomes['Fee'] && (
-                <div className="outcome-item">
-                  <strong>Fee:</strong> {diceOutcomes['Fee']}
-                </div>
-              )}
-            </div>
-          </div>
-        ) : this.renderDiceOutcomes()}
+        {/* Display dice outcomes if available - always use renderDiceOutcomes() */}
+        {this.renderDiceOutcomes()}
         
         {/* Group cards together with consistent styling */}
         <div className="space-cards-section">
@@ -325,4 +552,9 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
   }
 }
 
-console.log('SpaceInfo.js execution finished');
+console.log('SpaceInfo.js code execution is finished')
+
+// Add log statements to debugging methods
+function logSpaceNegotiateUsage(spaceName) {
+  console.log(`SpaceInfo: Negotiate button shown for space: ${spaceName}`);
+};

@@ -15,6 +15,9 @@ App
     ├── BoardDisplay
     ├── DiceRoll
     └── CardDisplay
+        ├── CardDetailView
+        ├── CardAnimations
+        └── WorkCardDialogs
 ```
 
 ### 1. App Component
@@ -68,14 +71,58 @@ App
   - Maintains roll history
   - Shows outcomes directly on space info card
 
-### 7. CardDisplay Component
-- **Purpose**: Manages player cards
+### 7. Card Components (Refactored)
+The card system has been refactored into six focused components:
+
+#### 7.1 CardDisplay Component
+- **Purpose**: Main card management component
 - **Responsibilities**:
+  - Coordinates other card-related components
   - Displays player's hand of cards
-  - Supports card filtering by type
-  - Provides detailed card view
-  - Allows playing and discarding cards
-  - Shows animations for card drawing
+  - Manages card filtering by type
+  - Handles card selection
+  - Orchestrates card animations and dialogs
+
+#### 7.2 CardDetailView Component
+- **Purpose**: Displays detailed card information
+- **Responsibilities**:
+  - Shows full card details in a popup
+  - Renders appropriate fields based on card type
+  - Provides play and discard buttons
+  - Handles closing the detail view
+
+#### 7.3 CardAnimations Component
+- **Purpose**: Manages card animations
+- **Responsibilities**:
+  - Provides visual effects for card drawing
+  - Renders animated card display
+  - Shows card type and information during animation
+
+#### 7.4 WorkCardDialogs Component
+- **Purpose**: Handles W card specific dialogs
+- **Responsibilities**:
+  - Shows discard requirement dialogs
+  - Displays replacement workflow UI
+  - Tracks discard and replacement progress
+  - Provides UI for selecting cards for replacement
+
+#### 7.5 CardTypeUtils (Utility)
+- **Purpose**: Provides utility functions for card handling
+- **Responsibilities**:
+  - Determines card colors based on type
+  - Maps card types to display names
+  - Extracts primary and secondary display fields
+  - Builds detail fields list based on card type
+  - Gets player color for styling
+
+#### 7.6 CardActions (Utility)
+- **Purpose**: Provides action handlers for cards
+- **Responsibilities**:
+  - Processes playing a card
+  - Handles discarding a card
+  - Manages card selection for replacement
+  - Processes card drawing logic
+  - Handles dialog interactions for W cards
 
 ## Key Utilities
 
@@ -137,12 +184,16 @@ App
    - SpaceInfo displays the categorized outcomes
    - Player selects a move or ends their turn
 
-4. **Card Management**:
+4. **Card Management (Refactored Flow)**:
    - Cards are drawn based on space requirements or dice roll outcomes
-   - CardDisplay shows the player's hand of cards
-   - Player can filter cards by type (W, B, I, L, E)
-   - Player can view card details, play, or discard cards
-   - GameState updates the player's cards
+   - GameBoard passes drawn cards to CardDisplay component
+   - CardDisplay coordinates with CardActions to add cards to player's hand
+   - CardAnimations handles the visual effects for card drawing
+   - User can filter cards by type using filters provided by CardDisplay
+   - When a card is selected, CardDetailView shows detailed information
+   - Card actions (play, discard) are processed through CardActions
+   - Special W card requirements are handled by WorkCardDialogs
+   - All card operations update the player's cards in GameState
    - Card effects are applied to gameplay
 
 5. **Visit Types**:
@@ -178,8 +229,15 @@ The enhanced dice rolling mechanic:
   - Quality outcomes
   - Multiplier outcomes
 
-### 3. Card System
-The card system is fully implemented:
+### 3. Card System (Refactored)
+The card system is now modularized for better separation of concerns:
+- Six focused components with clear responsibilities:
+  - **CardDisplay**: Main component that coordinates others
+  - **CardDetailView**: Handles detailed card view popup
+  - **CardAnimations**: Manages card drawing animations
+  - **WorkCardDialogs**: Special dialogs for W card mechanics
+  - **CardTypeUtils**: Utility functions for card styling and information
+  - **CardActions**: Action handlers for card operations
 - Card data is defined in CSV files
 - Five card types are supported:
   - W Cards (Work Type): Represent different types of work in the project
@@ -188,11 +246,12 @@ The card system is fully implemented:
   - L Cards (Leadership): Focus on team and leadership challenges
   - E Cards (Environment): Address external factors affecting the project
 - Card drawing is triggered by specific spaces and dice roll outcomes
-- CardDisplay component provides a full UI for:
+- The updated card system provides a full UI for:
   - Viewing cards in hand
   - Filtering by card type
   - Examining card details
   - Playing and discarding cards
+  - Special handling for W card requirements
 - Animated card drawing provides visual feedback
 - Card effects are integrated with gameplay
 
@@ -290,6 +349,7 @@ Movement between spaces follows these rules:
 - Special case handling in MoveLogic creates maintenance burden
 - Visit type logic spans multiple files
 - Dice roll outcome processing is complex
+- ~~Large CardDisplay component has many responsibilities~~ ✓ ADDRESSED with refactoring!
 
 ### 3. Feature Gaps
 - ~~Card UI is not yet implemented~~ ✓ COMPLETED!
@@ -307,14 +367,18 @@ Movement between spaces follows these rules:
 6. Use the GameState utility for managing game state instead of component state where possible
 7. When modifying dice roll functionality, ensure outcome categorization is maintained
 8. Test card interactions thoroughly, including filtering, playing, and discarding
+9. When modifying card components, be mindful of the loading order in Index.html:
+   - CardTypeUtils.js and CardActions.js must load before other card components
+   - Each card component now has a focused responsibility - modify the appropriate file
 
 ## Planned Enhancements
 
 1. ~~Complete the card UI implementation~~ ✓ COMPLETED!
 2. ~~Refine the dice roll outcome processing~~ ✓ COMPLETED!
-3. Implement the negotiation mechanic
-4. Add animations and improved visual feedback for player movement
-5. Enhance the educational content
-6. Optimize performance for larger game boards
+3. ~~Refactor the large CardDisplay.js component~~ ✓ COMPLETED!
+4. Implement the negotiation mechanic
+5. Add animations and improved visual feedback for player movement
+6. Enhance the educational content
+7. Optimize performance for larger game boards
 
 This document reflects the current state of the codebase and will be updated as development progresses.

@@ -37,13 +37,83 @@
 
 /* Space Info Card Styles */
 
+/* Space Roll Dice button container */
+.space-roll-dice-container,
+.space-negotiate-container {
+  margin: 10px 0;
+}
+
+.space-roll-dice-container .roll-dice-btn {
+  background-color: #fbbc05;
+  color: #333;
+  width: 100%;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.space-roll-dice-container .roll-dice-btn:hover {
+  background-color: #f2a600;
+}
+
+.space-roll-dice-container .roll-dice-btn.disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.space-roll-dice-container .roll-dice-btn.used {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+}
+
+/* Negotiate button styles */
+.space-negotiate-container .negotiate-btn {
+  background-color: #ea4335; /* Red color for the negotiate button */
+  color: white;
+  width: 100%;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+  margin-bottom: 5px;
+}
+
+.space-negotiate-container .negotiate-btn:hover {
+  background-color: #d62516;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.space-negotiate-container .negotiate-btn:active {
+  transform: translateY(0);
+}
+
+.negotiate-info {
+  font-size: 12px;
+  color: #666;
+  padding: 5px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  margin-top: 5px;
+}
+
+.negotiate-info p {
+  margin: 0;
+}
+
 /* Main container */
 .space-info {
   background-color: white;
   border-radius: 8px;
   padding: 15px;
-  margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 0;
+  box-shadow: none;
 }
 
 .space-info h3 {
@@ -229,8 +299,9 @@
 
 .outcome-item {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  padding: 4px 0;
+  padding: 6px 0;
   font-size: 13px;
   border-bottom: 1px dashed #e9ecef;
 }
@@ -242,11 +313,42 @@
 .outcome-type {
   font-weight: bold;
   color: #2c3e50;
+  flex: 0 0 30%;
 }
 
 .outcome-value {
   color: #3498db;
   font-weight: 500;
+  flex: 1;
+}
+
+.outcome-action-button {
+  margin-top: 5px;
+  width: 100%;
+}
+
+.outcome-action-button .draw-cards-btn {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: center;
+}
+
+.outcome-action-button .draw-cards-btn:hover {
+  background-color: #2980b9;
+}
+
+/* Used button style */
+.outcome-action-button .draw-cards-btn.used {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
 }
 
 /* Empty space info */

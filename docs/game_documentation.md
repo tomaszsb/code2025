@@ -18,9 +18,40 @@ The game is a board-game style application that simulates a project management j
 6. **SpaceInfo** (`js/components/SpaceInfo.js`): Displays information about the selected space and dice roll outcomes.
 7. **PlayerInfo** (`js/components/PlayerInfo.js`): Shows information about each player.
 8. **DiceRoll** (`js/components/DiceRoll.js`): Handles dice rolling mechanics with 3D visualization and outcome processing.
-9. **CardDisplay** (`js/components/CardDisplay.js`): Manages player cards, including display, filtering, and interaction.
+9. **Card Components** (Refactored from a single file into a modular system):
+   - **CardDisplay** (`js/components/CardDisplay.js`): Core display component for player cards
+   - **CardDetailView** (`js/components/CardDetailView.js`): Card detail popup component
+   - **CardTypeUtils** (`js/components/CardTypeUtils.js`): Utility functions for card types
+   - **CardAnimations** (`js/components/CardAnimations.js`): Animation components for cards
+   - **WorkCardDialogs** (`js/components/WorkCardDialogs.js`): W card dialogs and mechanics
+   - **CardActions** (`js/components/CardActions.js`): Action handlers for cards
 
 ## Recent Modifications
+
+### Card System Refactoring
+
+The card system has been refactored from a single large component into a modular system with improved separation of concerns:
+
+1. **Refactored Card Components**:
+   - The original monolithic CardDisplay.js file (over 700 lines) has been split into six focused components
+   - Each component has a single responsibility for better maintainability
+   - Console.log statements added at the beginning and end of each file for easier debugging
+   - Clearer component interfaces with proper imports/exports
+
+2. **Component Responsibilities**:
+   - **CardDisplay.js**: Core display component that orchestrates the card system
+   - **CardDetailView.js**: Handles the card detail popup when a card is selected
+   - **CardTypeUtils.js**: Contains utility functions for card types, styling, and fields
+   - **CardAnimations.js**: Manages card draw animations and visual effects
+   - **WorkCardDialogs.js**: Specific to Work (W) card discard and replacement dialogs
+   - **CardActions.js**: Contains action handlers for playing, discarding, and drawing cards
+
+3. **Benefits of Refactoring**:
+   - Improved code organization and separation of concerns
+   - Enhanced maintainability through focused components
+   - Better code reusability, especially for utility functions
+   - Clearer responsibility boundaries between components
+   - Easier debugging and testing of individual components
 
 ### Space Visibility Filtering
 
@@ -128,6 +159,7 @@ A complete card management system has been implemented with the following featur
    - Allows viewing detailed card information
    - Supports playing and discarding cards
    - Provides visual feedback when drawing new cards
+   - Includes special handling for Work (W) card discard requirements
 
 ### Space Information
 
@@ -148,6 +180,87 @@ The game tracks spaces each player has visited in their `visitedSpaces` array. T
 - Card drawing opportunities
 
 ## Technical Implementation Details
+
+### Card System Refactoring
+
+```javascript
+// Example of the new modular structure
+
+// 1. CardTypeUtils.js - Card utility functions
+export const getCardColor = (cardType) => {
+  switch (cardType) {
+    case 'W': return '#4285f4'; // Blue for Work Type
+    case 'B': return '#ea4335'; // Red for Bank
+    case 'I': return '#fbbc05'; // Yellow for Investor
+    case 'L': return '#34a853'; // Green for Life
+    case 'E': return '#8e44ad'; // Purple for Expeditor
+    default: return '#777777';  // Gray for unknown
+  }
+};
+
+// 2. CardActions.js - Action handlers
+export const handlePlayCard = (playerId, selectedCardIndex, cards, callbacks = {}) => {
+  if (selectedCardIndex === null || !cards[selectedCardIndex]) {
+    return;
+  }
+  
+  // Get the selected card
+  const cardToPlay = cards[selectedCardIndex];
+  
+  // Remove the card from the player's hand
+  const updatedCards = [...cards];
+  updatedCards.splice(selectedCardIndex, 1);
+  
+  // Update the player's cards in the game state
+  const player = window.GameState.players.find(p => p.id === playerId);
+  
+  if (player) {
+    player.cards = updatedCards;
+    window.GameState.saveState();
+  }
+  
+  // Call the callback with the played card
+  if (callbacks.onCardPlayed) {
+    callbacks.onCardPlayed(cardToPlay);
+  }
+  
+  return {
+    cards: updatedCards,
+    selectedCardIndex: null,
+    selectedCardId: null,
+    showCardDetail: false
+  };
+};
+
+// 3. CardDetailView.js - Detailed card popup
+const CardDetailView = ({ card, onClose, onPlayCard, onDiscardCard }) => {
+  // Card detail display logic
+  return (
+    <div className="card-detail-overlay">
+      <div className="card-detail-container" style={{ borderColor: getCardColor(card.type) }}>
+        {/* Card detail content */}
+      </div>
+    </div>
+  );
+};
+
+// 4. CardDisplay.js - Main card component (simplified example)
+class CardDisplay extends React.Component {
+  handleCardClick = (index) => {
+    // Card selection logic
+  }
+  
+  render() {
+    return (
+      <div className="card-display-container">
+        {/* Card display content */}
+        {showCardDetail && <CardDetailView card={selectedCard} onClose={this.handleCloseDetail} />}
+        {/* Card filters, animations, etc. */}
+      </div>
+    );
+  }
+}
+```
 
 ### Space Filtering Algorithm
 
@@ -187,53 +300,6 @@ Object.keys(spaceNameMap).forEach(baseName => {
     filteredSpaces.push(spaceToAdd);
   }
 });
-```
-
-### Card System Implementation
-
-```javascript
-// Example of card drawing implementation
-drawCard = (cardType, cardData) => {
-  // Show animation
-  this.setState({
-    animateCardDraw: true,
-    newCardType: cardType,
-    newCardData: cardData
-  });
-  
-  // After animation completes, add the card to player's hand
-  setTimeout(() => {
-    // Get current cards
-    const { cards } = this.state;
-    
-    // Create a new card object
-    const newCard = {
-      id: `card-${Date.now()}`, // Unique ID
-      type: cardType,
-      ...cardData
-    };
-    
-    // Add card to hand
-    const updatedCards = [...cards, newCard];
-    
-    // Update state
-    this.setState({
-      cards: updatedCards,
-      animateCardDraw: false,
-      newCardType: null,
-      newCardData: null
-    });
-    
-    // Update player state
-    const { playerId } = this.props;
-    const player = window.GameState.players.find(p => p.id === playerId);
-    
-    if (player) {
-      player.cards = updatedCards;
-      window.GameState.saveState();
-    }
-  }, 1500); // Animation duration
-}
 ```
 
 ### Enhanced Dice Roll Implementation
@@ -345,6 +411,15 @@ The board layout can be further customized by adjusting:
 2. The space dimensions and gap sizes in `board.css`
 3. The container sizes in `main.css`
 
+### Modifying Card Components
+
+When working with the refactored card system:
+1. Each component has a specific role - modify the appropriate file for the functionality you need
+2. The main CardDisplay component coordinates the other components
+3. Card utilities like colors and field mappings are in CardTypeUtils.js
+4. Card action handlers (play, discard, draw) are in CardActions.js
+5. Special dialogs for Work cards are in WorkCardDialogs.js
+
 ## Troubleshooting
 
 ### Common Issues
@@ -355,6 +430,7 @@ The board layout can be further customized by adjusting:
 4. **Card display problems**: Check that card data is properly loaded and that the CardDisplay component is receiving the correct player ID
 5. **Dice roll animation issues**: Verify CSS animations are working correctly and that the browser supports 3D transforms
 6. **Missing dice outcomes**: Ensure the dice roll CSV data includes entries for the space and visit type
+7. **Card component errors**: Check the import order in Index.html to ensure dependencies load in the correct order (CardTypeUtils and CardActions must load before other card components)
 
 ### Debugging Tips
 
@@ -364,3 +440,4 @@ The board layout can be further customized by adjusting:
 4. Use the browser console to check for card drawing and processing events
 5. Verify that dice outcomes are being properly categorized
 6. Check CSS classes for proper animation sequencing
+7. Look for the console.log messages at the beginning and end of each card component file to confirm loading

@@ -100,6 +100,13 @@ window.MoveLogic = {
       // Skip empty space names
       if (!nextSpaceName || nextSpaceName.trim() === '') continue;
       
+      // Check if this is a negotiate option
+      if (nextSpaceName.toLowerCase().includes('negotiate')) {
+        console.log('MoveLogic: Found negotiate option:', nextSpaceName);
+        // We don't add negotiate options to available moves, as they're handled by a separate UI element
+        continue;
+      }
+      
       // Check if this is a special pattern
       if (specialPatterns.some(pattern => nextSpaceName.includes(pattern))) {
         hasSpecialPattern = true;

@@ -1,3 +1,298 @@
+// SpaceExplorer component for displaying details of spaces when exploring the board
+class SpaceExplorer extends React.Component {
+  renderDiceTable() {
+    const { space, diceRollData } = this.props;
+    
+    if (!space || !diceRollData) return null;
+    
+    // Filter dice roll data for the current space
+    const spaceDiceData = diceRollData.filter(data => 
+      data['Space Name'] === space.name
+    );
+    
+    if (spaceDiceData.length === 0) return null;
+    
+    // Log data for debugging
+    console.log('Space Explorer: Found dice data for space:', space.name);
+    console.log('Space Explorer: Dice data:', spaceDiceData);
+    
+    return (
+      <div className="explorer-dice-section">
+        <h4>Dice Roll Outcomes:</h4>
+        <div className="explorer-dice-table-container">
+          <table className="explorer-dice-table">
+            <thead>
+              <tr>
+                <th>Roll</th>
+                <th>Outcome</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[1, 2, 3, 4, 5, 6].map(roll => {
+                // Find the dice data for this roll
+                const rollData = spaceDiceData.find(data => {
+                  // Try different ways to match the dice value
+                  const diceValue = data['Dice Value'] || data['Roll'] || data['Value'];
+                  return diceValue && parseInt(diceValue) === roll;
+                });
+                
+                // If no data for this roll, show N/A
+                if (!rollData) {
+                  return (
+                    <tr key={roll}>
+                      <td className="dice-roll">{roll}</td>
+                      <td className="dice-outcome">N/A</td>
+                    </tr>
+                  );
+                }
+                
+                // Get the outcome text - examine all fields to find relevant outcomes
+                let outcomeText = '';
+                const outcomeFields = [];
+                
+                // Log each entry's keys for debugging
+                console.log(`Dice roll ${roll} data fields:`, Object.keys(rollData));
+                
+                // Check for move/next step outcomes (highest priority)
+                if (rollData['Next Step'] && rollData['Next Step'] !== 'n/a') {
+                  outcomeFields.push(`<span class="outcome-move">Move to: ${rollData['Next Step']}</span>`);
+                }
+                
+                // Check for explicit Outcome field
+                if (rollData['Outcome'] && rollData['Outcome'] !== 'n/a') {
+                  outcomeFields.push(`<span class="outcome-general">${rollData['Outcome']}</span>`);
+                }
+                
+                // Check for card outcomes
+                ['W', 'B', 'I', 'L', 'E'].forEach(cardType => {
+                  // Try different possible field names for card outcomes
+                  const cardOutcome = 
+                    rollData[`${cardType} Card`] || 
+                    rollData[`${cardType} Cards`] || 
+                    rollData[`${cardType}Card`] || 
+                    rollData[`${cardType}Cards`] || 
+                    rollData[`${cardType}CardOutcome`];
+                  
+                  if (cardOutcome && cardOutcome !== 'n/a' && cardOutcome !== '0') {
+                    const cardName = {
+                      'W': 'Work Card',
+                      'B': 'Bank Card',
+                      'I': 'Investor Card',
+                      'L': 'Life Card',
+                      'E': 'Expeditor Card'
+                    }[cardType];
+                    
+                    outcomeFields.push(`<span class="outcome-card">${cardName}: ${cardOutcome}</span>`);
+                  }
+                });
+                
+                // Check for resource outcomes
+                if (rollData['Fee'] && rollData['Fee'] !== 'n/a') {
+                  outcomeFields.push(`<span class="outcome-resource">Fee: ${rollData['Fee']}</span>`);
+                }
+                
+                if (rollData['Time'] && rollData['Time'] !== 'n/a') {
+                  outcomeFields.push(`<span class="outcome-resource">Time: ${rollData['Time']}</span>`);
+                }
+                
+                // Check for any other fields that might contain outcomes
+                Object.entries(rollData).forEach(([key, value]) => {
+                  // Skip fields we've already processed or that are metadata
+                  const skipFields = ['Space Name', 'Dice Value', 'Roll', 'Value', 'Next Step', 'Outcome', 'Fee', 'Time'];
+                  if (skipFields.includes(key) || key.includes('Card') || value === 'n/a' || value === '0') {
+                    return;
+                  }
+                  
+                  // Include any other field that looks like an outcome
+                  if (value && typeof value === 'string' && value.trim() !== '') {
+                    outcomeFields.push(`<span class="outcome-other">${key}: ${value}</span>`);
+                  }
+                });
+                
+                // Join all outcome fields with line breaks
+                outcomeText = outcomeFields.join('<br>');
+                
+                // If no outcomes found, show a default message
+                if (!outcomeText) {
+                  outcomeText = 'No specific outcome';
+                }
+                
+                return (
+                  <tr key={roll}>
+                    <td className="dice-roll">{roll}</td>
+                    <td className="dice-outcome" dangerouslySetInnerHTML={{ __html: outcomeText }}></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+  
+  render() {
+    const { space, visitType, onClose } = this.props;
+    
+    if (!space) {
+      return (
+        <div className="space-explorer empty">
+          <div className="explorer-placeholder">
+            <p>Click on any space on the board to explore details</p>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="space-explorer">
+        <div className="explorer-header">
+          <h3 className="explorer-title">Space Explorer</h3>
+          {onClose && (
+            <button className="explorer-close-btn" onClick={onClose}>
+              ×
+            </button>
+          )}
+        </div>
+        <div className="explorer-space-name">{space.name}</div>
+        <div className="explorer-visit-type">{visitType === 'first' ? 'First Visit' : 'Subsequent Visit'}</div>
+        
+        {/* Dice roll indicator */}
+        {this.props.diceRollData && this.props.diceRollData.some(data => data['Space Name'] === space.name) && (
+          <div className="explorer-dice-indicator">
+            <span className="dice-icon"></span>
+            <span className="dice-text">This space requires a dice roll</span>
+          </div>
+        )}
+        
+        <div className="explorer-section">
+          <h4>Description:</h4>
+          <div className="explorer-description">{space.description}</div>
+        </div>
+        
+        {space.action && (
+          <div className="explorer-section">
+            <h4>Action:</h4>
+            <div className="explorer-action">{space.action}</div>
+          </div>
+        )}
+        
+        {space.outcome && (
+          <div className="explorer-section">
+            <h4>Outcome:</h4>
+            <div className="explorer-outcome">{space.outcome}</div>
+          </div>
+        )}
+        
+        {/* Card sections */}
+        <div className="explorer-cards-section">
+          {space['W Card'] && space['W Card'] !== 'n/a' && (
+            <div className="explorer-card-item">
+              <span className="card-type work-card">W</span>
+              <span className="card-text">{space['W Card']}</span>
+            </div>
+          )}
+          
+          {space['B Card'] && space['B Card'] !== 'n/a' && (
+            <div className="explorer-card-item">
+              <span className="card-type business-card">B</span>
+              <span className="card-text">{space['B Card']}</span>
+            </div>
+          )}
+          
+          {space['I Card'] && space['I Card'] !== 'n/a' && (
+            <div className="explorer-card-item">
+              <span className="card-type innovation-card">I</span>
+              <span className="card-text">{space['I Card']}</span>
+            </div>
+          )}
+          
+          {space['L card'] && space['L card'] !== 'n/a' && (
+            <div className="explorer-card-item">
+              <span className="card-type leadership-card">L</span>
+              <span className="card-text">{space['L card']}</span>
+            </div>
+          )}
+          
+          {space['E Card'] && space['E Card'] !== 'n/a' && (
+            <div className="explorer-card-item">
+              <span className="card-type environment-card">E</span>
+              <span className="card-text">{space['E Card']}</span>
+            </div>
+          )}
+        </div>
+        
+        {/* Resource sections */}
+        <div className="explorer-resources-section">
+          {space['Time'] && space['Time'] !== 'n/a' && (
+            <div className="explorer-resource-item">
+              <span className="resource-label">Time:</span>
+              <span className="resource-value">{space['Time']}</span>
+            </div>
+          )}
+          
+          {space['Fee'] && space['Fee'] !== 'n/a' && (
+            <div className="explorer-resource-item">
+              <span className="resource-label">Fee:</span>
+              <span className="resource-value">{space['Fee']}</span>
+            </div>
+          )}
+        </div>
+        
+        {/* Dice roll data */}
+        {this.renderDiceTable()}
+      </div>
+    );
+  }
+}
+
+// StaticPlayerStatus component for displaying player status when landing on a space
+class StaticPlayerStatus extends React.Component {
+  render() {
+    const { player, space } = this.props;
+    
+    if (!player || !space) {
+      return <div className="static-player-status empty">No player data available</div>;
+    }
+    
+    return (
+      <div className="static-player-status">
+        <h3>{player.name}'s Status</h3>
+        <div className="status-label">When Landing</div>
+        <div className="status-space">Space: {space.name}</div>
+        
+        <div className="status-section">
+          <h4>Resources:</h4>
+          <div className="resource-item">
+            <span className="resource-label">Money:</span>
+            <span className="resource-value">${player.resources.money}</span>
+          </div>
+          <div className="resource-item">
+            <span className="resource-label">Time:</span>
+            <span className="resource-value">{player.resources.time} days</span>
+          </div>
+        </div>
+        
+        <div className="status-section space-effect-container">
+          <h4>Space Effect:</h4>
+          {space.action && (
+            <div className="effect-item">
+              <span className="effect-label">Action:</span>
+              <span className="effect-value">{space.action}</span>
+            </div>
+          )}
+          {space.outcome && (
+            <div className="effect-item">
+              <span className="effect-label">Outcome:</span>
+              <span className="effect-value">{space.outcome}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+}
+
 // GameBoard component - Main controller component
 console.log('GameBoard.js file is beginning to be used');
 
@@ -23,12 +318,16 @@ window.GameBoard = class GameBoard extends React.Component {
       diceRollSpace: null,     // Space data for dice rolling
       diceRollVisitType: null, // Visit type for dice rolling
       diceRollData: window.diceRollData || [], // Dice roll outcome data from CSV
-      showCardDisplay: true,   // Flag to show/hide card display component
+      showCardDisplay: false,   // Flag to show/hide card display component
       cardDrawAnimation: false, // Flag for card draw animation
       newCardData: null,       // Data for newly drawn card
       hasRolledDice: false,     // Track if player has rolled dice this turn
       diceOutcomes: null,      // Store dice roll outcomes for display in space info
-      lastDiceRoll: null       // Store last dice roll result
+      lastDiceRoll: null,       // Store last dice roll result
+      currentPlayerOnLanding: null, // Store snapshot of player status upon landing
+      currentSpaceOnLanding: null,   // Store snapshot of space upon landing
+      exploredSpace: null,      // Store currently explored space for details panel
+      showSpaceExplorer: false  // Flag to show/hide space explorer panel
     };
   }
   
@@ -83,10 +382,27 @@ window.GameBoard = class GameBoard extends React.Component {
     // Set the selected space to the current player's position
     const currentPlayer = this.getCurrentPlayer();
     if (currentPlayer) {
+      // Get the current space
+      const currentSpace = this.state.spaces.find(s => s.id === currentPlayer.position);
+      
+      // Create a deep copy of the player's status for the static view
+      const playerSnapshot = {
+        ...currentPlayer,
+        resources: { ...currentPlayer.resources },
+        cards: [...(currentPlayer.cards || [])]
+      };
+      
+      // Create a deep copy of the space info for the static view
+      const spaceSnapshot = currentSpace ? { ...currentSpace } : null;
+      
       this.setState({
-        selectedSpace: currentPlayer.position
+        selectedSpace: currentPlayer.position,
+        currentPlayerOnLanding: playerSnapshot,
+        currentSpaceOnLanding: spaceSnapshot,
+        exploredSpace: currentSpace  // Initialize explored space to current player's position
       });
-      console.log("GameBoard: Automatically selected current player's space:", currentPlayer.position);
+      console.log("GameBoard: Set middle column to current player's space:", currentPlayer.position);
+      console.log("GameBoard: Captured initial player and space status", playerSnapshot, spaceSnapshot);
     }
     
     console.log("GameBoard mounted successfully");
@@ -112,31 +428,24 @@ window.GameBoard = class GameBoard extends React.Component {
     console.log('Subsequent visit instruction space:', subsequentVisitInstructionsSpace);
     
     if (firstVisitInstructionsSpace || subsequentVisitInstructionsSpace) {
-      // Make a deep copy and ensure we have all the data fields
-      // This ensures all fields from the CSV are properly preserved
-      
-      // Function to convert space object to instruction data
+      // Function to convert space object to instruction data with only essential fields
       const processInstructionSpace = (space) => {
         if (!space) return null;
         
-        // Start with a clean object
-        const instructionData = {};
+        // Start with a clean object that only includes essential fields
+        const instructionData = {
+          description: space.description || '',
+          action: space.action || '',
+          outcome: space.outcome || ''
+        };
         
-        // Copy all properties from the space object
-        Object.keys(space).forEach(key => {
-          instructionData[key] = space[key];
+        // Only include non-empty card fields
+        const cardFields = ['W Card', 'B Card', 'I Card', 'L card', 'E Card'];
+        cardFields.forEach(field => {
+          if (space[field] && space[field].trim() !== '') {
+            instructionData[field] = space[field];
+          }
         });
-        
-        // Get all raw fields from original CSV
-        const rawFields = [
-          'description', 'action', 'outcome',
-          'W Card', 'B Card', 'I Card', 'L card', 'E Card',
-          'Time', 'Fee', 'Space 1', 'Space 2', 'Space 3', 'Space 4', 'Space 5',
-          'Negotiate'
-        ];
-        
-        // Log all available fields in this space
-        console.log(`Available fields for ${space.name}:`, Object.keys(space));
         
         return instructionData;
       };
@@ -186,34 +495,36 @@ window.GameBoard = class GameBoard extends React.Component {
   
   handleSpaceClick = (spaceId) => {
     // Check if this space is a valid move
-    const { availableMoves } = this.state;
+    const { availableMoves, spaces, showSpaceExplorer, exploredSpace } = this.state;
     const isValidMove = availableMoves.some(space => space.id === spaceId);
     const currentPlayer = this.getCurrentPlayer();
+    
+    // Find the space that was clicked
+    const clickedSpace = spaces.find(space => space.id === spaceId);
+    
+    // Handle toggling the space explorer
+    const shouldShowExplorer = !(showSpaceExplorer && exploredSpace && exploredSpace.id === spaceId);
     
     if (isValidMove) {
       // Don't move the player yet, just store the selected move
       // Allow player to change their mind by selecting different spaces before ending turn
       this.setState({
-        // Keep selectedSpace as the current player's position to not change the space card
+        // No longer change selectedSpace - keep it as the current player's position
         selectedMove: spaceId,   // Store the destination space
-        hasSelectedMove: true    // Mark that player has selected their move
+        hasSelectedMove: true,   // Mark that player has selected their move
+        exploredSpace: clickedSpace, // Set the explored space for the space explorer panel
+        showSpaceExplorer: shouldShowExplorer // Toggle panel visibility
       });
       
       console.log('Move selected:', spaceId, '- Will be executed on End Turn');
     } else {
-      // For non-move spaces, allow inspection but return to player's space afterwards
-      // Store the previous space to allow toggling back
-      const previousSpace = this.state.selectedSpace;
-      const isTogglingBack = spaceId === previousSpace && previousSpace !== (currentPlayer?.position || null);
+      // For non-move spaces, we update the space explorer panel but don't change the middle column
+      this.setState({
+        exploredSpace: clickedSpace, // Set the explored space for the space explorer panel
+        showSpaceExplorer: shouldShowExplorer // Toggle panel visibility
+      });
       
-      if (isTogglingBack && currentPlayer) {
-        // If clicking again on a non-current space, return to player's current space
-        this.setState({ selectedSpace: currentPlayer.position });
-        console.log('Toggling back to player position:', currentPlayer.position);
-      } else {
-        // Just select the space for inspection without marking it as a move
-        this.setState({ selectedSpace: spaceId });
-      }
+      console.log('Space clicked for exploration:', spaceId, 'Space explorer toggled:', shouldShowExplorer);
     }
     
     console.log('Space clicked:', spaceId, 'Is valid move:', isValidMove);
@@ -236,26 +547,122 @@ window.GameBoard = class GameBoard extends React.Component {
     const newCurrentPlayer = GameState.getCurrentPlayer();
     const newPlayerPosition = newCurrentPlayer ? newCurrentPlayer.position : null;
     
+    // Get the space the player landed on
+    const newSpace = this.state.spaces.find(s => s.id === newPlayerPosition);
+    
+    // Create a deep copy of the player's status for the static view
+    const playerSnapshot = newCurrentPlayer ? {
+      ...newCurrentPlayer,
+      resources: { ...newCurrentPlayer.resources },
+      cards: [...(newCurrentPlayer.cards || [])]
+    } : null;
+    
+    // Create a deep copy of the space info for the static view
+    const spaceSnapshot = newSpace ? { ...newSpace } : null;
+    
     // Update state
     this.setState({
-    players: [...GameState.players],
-    currentPlayerIndex: GameState.currentPlayerIndex,
-    selectedSpace: newPlayerPosition, // Set to new player's position instead of null
-    selectedMove: null,               // Clear the selected move
-    hasSelectedMove: false,           // Reset flag for the next player's turn
-    showDiceRoll: false,              // Hide dice roll component
-    diceRollSpace: null,              // Clear dice roll space info
-    hasRolledDice: false,             // Reset dice roll status
-    diceOutcomes: null,               // Reset dice outcomes
-    lastDiceRoll: null                // Reset last dice roll
+      players: [...GameState.players],
+      currentPlayerIndex: GameState.currentPlayerIndex,
+      selectedSpace: newPlayerPosition, // Always set to new player's position
+      selectedMove: null,               // Clear the selected move
+      hasSelectedMove: false,           // Reset flag for the next player's turn
+      showDiceRoll: false,              // Hide dice roll component
+      diceRollSpace: null,              // Clear dice roll space info
+      hasRolledDice: false,             // Reset dice roll status
+      diceOutcomes: null,               // Reset dice outcomes
+      lastDiceRoll: null,               // Reset last dice roll
+      currentPlayerOnLanding: playerSnapshot, // Store snapshot of player status
+      currentSpaceOnLanding: spaceSnapshot,    // Store snapshot of space
+      exploredSpace: null,          // Clear explored space
+      showSpaceExplorer: false      // Hide space explorer
     });
     
     // Update available moves for new player
     this.updateAvailableMoves();
     
     console.log('Turn ended, next player:', GameState.currentPlayerIndex, 'on space:', newPlayerPosition);
+    console.log('Middle column updated to show new player position:', newPlayerPosition);
   }
 
+  // Handle negotiation button click
+  handleNegotiate = () => {
+    console.log('GameBoard: Negotiate button clicked');
+    
+    // Get the current player
+    const currentPlayer = this.getCurrentPlayer();
+    if (!currentPlayer) {
+      console.log('GameBoard: No current player found');
+      return;
+    }
+    
+    // Get the current space
+    const currentSpace = this.state.spaces.find(s => s.id === currentPlayer.position);
+    if (!currentSpace) {
+      console.log('GameBoard: Current space not found');
+      return;
+    }
+    
+    // Only record the time spent on the space
+    if (currentSpace.Time && currentSpace.Time.trim() !== '') {
+      const timeToAdd = parseInt(currentSpace.Time, 10) || 0;
+      if (timeToAdd > 0) {
+        console.log(`GameBoard: Adding ${timeToAdd} days to player time from negotiate`);
+        currentPlayer.resources.time += timeToAdd;
+        
+        // Update GameState directly
+        const playerIndex = GameState.players.findIndex(p => p.id === currentPlayer.id);
+        if (playerIndex >= 0) {
+          GameState.players[playerIndex].resources.time += timeToAdd;
+        }
+        GameState.saveState();
+      }
+    }
+    
+    // Move to next player's turn (keep player on same space)
+    GameState.nextPlayerTurn();
+    
+    // Get the new current player
+    const newCurrentPlayer = GameState.getCurrentPlayer();
+    const newPlayerPosition = newCurrentPlayer ? newCurrentPlayer.position : null;
+    
+    // Get the space the player landed on
+    const newSpace = this.state.spaces.find(s => s.id === newPlayerPosition);
+    
+    // Create a deep copy of the player's status for the static view
+    const playerSnapshot = newCurrentPlayer ? {
+      ...newCurrentPlayer,
+      resources: { ...newCurrentPlayer.resources },
+      cards: [...(newCurrentPlayer.cards || [])]
+    } : null;
+    
+    // Create a deep copy of the space info for the static view
+    const spaceSnapshot = newSpace ? { ...newSpace } : null;
+    
+    // Update state
+    this.setState({
+      players: [...GameState.players],
+      currentPlayerIndex: GameState.currentPlayerIndex,
+      selectedSpace: newPlayerPosition, // Set to new player's position
+      selectedMove: null,               // Clear the selected move
+      hasSelectedMove: false,           // Reset flag for the next player's turn
+      showDiceRoll: false,              // Hide dice roll component
+      diceRollSpace: null,              // Clear dice roll space info
+      hasRolledDice: false,             // Reset dice roll status
+      diceOutcomes: null,               // Reset dice outcomes
+      lastDiceRoll: null,               // Reset last dice roll
+      currentPlayerOnLanding: playerSnapshot, // Store snapshot of player status
+      currentSpaceOnLanding: spaceSnapshot,    // Store snapshot of space
+      exploredSpace: null,          // Clear explored space
+      showSpaceExplorer: false      // Hide space explorer
+    });
+    
+    // Update available moves for new player
+    this.updateAvailableMoves();
+    
+    console.log('Turn ended via negotiate, next player:', GameState.currentPlayerIndex, 'on space:', newPlayerPosition);
+  }
+  
   // Handle dice roll outcomes for display in space info
   handleDiceOutcomes = (result, outcomes) => {
     console.log('GameBoard: Received dice outcomes for space info:', outcomes);
@@ -271,6 +678,47 @@ window.GameBoard = class GameBoard extends React.Component {
     console.log('GameBoard: Outcomes:', outcomes);
     console.log('GameBoard: Detailed outcomes:', JSON.stringify(outcomes));
     
+    // Check if the dice outcome includes discarding W cards
+    if (outcomes && outcomes.discardWCards && parseInt(outcomes.discardWCards) > 0) {
+      const discardCount = parseInt(outcomes.discardWCards);
+      console.log(`GameBoard: Dice outcome requires discarding ${discardCount} W cards`);
+      
+      // Trigger W card discard dialog if the CardDisplay component is available
+      if (this.cardDisplayRef.current) {
+        this.cardDisplayRef.current.setRequiredWDiscards(discardCount);
+      }
+    }
+    
+    // Check for "W Cards: Remove X" format
+    if (outcomes && outcomes["W Cards"] && outcomes["W Cards"].includes("Remove")) {
+      // Extract the number from "Remove X" format
+      const matches = outcomes["W Cards"].match(/Remove\s+(\d+)/i);
+      if (matches && matches[1]) {
+        const discardCount = parseInt(matches[1], 10);
+        console.log(`GameBoard: Dice outcome requires removing ${discardCount} W cards`);
+        
+        // Trigger W card discard dialog
+        if (this.cardDisplayRef.current) {
+          this.cardDisplayRef.current.setRequiredWDiscards(discardCount);
+        }
+      }
+    }
+    
+    // Check for "W Cards: Replace X" format
+    if (outcomes && outcomes["W Cards"] && outcomes["W Cards"].includes("Replace")) {
+      // Extract the number from "Replace X" format
+      const matches = outcomes["W Cards"].match(/Replace\s+(\d+)/i);
+      if (matches && matches[1]) {
+        const replaceCount = parseInt(matches[1], 10);
+        console.log(`GameBoard: Dice outcome requires replacing ${replaceCount} W cards`);
+        
+        // Trigger W card replacement dialog
+        if (this.cardDisplayRef.current && this.cardDisplayRef.current.setRequiredWReplacements) {
+          this.cardDisplayRef.current.setRequiredWReplacements(replaceCount);
+        }
+      }
+    }
+    
     // Get current player
     const currentPlayer = this.getCurrentPlayer();
     const currentPosition = currentPlayer ? currentPlayer.position : null;
@@ -279,9 +727,11 @@ window.GameBoard = class GameBoard extends React.Component {
     this.setState({
       diceOutcomes: outcomes,
       lastDiceRoll: result,
-      // Ensure we're showing the current player's space info
+      // Always maintain the current player's position for the middle column
       selectedSpace: currentPosition
     });
+    
+    console.log('Dice roll completed, middle column kept on current player position:', currentPosition);
     
     // Hide the dice roll component after completion
     this.setState({ 
@@ -455,6 +905,14 @@ window.GameBoard = class GameBoard extends React.Component {
     return this.state.diceRollData.some(data => data['Space Name'] === currentSpace.name);
   }
   
+  // Handler to close the space explorer
+  handleCloseExplorer = () => {
+    this.setState({
+      showSpaceExplorer: false
+    });
+    console.log('Space explorer closed');
+  }
+  
   getSelectedSpace = () => {
     const { selectedSpace, spaces } = this.state;
     const space = spaces.find(space => space.id === selectedSpace);
@@ -626,66 +1084,120 @@ window.GameBoard = class GameBoard extends React.Component {
       <div className="game-container">
         <div className="game-header">
           <h1>Project Management Game</h1>
-          <div className="player-turn-indicator">
-            {currentPlayer ? `${currentPlayer.name}'s Turn` : 'No players'}
+          <div className="turn-controls">
+            <div className="player-turn-indicator">
+              {currentPlayer ? `${currentPlayer.name}'s Turn` : 'No players'}
+            </div>
+            {/* Game instructions button moved to header */}
+            <button
+              onClick={this.toggleInstructions}
+              className="instructions-btn"
+            >
+              Game Instructions
+            </button>
           </div>
         </div>
         
         <div className="game-content">
-          <div className="left-panel">
-            {/* Player status for all players */}
-            <div className="players-list">
-              {players.map((player, index) => (
-                <PlayerInfo 
-                  key={player.id}
-                  player={player}
-                  isCurrentPlayer={index === currentPlayerIndex}
+          <div className="main-content">
+            <div className="board-and-explorer-container">
+              <div className="board-container">
+                {/* Game board with available moves highlighted */}
+                <BoardDisplay 
+                  spaces={spaces}
+                  players={players}
+                  selectedSpace={selectedSpace}
+                  selectedMove={this.state.selectedMove}  // Pass the selected move to BoardDisplay
+                  availableMoves={availableMoves}
+                  onSpaceClick={this.handleSpaceClick}
+                  diceRollData={diceRollData}
                 />
-              ))}
+              </div>
+              {/* Add Space Explorer panel to the right of the board - show only when flag is true */}
+              {this.state.showSpaceExplorer && this.state.exploredSpace && (
+                <div className="space-explorer-container">
+                  <SpaceExplorer 
+                    space={this.state.exploredSpace}
+                    visitType={this.state.exploredSpace ? 
+                      (GameState.hasPlayerVisitedSpace(currentPlayer, this.state.exploredSpace.name) ? 'subsequent' : 'first')
+                      : 'first'}
+                    diceRollData={diceRollData}
+                    onClose={this.handleCloseExplorer}
+                  />
+                </div>
+              )}
             </div>
             
-            {/* Card display component */}
-            {currentPlayer && showCardDisplay && (
-              <CardDisplay
-                playerId={currentPlayer.id}
-                visible={true}
-                onCardPlayed={this.handleCardPlayed}
-                onCardDiscarded={this.handleCardDiscarded}
-                ref={this.cardDisplayRef}
-              />
-            )}
-            
-            {/* Space information */}
-            {selectedSpaceObj && (
-              <SpaceInfo 
-                space={selectedSpaceObj}
-                visitType={visitType}
-                diceOutcomes={this.state.diceOutcomes}
-                diceRoll={this.state.lastDiceRoll}
-                availableMoves={availableMoves}
-                onMoveSelect={this.handleSpaceClick}
-                onDrawCards={this.handleDrawCards}
-              />
-            )}
-            {/* Debug info */}
-            <div className="debug-info" style={{ display: 'none' }}>
-              Dice Roll: {this.state.lastDiceRoll ? this.state.lastDiceRoll : 'None'}<br/>
-              Has Outcomes: {this.state.diceOutcomes ? 'Yes' : 'No'}
+              <div className="info-panels-container">
+                {/* Static Player Status display - now in left column */}
+                <div className="player-static-status-container">
+                  <StaticPlayerStatus 
+                    player={this.state.currentPlayerOnLanding}
+                    space={this.state.currentSpaceOnLanding}
+                  />
+                </div>
+                
+                {/* Current space info - now in middle column */}
+                <div className="current-space-container">
+                  {/* Space information with Roll Dice button added */}
+                  {selectedSpaceObj && (
+                    <div className="space-info-container">
+                      <SpaceInfo 
+                        space={selectedSpaceObj}
+                        visitType={visitType}
+                        diceOutcomes={this.state.diceOutcomes}
+                        diceRoll={this.state.lastDiceRoll}
+                        availableMoves={availableMoves}
+                        onMoveSelect={this.handleSpaceClick}
+                        onDrawCards={this.handleDrawCards}
+                        onRollDice={this.handleRollDiceClick}
+                        onNegotiate={this.handleNegotiate}
+                        hasRolledDice={hasRolledDice}
+                        hasDiceRollSpace={this.hasDiceRollSpace()}
+                      />
+                    </div>
+                  )}
+                  {/* Debug info */}
+                  <div className="debug-info" style={{ display: 'none' }}>
+                    Dice Roll: {this.state.lastDiceRoll ? this.state.lastDiceRoll : 'None'}<br/>
+                    Has Outcomes: {this.state.diceOutcomes ? 'Yes' : 'No'}
+                  </div>
+                </div>
+                
+                {/* Current player panel - still in right column */}
+                <div className="player-panel">
+                {/* Player status - show only current player */}
+                <div className="players-list">
+                  {players.map((player, index) => (
+                    index === currentPlayerIndex && (
+                      <PlayerInfo 
+                        key={player.id}
+                        player={player}
+                        isCurrentPlayer={true}
+                        showCardDisplay={showCardDisplay}
+                        onToggleCardDisplay={this.toggleCardDisplay}
+                      />
+                    )
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
           
-          <div className="main-panel">
-            {/* Game board with available moves highlighted */}
-            <BoardDisplay 
-              spaces={spaces}
-              players={players}
-              selectedSpace={selectedSpace}
-              selectedMove={this.state.selectedMove}  // Pass the selected move to BoardDisplay
-              availableMoves={availableMoves}
-              onSpaceClick={this.handleSpaceClick}
-              diceRollData={diceRollData}
-            />
-          </div>
+          {/* Card display component - place at the bottom of the layout */}
+          {currentPlayer && (
+            <div className="card-display-container">
+              <CardDisplay
+                playerId={currentPlayer.id}
+                visible={showCardDisplay}
+                onCardPlayed={this.handleCardPlayed}
+                onCardDiscarded={this.handleCardDiscarded}
+                onWDiscardComplete={() => console.log('GameBoard: W card discard requirement completed')}
+                onWReplacementComplete={() => console.log('GameBoard: W card replacement requirement completed')}
+                ref={this.cardDisplayRef}
+              />
+            </div>
+          )}
         </div>
         
         {/* Dice Roll component - show when active */}
@@ -705,19 +1217,7 @@ window.GameBoard = class GameBoard extends React.Component {
         )}
         
         <div className="game-controls">
-          {/* Roll Dice Button - gray out if space doesn't have dice roll data */}
-          {!showDiceRoll && (
-            <button 
-              onClick={this.handleRollDiceClick}
-              className={`roll-dice-btn ${this.hasDiceRollSpace() ? '' : 'disabled'}`}
-              disabled={!this.hasDiceRollSpace()}
-              title={this.hasDiceRollSpace() ? 'Roll dice for this space' : 'This space doesn\'t require a dice roll'}
-            >
-              Roll Dice
-            </button>
-          )}
-          
-          {/* End Turn button */}
+          {/* End Turn button (Roll Dice button moved to space info area) */}
           <button 
             onClick={this.handleEndTurn}
             disabled={
@@ -732,21 +1232,8 @@ window.GameBoard = class GameBoard extends React.Component {
             End Turn
           </button>
           
-          {/* Toggle Cards button */}
-          <button
-            onClick={this.toggleCardDisplay}
-            className="toggle-cards-btn"
-          >
-            {showCardDisplay ? 'Hide Cards' : 'Show Cards'}
-          </button>
-          
-          {/* Game instructions button */}
-          <button
-            onClick={this.toggleInstructions}
-            className="instructions-btn"
-          >
-            Game Instructions
-          </button>
+          {/* Toggle Cards button moved to PlayerInfo component */}
+          {/* Game instructions button moved to header */}
         </div>
         
         {/* Card draw animation */}
@@ -779,9 +1266,93 @@ window.GameBoard = class GameBoard extends React.Component {
             </div>
           </div>
         )}
+        
+        {/* Game Instructions Panel */}
+        {this.state.showInstructions && this.state.instructionsData && (
+          <div className="instructions-panel">
+            <div className="instructions-content">
+              <h2>Game Instructions</h2>
+              
+              <div className="instruction-section">
+                <h3>Getting Started</h3>
+                <div className="instruction-item">
+                  <h4>Game Objective</h4>
+                  <p>Complete the project management game by navigating through various phases and managing your resources effectively.</p>
+                </div>
+              </div>
+              
+              <div className="instruction-section">
+                <h3>Game Rules</h3>
+                {this.state.instructionsData.first && (
+                  <div className="instruction-item">
+                    <h4>First Visit</h4>
+                    <p>{this.state.instructionsData.first.description || "Navigate through the board by selecting available spaces."}</p>
+                    {this.state.instructionsData.first.action && <p><strong>Action:</strong> {this.state.instructionsData.first.action}</p>}
+                    {this.state.instructionsData.first.outcome && <p><strong>Outcome:</strong> {this.state.instructionsData.first.outcome}</p>}
+                    {/* Only show card fields that were included in the filtered data */}
+                    {this.state.instructionsData.first["W Card"] && <p><strong>W Card:</strong> {this.state.instructionsData.first["W Card"]}</p>}
+                    {this.state.instructionsData.first["B Card"] && <p><strong>B Card:</strong> {this.state.instructionsData.first["B Card"]}</p>}
+                    {this.state.instructionsData.first["I Card"] && <p><strong>I Card:</strong> {this.state.instructionsData.first["I Card"]}</p>}
+                    {this.state.instructionsData.first["L card"] && <p><strong>L Card:</strong> {this.state.instructionsData.first["L card"]}</p>}
+                    {this.state.instructionsData.first["E Card"] && <p><strong>E Card:</strong> {this.state.instructionsData.first["E Card"]}</p>}
+                  </div>
+                )}
+                
+                {this.state.instructionsData.subsequent && (
+                  <div className="instruction-item">
+                    <h4>Subsequent Visits</h4>
+                    <p>{this.state.instructionsData.subsequent.description || "Return to previous spaces for additional options."}</p>
+                    {this.state.instructionsData.subsequent.action && <p><strong>Action:</strong> {this.state.instructionsData.subsequent.action}</p>}
+                    {this.state.instructionsData.subsequent.outcome && <p><strong>Outcome:</strong> {this.state.instructionsData.subsequent.outcome}</p>}
+                    {/* Only show card fields that were included in the filtered data */}
+                    {this.state.instructionsData.subsequent["W Card"] && <p><strong>W Card:</strong> {this.state.instructionsData.subsequent["W Card"]}</p>}
+                    {this.state.instructionsData.subsequent["B Card"] && <p><strong>B Card:</strong> {this.state.instructionsData.subsequent["B Card"]}</p>}
+                    {this.state.instructionsData.subsequent["I Card"] && <p><strong>I Card:</strong> {this.state.instructionsData.subsequent["I Card"]}</p>}
+                    {this.state.instructionsData.subsequent["L card"] && <p><strong>L Card:</strong> {this.state.instructionsData.subsequent["L card"]}</p>}
+                    {this.state.instructionsData.subsequent["E Card"] && <p><strong>E Card:</strong> {this.state.instructionsData.subsequent["E Card"]}</p>}
+                  </div>
+                )}
+              </div>
+              
+              <div className="instruction-section">
+                <h3>Card Types</h3>
+                <div className="instruction-item">
+                  <h4>W - Work Type Cards</h4>
+                  <p>These cards represent different types of work you can perform.</p>
+                </div>
+                <div className="instruction-item">
+                  <h4>B - Bank Cards</h4>
+                  <p>These cards represent financial transactions and resources.</p>
+                </div>
+                <div className="instruction-item">
+                  <h4>I - Investor Cards</h4>
+                  <p>These cards provide opportunities for investment and growth.</p>
+                </div>
+                <div className="instruction-item">
+                  <h4>L - Life Cards</h4>
+                  <p>These cards represent life events that may impact your progress.</p>
+                </div>
+                <div className="instruction-item">
+                  <h4>E - Expeditor Cards</h4>
+                  <p>These cards can help speed up your progress through the game.</p>
+                </div>
+              </div>
+              
+              <button 
+                className="close-instructions-btn"
+                onClick={this.toggleInstructions}
+              >
+                Close Instructions
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 }
 
 console.log('GameBoard.js code execution finished');
+
+// Export SpaceExplorer component for use in other files
+window.SpaceExplorer = SpaceExplorer;

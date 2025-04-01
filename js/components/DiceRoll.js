@@ -142,7 +142,13 @@ window.DiceRoll = class DiceRoll extends React.Component {
   console.log('DiceRoll: Processing outcome type', dieRollType, 'value:', outcomeValue);
   
   if (outcomeValue && outcomeValue.trim() !== '' && outcomeValue !== 'n/a') {
-  outcomes[dieRollType] = outcomeValue;
+    // Special case for W Cards Discard outcome
+    if (dieRollType === 'W Cards Discard' || dieRollType === 'discard W Cards') {
+      outcomes.discardWCards = outcomeValue;
+      console.log('DiceRoll: Detected W cards discard requirement:', outcomeValue);
+    } else {
+      outcomes[dieRollType] = outcomeValue;
+    }
   }
   }
   

@@ -45,7 +45,7 @@ window.GameState = {
       if (row['Space 3']) nextSpaces.push(row['Space 3']);
       if (row['Space 4']) nextSpaces.push(row['Space 4']);
       if (row['Space 5']) nextSpaces.push(row['Space 5']);
-      if (row['Negotiate']) nextSpaces.push(row['Negotiate']);
+      // Do not include the Negotiate column in nextSpaces as it's not an actual space to move to
       
       // Filter out empty or n/a values, but keep original names otherwise
       nextSpaces = nextSpaces

@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Management Game</title>
+    <!-- Consolidated CSS files -->
     <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/board.css">
-    <link rel="stylesheet" href="css/dice.css">
-    <link rel="stylesheet" href="css/cards.css">
-    <link rel="stylesheet" href="css/space-info.css">
-    <link rel="stylesheet" href="css/space-explorer.css">
+    <link rel="stylesheet" href="css/game-components.css">
+    <!-- Logging CSS loading -->
+    <script>
+        console.log('Loading consolidated CSS files');
+    </script>
     
     <!-- React from CDN -->
     <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
@@ -40,10 +41,16 @@
     <script type="text/babel" src="js/components/CardDetailView.js"></script>
     <script type="text/babel" src="js/components/CardAnimations.js"></script>
     <script type="text/babel" src="js/components/WorkCardDialogs.js"></script>
+    <script type="text/babel" src="js/components/space-explorer-logger.js"></script>
     
     <!-- Load main components -->
     <script type="text/babel" src="js/components/PlayerInfo.js"></script>
     <script type="text/babel" src="js/components/SpaceInfo.js"></script>
+    <!-- Load Board Components -->
+    <script type="text/babel" src="js/components/BoardConnectors.js"></script>
+    <script type="text/babel" src="js/components/BoardStyleManager.js"></script>
+    <script type="text/babel" src="js/components/StaticPlayerStatus.js"></script>
+    <script type="text/babel" src="js/components/BoardSpaceRenderer.js"></script>
     <script type="text/babel" src="js/components/BoardDisplay.js"></script>
     <script type="text/babel" src="js/components/PlayerSetup.js"></script>
     <script type="text/babel" src="js/components/DiceRoll.js"></script>
@@ -53,5 +60,8 @@
     
     <!-- Load main script last -->
     <script type="text/babel" src="js/main.js"></script>
+    
+    <!-- Load UI Inspector tool -->
+    <script src="js/ui-inspector.js"></script>
 </body>
 </html>

@@ -1,0 +1,802 @@
+/* game-components.css - Game-specific components like board, cards, dice */
+console.log('game-components.css file is beginning to be used');
+
+/* ====== BOARD SPACES ====== */
+
+.game-board {
+  width: 100%;
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10%, 1fr));
+  grid-gap: 0.313rem;
+  padding: 0.313rem;
+}
+
+.board-row {
+  display: flex;
+  justify-content: center;
+
+}
+
+.board-row.reverse {
+  flex-direction: row-reverse;
+}
+
+.board-space {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  background-color: #ecf0f1;
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  word-break: break-word;
+  overflow: hidden;
+}
+
+/* Exploration highlight */
+.board-space:hover {
+  transform: translateY(-0.313rem);
+  box-shadow: 0 0.313rem 0.938rem rgba(66, 133, 244, 0.5);
+  border: 0.125rem solid #4285f4;
+  z-index: 10;
+}
+
+.board-space.selected {
+  transform: translateY(-0.313rem);
+  box-shadow: 0 0 0 0.188rem #f39c12, 0 0.313rem 0.938rem rgba(0, 0, 0, 0.2);
+}
+
+/* Available move indicator */
+.board-space.available-move {
+  animation: pulse 1.5s infinite;
+  box-shadow: 0 0 0 0.125rem #27ae60, 0 0.313rem 0.938rem rgba(0, 0, 0, 0.2);
+}
+
+/* Selected move destination indicator */
+.board-space.selected-move {
+  transform: translateY(-0.188rem);
+  box-shadow: 0 0 0 0.188rem #e74c3c, 0 0.313rem 0.938rem rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+/* Enlarged space styling */
+.board-space.enlarged {
+  transform: scale(1.15) translateY(-0.188rem);
+  z-index: 10;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Specific hover style for enlarged spaces that overrides the base hover style */
+.board-space.enlarged:hover {
+  transform: scale(1.15) translateY(-0.188rem); /* Match the non-hover value for consistency */
+  box-shadow: 0 0.313rem 0.938rem rgba(66, 133, 244, 0.5);
+  border: 0.125rem solid #4285f4;
+}
+
+/* Add a visual indicator for the selected move */
+.board-space.selected-move::after {
+  content: 'DESTINATION';
+  position: absolute;
+  bottom: -1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #e74c3c;
+  color: white;
+  font-size: 0.625rem;
+  font-weight: bold;
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--border-radius-sm);
+  white-space: nowrap;
+  z-index: 20;
+}
+
+.move-indicator {
+  position: absolute;
+  top: -0.625rem;
+  right: -0.625rem;
+  background-color: #27ae60;
+  color: white;
+  font-size: 0.625rem;
+  font-weight: bold;
+  padding: 0.188rem 0.375rem;
+  border-radius: 0.625rem;
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+}
+
+.move-details {
+  font-size: 0.5rem;
+  margin-top: 0.125rem;
+  line-height: 1.1;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Space content styling */
+.space-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.space-name {
+  font-size: 0.8rem;
+  line-height: 1.1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.125rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.visit-type {
+  font-size: 0.7rem;
+  line-height: 1;
+  font-style: italic;
+  font-weight: normal;
+  text-align: center;
+  margin-top: 0.125rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Player tokens on board */
+.player-tokens {
+  display: flex;
+  gap: 0.313rem;
+  position: absolute;
+  bottom: 0.625rem;
+  left: 0.625rem;
+}
+
+.player-token {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  border: 0.125rem solid white;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Space type color coding - maintain original colors directly */
+.space-type-setup {
+  background-color: #e3f2fd;
+  color: #3498db;
+  border: 0.125rem solid #3498db;
+}
+
+.space-type-design {
+  background-color: #e8f5e9;
+  color: #2ecc71;
+  border: 0.125rem solid #2ecc71;
+}
+
+.space-type-funding {
+  background-color: #fff8e1;
+  color: #333;
+  border: 0.125rem solid #f1c40f;
+}
+
+.space-type-owner {
+  background-color: #fce4ec;
+  color: #9b59b6;
+  border: 0.125rem solid #9b59b6;
+}
+
+.space-type-regulatory {
+  background-color: #f3e5f5;
+  color: #e74c3c;
+  border: 0.125rem solid #e74c3c;
+}
+
+.space-type-construction {
+  background-color: #f1f8e9;
+  color: #e67e22;
+  border: 0.125rem solid #e67e22;
+}
+
+.space-type-end {
+  background-color: #e8eaf6;
+  color: #1abc9c;
+  border: 0.125rem solid #1abc9c;
+}
+
+/* ====== DICE STYLES ====== */
+.dice-roll-indicator {
+  position: absolute;
+  top: 0.313rem;
+  right: 0.313rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dice-icon {
+  width: 1rem;
+  height: 1rem;
+  background-color: #e74c3c;
+  border-radius: 0.188rem;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dice-icon::before {
+  content: "";
+  width: 0.25rem;
+  height: 0.25rem;
+  background-color: white;
+  border-radius: 50%;
+  position: absolute;
+}
+
+.has-dice-roll {
+  position: relative;
+}
+
+/* Dice outcomes in space info */
+.dice-outcomes-display {
+  margin: var(--spacing-lg) 0;
+  padding: var(--spacing-md);
+  background-color: #f8f9fa;
+  border-radius: var(--border-radius-md);
+  border: 1px solid #e9ecef;
+  box-shadow: var(--shadow-sm);
+}
+
+.dice-outcome-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid #e9ecef;
+}
+
+.dice-result-badge {
+  width: 2.25rem;
+  height: 2.25rem;
+  background-color: #3498db;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.75rem;
+  font-weight: bold;
+  font-size: 1.125rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.dice-result-title h4 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1rem;
+}
+
+.dice-outcome-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.outcome-category {
+  flex: 1;
+  min-width: 30%;
+  padding: var(--spacing-sm);
+  background-color: white;
+  border-radius: var(--border-radius-sm);
+  border-left: 0.188rem solid #3498db;
+}
+
+.outcome-category-title {
+  margin: 0 0 0.375rem 0;
+  color: #2c3e50;
+  font-size: 0.813rem;
+  font-weight: bold;
+}
+
+.outcome-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.outcome-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.125rem 0;
+  font-size: 0.75rem;
+  border-bottom: 1px dashed #e9ecef;
+}
+
+.outcome-item:last-child {
+  border-bottom: none;
+}
+
+.outcome-type {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.outcome-value {
+  color: #3498db;
+}
+
+/* ====== SPACE EXPLORER STYLES ====== */
+.space-explorer {
+  padding: var(--spacing-md);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.explorer-space-name,
+.explorer-visit-type,
+.explorer-description,
+.explorer-action,
+.explorer-outcome,
+.card-text,
+.dice-outcome {
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.space-explorer.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+}
+
+.explorer-placeholder {
+  padding: var(--spacing-xl);
+  border: 0.125rem dashed #e0e0e0;
+  border-radius: var(--border-radius-md);
+  background-color: #f8f8f8;
+}
+
+.explorer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.explorer-title {
+  color: #4285f4;
+  margin: 0;
+  font-size: 1.2em;
+}
+
+.explorer-close-btn {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background-color: #e74c3c;
+  border: none;
+  color: white;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  font-weight: bold;
+  box-shadow: var(--shadow-sm);
+}
+
+.explorer-close-btn:hover {
+  background-color: #c0392b;
+  transform: scale(1.1);
+}
+
+.explorer-space-name {
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-bottom: 0.313rem;
+  color: #333;
+}
+
+.explorer-visit-type {
+  font-size: 0.9em;
+  color: #777;
+  font-style: italic;
+  margin-bottom: 0.938rem;
+}
+
+/* Dice roll indicator in explorer */
+.explorer-dice-indicator {
+  display: flex;
+  align-items: center;
+  background-color: #ffebe5;
+  border: 1px solid #ffcdc7;
+  border-radius: var(--border-radius-sm);
+  padding: 0.375rem 0.625rem;
+  margin: var(--spacing-md) 0;
+  font-size: 0.85em;
+  color: #e74c3c;
+}
+
+.explorer-dice-indicator .dice-icon {
+  width: 1rem;
+  height: 1rem;
+  background-color: #e74c3c;
+  border-radius: 0.188rem;
+  position: relative;
+  margin-right: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.explorer-dice-indicator .dice-text {
+  font-weight: bold;
+}
+
+.explorer-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.explorer-section h4 {
+  margin: 0 0 0.313rem 0;
+  color: #555;
+  font-size: 0.95em;
+}
+
+.explorer-description, 
+.explorer-action, 
+.explorer-outcome {
+  font-size: 0.9em;
+  line-height: 1.4;
+  color: #333;
+  background-color: #f9f9f9;
+  padding: 0.5rem;
+  border-radius: var(--border-radius-sm);
+  border-left: 0.188rem solid #4285f4;
+}
+
+.explorer-action {
+  border-left-color: #ea4335;
+}
+
+.explorer-outcome {
+  border-left-color: #34a853;
+}
+
+/* Space type styling in explorer - using consistent format and maintaining phase colors */
+.space-explorer[data-type="SETUP"] {
+  background-color: #e3f2fd;
+  border: 0.125rem solid #3498db;
+}
+
+.space-explorer[data-type="OWNER"] {
+  background-color: #fce4ec;
+  border: 0.125rem solid #9b59b6;
+}
+
+.space-explorer[data-type="FUNDING"] {
+  background-color: #fff8e1;
+  border: 0.125rem solid #f1c40f;
+}
+
+.space-explorer[data-type="DESIGN"] {
+  background-color: #e8f5e9;
+  border: 0.125rem solid #2ecc71;
+}
+
+.space-explorer[data-type="REGULATORY"] {
+  background-color: #f3e5f5;
+  border: 0.125rem solid #e74c3c;
+}
+
+.space-explorer[data-type="CONSTRUCTION"] {
+  background-color: #f1f8e9;
+  border: 0.125rem solid #e67e22;
+}
+
+.space-explorer[data-type="END"] {
+  background-color: #e8eaf6;
+  border: 0.125rem solid #1abc9c;
+}
+
+/* ====== CARD STYLES ====== */
+.card-display-container {
+  margin-top: var(--spacing-md);
+}
+
+/* Card animation */
+.game-card-draw-animation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease;
+}
+
+.card-animation-container {
+  perspective: 1000px;
+}
+
+.animated-card {
+  width: 30%;
+  height: 50vh;
+  max-width: 15.625rem;
+  max-height: 21.875rem;
+  background-color: white;
+  border-radius: var(--border-radius-lg);
+  border: 0.188rem solid;
+  overflow: hidden;
+  box-shadow: 0 0 1.875rem rgba(255, 255, 255, 0.3);
+  animation: cardFlipIn 1.5s ease-out;
+}
+
+.animated-card-header {
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.animated-card-content {
+  padding: 0.938rem;
+}
+
+.animated-card-field {
+  font-weight: bold;
+  margin-bottom: 0.625rem;
+}
+
+.animated-card-description {
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+/* Card indicators in explorer */
+.explorer-cards-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.explorer-card-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  background-color: #f9f9f9;
+  padding: 0.5rem;
+  border-radius: var(--border-radius-sm);
+}
+
+.card-type {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  margin-right: 0.625rem;
+  flex-shrink: 0;
+}
+
+.card-text {
+  font-size: 0.85em;
+  line-height: 1.3;
+  flex: 1;
+}
+
+/* Enhanced info for selected moves */
+.space-enhanced-info {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: var(--border-radius-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0.313rem;
+  z-index: 15;
+  color: white;
+  font-size: 0.688rem;
+  overflow: hidden;
+}
+
+.enhanced-info-content {
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.enhanced-info-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+  line-height: 1.2;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.188rem;
+}
+
+.enhanced-info-label {
+  font-weight: bold;
+  margin-right: 0.25rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.enhanced-info-value {
+  text-align: right;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.625rem;
+}
+
+.enhanced-action {
+  font-style: italic;
+  font-size: 0.563rem;
+}
+
+.enhanced-info-cards {
+  display: flex;
+  justify-content: center;
+  gap: 0.313rem;
+  margin-top: 0.25rem;
+}
+
+.card-indicator {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.625rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Explorer tables */
+.explorer-dice-table-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.explorer-dice-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.85em;
+}
+
+.explorer-dice-table th {
+  background-color: #4285f4;
+  color: white;
+  padding: 0.375rem;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.explorer-dice-table tr:nth-child(even) {
+  background-color: rgba(66, 133, 244, 0.05);
+}
+
+.explorer-dice-table td {
+  padding: 0.375rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.explorer-dice-table tr:last-child td {
+  border-bottom: none;
+}
+
+.dice-roll {
+  width: 2.5rem;
+  min-width: 2.5rem;
+  font-weight: bold;
+  text-align: center;
+  background-color: #f2f2f2;
+}
+
+.dice-outcome {
+  width: calc(100% - 2.5rem);
+  line-height: 1.4;
+  font-size: 0.9em;
+}
+
+.dice-outcome br {
+  margin-bottom: 0.313rem;
+}
+
+/* Visual indicators for different outcome types */
+.dice-outcome [class^="outcome-"] {
+  display: block;
+  padding: 0.125rem 0.25rem;
+  margin: 0.125rem 0;
+  border-radius: 0.188rem;
+  font-size: 0.85em;
+}
+
+.outcome-move {
+  background-color: #e8f5e9;
+  border-left: 0.125rem solid #4caf50;
+}
+
+.outcome-card {
+  background-color: #e3f2fd;
+  border-left: 0.125rem solid #2196f3;
+}
+
+.outcome-resource {
+  background-color: #fff8e1;
+  border-left: 0.125rem solid #ffc107;
+}
+
+.outcome-general {
+  background-color: #f5f5f5;
+  border-left: 0.125rem solid #607d8b;
+}
+
+.outcome-other {
+  background-color: #f3e5f5;
+  border-left: 0.125rem solid #9c27b0;
+}
+
+/* Resource display */
+.explorer-resources-section {
+  margin-top: auto;
+  border-top: 1px solid #e0e0e0;
+  padding-top: var(--spacing-md);
+}
+
+.explorer-resource-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.313rem;
+  font-size: 0.9em;
+  background-color: #f0f0f0;
+  padding: 0.313rem 0.5rem;
+  border-radius: var(--border-radius-sm);
+}
+
+.resource-label {
+  font-weight: bold;
+  color: #555;
+}
+
+.resource-value {
+  color: #333;
+}
+
+console.log('game-components.css code execution finished');

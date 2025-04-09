@@ -61,8 +61,8 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     const phaseColors = {
       'SETUP': '#e3f2fd',     // Light blue
       'OWNER': '#fce4ec',     // Light pink
-      'FUNDING': '#e8f5e9',   // Light green
-      'DESIGN': '#fff8e1',    // Light yellow
+      'FUNDING': '#fff8e1',   // Light yellow
+      'DESIGN': '#e8f5e9',    // Light green
       'REGULATORY': '#f3e5f5', // Light purple
       'CONSTRUCTION': '#f1f8e9', // Light greenish
       'END': '#e8eaf6'        // Light indigo
@@ -70,6 +70,25 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     
     // Return the color for the phase or default if not found
     return phaseColors[type.toUpperCase()] || '#f8f9fa';
+  }
+  
+  // Get border color based on space type
+  getBorderColor(type) {
+    if (!type) return '#ddd';
+    
+    // Define colors for different phases
+    const borderColors = {
+      'SETUP': '#3498db',     // Blue
+      'OWNER': '#9b59b6',     // Purple
+      'FUNDING': '#f1c40f',   // Yellow
+      'DESIGN': '#2ecc71',    // Green
+      'REGULATORY': '#e74c3c', // Red
+      'CONSTRUCTION': '#e67e22', // Orange
+      'END': '#1abc9c'        // Teal
+    };
+    
+    // Return the color for the phase or default if not found
+    return borderColors[type.toUpperCase()] || '#ddd';
   }
   // Render available moves
   renderAvailableMoves() {
@@ -288,39 +307,10 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     return type;
   }
 
-  // Render negotiate button
-renderNegotiateButton() {
-    const { space, onNegotiate } = this.props;
-    
-    // Check if current space has negotiate options
-    const hasNegotiateOption = space && space.rawNegotiate && space.rawNegotiate.trim() !== '' && space.rawNegotiate !== 'n/a';
-    
-    if (space && space.name) {
-      if (hasNegotiateOption) {
-        console.log(`SpaceInfo: Space has negotiate option: ${space.name}, option: ${space.rawNegotiate}`);
-      } else {
-        console.log(`SpaceInfo: Space does not have negotiate option: ${space.name}`);
-      }
-    }
-    
-    if (!hasNegotiateOption || !onNegotiate) {
-      return null;
-    }
-    
-    return (
-      <div className="space-negotiate-container">
-        <button 
-          onClick={onNegotiate}
-          className="negotiate-btn"
-          title="End your turn and stay on this space"
-        >
-          Negotiate
-        </button>
-        <div className="negotiate-info">
-          <p>End turn and stay on this space (only time is recorded)</p>
-        </div>
-      </div>
-    );
+  // Negotiate button functionality moved to player panel 
+  // This method is kept as a placeholder but doesn't render anything
+  renderNegotiateButton() {
+    return null;
   }
   
   // Render dice outcomes if available
@@ -444,8 +434,8 @@ renderNegotiateButton() {
       { key: 'I Card', label: 'Investor Card', priority: 'normal', isCard: true },
       { key: 'L card', label: 'Life Card', priority: 'normal', isCard: true },
       { key: 'E Card', label: 'Expeditor Card', priority: 'normal', isCard: true },
-      { key: 'Time', label: 'Time', priority: 'normal', isResource: true },
       { key: 'Fee', label: 'Fee', priority: 'normal', isResource: true }
+      // Time is handled separately now in the top right corner
     ];
     
     // Separate high-priority and normal-priority fields
@@ -455,14 +445,23 @@ renderNegotiateButton() {
     // Get background color based on space phase/type
     const phaseColor = this.getPhaseColor(space.type);
     
-    // Create style for the space info card with the phase color
+    // Create style for the space info card with the phase color and border
     const spaceInfoStyle = {
       backgroundColor: phaseColor,
-      borderLeft: `4px solid ${phaseColor === '#f8f9fa' ? '#3498db' : phaseColor}`,
+      border: `2px solid ${this.getBorderColor(space.type)}`,
+      position: 'relative' // To allow absolute positioning of time
     };
     
     return (
       <div className="space-info" style={spaceInfoStyle}>
+        {/* Time display in top right corner */}
+        {space['Time'] && space['Time'] !== 'n/a' && (
+          <div className="space-time-display">
+            <span className="time-label">Time:</span>
+            <span className="time-value">{space['Time']}</span>
+          </div>
+        )}
+        
         <h3>{space.name}</h3>
         <div className="space-type">{space.type}</div>
         

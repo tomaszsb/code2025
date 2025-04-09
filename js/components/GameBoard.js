@@ -1,3 +1,6 @@
+// GameBoard.js file is beginning to be used
+console.log('GameBoard.js file is beginning to be used');
+
 // SpaceExplorer component for displaying details of spaces when exploring the board
 class SpaceExplorer extends React.Component {
   renderDiceTable() {
@@ -145,7 +148,7 @@ class SpaceExplorer extends React.Component {
     }
     
     return (
-      <div className="space-explorer">
+      <div className="space-explorer" data-type={space.type ? space.type.toUpperCase() : ''}>
         <div className="explorer-header">
           <h3 className="explorer-title">Space Explorer</h3>
           {onClose && (
@@ -252,41 +255,92 @@ class StaticPlayerStatus extends React.Component {
     const { player, space } = this.props;
     
     if (!player || !space) {
-      return <div className="static-player-status empty">No player data available</div>;
+      return <div className="player-info empty">No player data available</div>;
     }
     
+    // Define styles for the player card when it's not their turn
+    const cardStyle = {
+      padding: '12px',
+      borderRadius: '8px',
+      marginBottom: '10px',
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+      backgroundColor: '#ffffff',
+      border: '2px solid #e0e0e0'
+    };
+    
+    // Style for player details container
+    const detailsStyle = {
+      flex: 1
+    };
+    
+    // Style for resources container
+    const resourcesStyle = {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+      marginBottom: '10px'
+    };
+    
+    // Style for each resource item
+    const resourceItemStyle = {
+      display: 'flex',
+      justifyContent: 'space-between',
+      backgroundColor: '#f5f5f5',
+      padding: '5px 10px',
+      borderRadius: '4px'
+    };
+    
+    // Style for effect sections
+    const effectSectionStyle = {
+      marginBottom: '10px',
+      backgroundColor: '#f5f5f5',
+      padding: '8px 12px',
+      borderRadius: '6px'
+    };
+    
+    // Style for effect value
+    const effectValueStyle = {
+      marginTop: '5px',
+      wordWrap: 'break-word',
+      width: '100%'
+    };
+    
     return (
-      <div className="static-player-status">
-        <h3>{player.name}'s Status</h3>
-        <div className="status-label">When Landing</div>
-        <div className="status-space">Space: {space.name}</div>
-        
-        <div className="status-section">
-          <h4>Resources:</h4>
-          <div className="resource-item">
-            <span className="resource-label">Money:</span>
-            <span className="resource-value">${player.resources.money}</span>
-          </div>
-          <div className="resource-item">
-            <span className="resource-label">Time:</span>
-            <span className="resource-value">{player.resources.time} days</span>
-          </div>
-        </div>
-        
-        <div className="status-section space-effect-container">
-          <h4>Space Effect:</h4>
-          {space.action && (
-            <div className="effect-item">
-              <span className="effect-label">Action:</span>
-              <span className="effect-value">{space.action}</span>
+      <div className="player-info" style={cardStyle}>
+        <div className="player-details" style={detailsStyle}>
+          <h3 style={{ margin: '0 0 8px 0' }}>{player.name}'s Status</h3>
+          <div style={{ fontStyle: 'italic', marginBottom: '5px' }}>When Landing</div>
+          <div style={{ fontWeight: 'bold', marginBottom: '15px' }}>Space: {space.name}</div>
+          
+          <div style={resourcesStyle}>
+            <div className="resource" style={resourceItemStyle}>
+              <span className="resource-label">Money:</span>
+              <span className="resource-value">${player.resources.money}</span>
             </div>
-          )}
-          {space.outcome && (
-            <div className="effect-item">
-              <span className="effect-label">Outcome:</span>
-              <span className="effect-value">{space.outcome}</span>
+            <div className="resource" style={resourceItemStyle}>
+              <span className="resource-label">Time:</span>
+              <span className="resource-value">{player.resources.time} days</span>
             </div>
-          )}
+          </div>
+          
+          <div style={{ marginTop: '15px' }}>
+            <h4 style={{ margin: '0 0 10px 0' }}>Space Effect:</h4>
+            {space.action && (
+              <div style={effectSectionStyle}>
+                <div style={{ fontWeight: 'bold' }}>Action:</div>
+                <div style={effectValueStyle}>{space.action}</div>
+              </div>
+            )}
+            {space.outcome && (
+              <div style={effectSectionStyle}>
+                <div style={{ fontWeight: 'bold' }}>Outcome:</div>
+                <div style={effectValueStyle}>{space.outcome}</div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -294,8 +348,6 @@ class StaticPlayerStatus extends React.Component {
 }
 
 // GameBoard component - Main controller component
-console.log('GameBoard.js file is beginning to be used');
-
 window.GameBoard = class GameBoard extends React.Component {
   constructor(props) {
     super(props);
@@ -327,8 +379,9 @@ window.GameBoard = class GameBoard extends React.Component {
       currentPlayerOnLanding: null, // Store snapshot of player status upon landing
       currentSpaceOnLanding: null,   // Store snapshot of space upon landing
       exploredSpace: null,      // Store currently explored space for details panel
-      showSpaceExplorer: false  // Flag to show/hide space explorer panel
+      showSpaceExplorer: true   // Flag set to always show space explorer panel
     };
+    console.log("GameBoard: Space explorer is now always visible");
   }
   
   // Handle drawing cards manually
@@ -389,7 +442,9 @@ window.GameBoard = class GameBoard extends React.Component {
       const playerSnapshot = {
         ...currentPlayer,
         resources: { ...currentPlayer.resources },
-        cards: [...(currentPlayer.cards || [])]
+        cards: [...(currentPlayer.cards || [])],
+        // Ensure color is consistent
+        color: currentPlayer.color
       };
       
       // Create a deep copy of the space info for the static view
@@ -406,6 +461,8 @@ window.GameBoard = class GameBoard extends React.Component {
     }
     
     console.log("GameBoard mounted successfully");
+    console.log("Space Explorer positioning fixed - now appears on the right side of the game board");
+    console.log("Game board correctly resizes when Space Explorer is visible");
   }
   
   // Load instructions data from the START space
@@ -495,15 +552,21 @@ window.GameBoard = class GameBoard extends React.Component {
   
   handleSpaceClick = (spaceId) => {
     // Check if this space is a valid move
-    const { availableMoves, spaces, showSpaceExplorer, exploredSpace } = this.state;
+    const { availableMoves, spaces } = this.state;
     const isValidMove = availableMoves.some(space => space.id === spaceId);
     const currentPlayer = this.getCurrentPlayer();
     
     // Find the space that was clicked
     const clickedSpace = spaces.find(space => space.id === spaceId);
     
-    // Handle toggling the space explorer
-    const shouldShowExplorer = !(showSpaceExplorer && exploredSpace && exploredSpace.id === spaceId);
+    // Always update exploredSpace to the clicked space
+    // This ensures we show the correct space info in the always-visible explorer
+    const exploredSpaceData = clickedSpace;
+    
+    // Log space explorer update (if function exists)
+    if (window.logSpaceExplorerToggle && typeof window.logSpaceExplorerToggle === 'function') {
+      window.logSpaceExplorerToggle(true, clickedSpace ? clickedSpace.name : 'unknown');
+    }
     
     if (isValidMove) {
       // Don't move the player yet, just store the selected move
@@ -512,19 +575,17 @@ window.GameBoard = class GameBoard extends React.Component {
         // No longer change selectedSpace - keep it as the current player's position
         selectedMove: spaceId,   // Store the destination space
         hasSelectedMove: true,   // Mark that player has selected their move
-        exploredSpace: clickedSpace, // Set the explored space for the space explorer panel
-        showSpaceExplorer: shouldShowExplorer // Toggle panel visibility
+        exploredSpace: exploredSpaceData // Set the explored space for the space explorer panel
       });
       
       console.log('Move selected:', spaceId, '- Will be executed on End Turn');
     } else {
       // For non-move spaces, we update the space explorer panel but don't change the middle column
       this.setState({
-        exploredSpace: clickedSpace, // Set the explored space for the space explorer panel
-        showSpaceExplorer: shouldShowExplorer // Toggle panel visibility
+        exploredSpace: exploredSpaceData // Set the explored space for the space explorer panel
       });
       
-      console.log('Space clicked for exploration:', spaceId, 'Space explorer toggled:', shouldShowExplorer);
+      console.log('Space clicked for exploration:', spaceId);
     }
     
     console.log('Space clicked:', spaceId, 'Is valid move:', isValidMove);
@@ -554,7 +615,9 @@ window.GameBoard = class GameBoard extends React.Component {
     const playerSnapshot = newCurrentPlayer ? {
       ...newCurrentPlayer,
       resources: { ...newCurrentPlayer.resources },
-      cards: [...(newCurrentPlayer.cards || [])]
+      cards: [...(newCurrentPlayer.cards || [])],
+      // Force the color to be the current player's color for consistent UI
+      color: newCurrentPlayer.color
     } : null;
     
     // Create a deep copy of the space info for the static view
@@ -573,9 +636,8 @@ window.GameBoard = class GameBoard extends React.Component {
       diceOutcomes: null,               // Reset dice outcomes
       lastDiceRoll: null,               // Reset last dice roll
       currentPlayerOnLanding: playerSnapshot, // Store snapshot of player status
-      currentSpaceOnLanding: spaceSnapshot,    // Store snapshot of space
-      exploredSpace: null,          // Clear explored space
-      showSpaceExplorer: false      // Hide space explorer
+      currentSpaceOnLanding: spaceSnapshot,   // Store snapshot of space
+      exploredSpace: newSpace          // Set explored space to new player's space
     });
     
     // Update available moves for new player
@@ -633,7 +695,9 @@ window.GameBoard = class GameBoard extends React.Component {
     const playerSnapshot = newCurrentPlayer ? {
       ...newCurrentPlayer,
       resources: { ...newCurrentPlayer.resources },
-      cards: [...(newCurrentPlayer.cards || [])]
+      cards: [...(newCurrentPlayer.cards || [])],
+      // Force the color to be the current player's color for consistent UI
+      color: newCurrentPlayer.color
     } : null;
     
     // Create a deep copy of the space info for the static view
@@ -653,8 +717,7 @@ window.GameBoard = class GameBoard extends React.Component {
       lastDiceRoll: null,               // Reset last dice roll
       currentPlayerOnLanding: playerSnapshot, // Store snapshot of player status
       currentSpaceOnLanding: spaceSnapshot,    // Store snapshot of space
-      exploredSpace: null,          // Clear explored space
-      showSpaceExplorer: false      // Hide space explorer
+      exploredSpace: newSpace          // Update space explorer to show the current player's space
     });
     
     // Update available moves for new player
@@ -905,12 +968,19 @@ window.GameBoard = class GameBoard extends React.Component {
     return this.state.diceRollData.some(data => data['Space Name'] === currentSpace.name);
   }
   
-  // Handler to close the space explorer
+  // Handler for close button in space explorer - now just updates content
   handleCloseExplorer = () => {
-    this.setState({
-      showSpaceExplorer: false
-    });
-    console.log('Space explorer closed');
+    // Instead of closing the space explorer, reset its content to the current player's space
+    const currentPlayer = this.getCurrentPlayer();
+    if (currentPlayer) {
+      const currentSpace = this.state.spaces.find(s => s.id === currentPlayer.position);
+      if (currentSpace) {
+        this.setState({
+          exploredSpace: currentSpace
+        });
+        console.log('Space explorer reset to current player space');
+      }
+    }
   }
   
   getSelectedSpace = () => {
@@ -1034,7 +1104,7 @@ window.GameBoard = class GameBoard extends React.Component {
       selectedSpace, selectedMove, availableMoves, showDiceRoll,
       diceRollSpace, diceRollVisitType, diceRollData,
       showCardDisplay, cardDrawAnimation, newCardData,
-      hasRolledDice
+      hasRolledDice, exploredSpace
     } = this.state;
     
     // Check if game is ended
@@ -1045,7 +1115,7 @@ window.GameBoard = class GameBoard extends React.Component {
             <h1>Project Management Game</h1>
             <div className="game-end-message">Game Completed!</div>
           </div>
-          <div className="game-content">
+          <div className="main-content">
             <div className="game-end-screen">
               <h2>Congratulations!</h2>
               <p>You have completed the project management game.</p>
@@ -1085,7 +1155,7 @@ window.GameBoard = class GameBoard extends React.Component {
         <div className="game-header">
           <h1>Project Management Game</h1>
           <div className="turn-controls">
-            <div className="player-turn-indicator">
+            <div className="player-turn-indicator" style={{backgroundColor: currentPlayer ? currentPlayer.color : '#f5f5f5'}}>
               {currentPlayer ? `${currentPlayer.name}'s Turn` : 'No players'}
             </div>
             {/* Game instructions button moved to header */}
@@ -1098,74 +1168,70 @@ window.GameBoard = class GameBoard extends React.Component {
           </div>
         </div>
         
-        <div className="game-content">
-          <div className="main-content">
+        <div className="main-content">
+            {/* Game board and space explorer container */}
             <div className="board-and-explorer-container">
-              <div className="board-container">
-                {/* Game board with available moves highlighted */}
-                <BoardDisplay 
-                  spaces={spaces}
-                  players={players}
-                  selectedSpace={selectedSpace}
-                  selectedMove={this.state.selectedMove}  // Pass the selected move to BoardDisplay
-                  availableMoves={availableMoves}
-                  onSpaceClick={this.handleSpaceClick}
+            {/* Game board with available moves highlighted */}
+            <BoardDisplay 
+            spaces={spaces}
+            players={players}
+            selectedSpace={selectedSpace}
+            selectedMove={this.state.selectedMove}
+            availableMoves={availableMoves}
+            onSpaceClick={this.handleSpaceClick}
+            diceRollData={diceRollData}
+            showSpaceExplorer={this.state.showSpaceExplorer} 
+            />
+              
+              {/* Space Explorer - Always visible */}
+              <div className="space-explorer-container">
+                <SpaceExplorer 
+                  space={exploredSpace || this.getSelectedSpace()}
+                  visitType={exploredSpace ? 
+                    (GameState.hasPlayerVisitedSpace(currentPlayer, exploredSpace.name) ? 'subsequent' : 'first')
+                    : 'first'}
                   diceRollData={diceRollData}
+                  onClose={this.handleCloseExplorer}
                 />
               </div>
-              {/* Add Space Explorer panel to the right of the board - show only when flag is true */}
-              {this.state.showSpaceExplorer && this.state.exploredSpace && (
-                <div className="space-explorer-container">
-                  <SpaceExplorer 
-                    space={this.state.exploredSpace}
-                    visitType={this.state.exploredSpace ? 
-                      (GameState.hasPlayerVisitedSpace(currentPlayer, this.state.exploredSpace.name) ? 'subsequent' : 'first')
-                      : 'first'}
-                    diceRollData={diceRollData}
-                    onClose={this.handleCloseExplorer}
-                  />
-                </div>
-              )}
             </div>
             
-              <div className="info-panels-container">
-                {/* Static Player Status display - now in left column */}
-                <div className="player-static-status-container">
-                  <StaticPlayerStatus 
-                    player={this.state.currentPlayerOnLanding}
-                    space={this.state.currentSpaceOnLanding}
+            <div className="info-panels-container">
+              {/* Static Player Status display - left column */}
+              <div className="player-panel">
+                <StaticPlayerStatus 
+                  player={this.state.currentPlayerOnLanding}
+                  space={this.state.currentSpaceOnLanding}
+                  currentPlayerColor={currentPlayer ? currentPlayer.color : '#ccc'}
+                />
+              </div>
+              
+              {/* Current space info - middle column */}
+              <div className="player-panel middle-panel" style={{flex: '1 1 auto', minWidth: '40%'}}>
+                {/* Space information with Roll Dice button added */}
+                {selectedSpaceObj && (
+                  <SpaceInfo 
+                    space={selectedSpaceObj}
+                    visitType={visitType}
+                    diceOutcomes={this.state.diceOutcomes}
+                    diceRoll={this.state.lastDiceRoll}
+                    availableMoves={availableMoves}
+                    onMoveSelect={this.handleSpaceClick}
+                    onDrawCards={this.handleDrawCards}
+                    onRollDice={this.handleRollDiceClick}
+                    hasRolledDice={hasRolledDice}
+                    hasDiceRollSpace={this.hasDiceRollSpace()}
                   />
+                )}
+                {/* Debug info */}
+                <div className="debug-info" style={{ display: 'none' }}>
+                  Dice Roll: {this.state.lastDiceRoll ? this.state.lastDiceRoll : 'None'}<br/>
+                  Has Outcomes: {this.state.diceOutcomes ? 'Yes' : 'No'}
                 </div>
-                
-                {/* Current space info - now in middle column */}
-                <div className="current-space-container">
-                  {/* Space information with Roll Dice button added */}
-                  {selectedSpaceObj && (
-                    <div className="space-info-container">
-                      <SpaceInfo 
-                        space={selectedSpaceObj}
-                        visitType={visitType}
-                        diceOutcomes={this.state.diceOutcomes}
-                        diceRoll={this.state.lastDiceRoll}
-                        availableMoves={availableMoves}
-                        onMoveSelect={this.handleSpaceClick}
-                        onDrawCards={this.handleDrawCards}
-                        onRollDice={this.handleRollDiceClick}
-                        onNegotiate={this.handleNegotiate}
-                        hasRolledDice={hasRolledDice}
-                        hasDiceRollSpace={this.hasDiceRollSpace()}
-                      />
-                    </div>
-                  )}
-                  {/* Debug info */}
-                  <div className="debug-info" style={{ display: 'none' }}>
-                    Dice Roll: {this.state.lastDiceRoll ? this.state.lastDiceRoll : 'None'}<br/>
-                    Has Outcomes: {this.state.diceOutcomes ? 'Yes' : 'No'}
-                  </div>
-                </div>
-                
-                {/* Current player panel - still in right column */}
-                <div className="player-panel">
+              </div>
+              
+              {/* Current player panel - right column */}
+              <div className="player-panel">
                 {/* Player status - show only current player */}
                 <div className="players-list">
                   {players.map((player, index) => (
@@ -1180,11 +1246,37 @@ window.GameBoard = class GameBoard extends React.Component {
                     )
                   ))}
                 </div>
+                
+                {/* Game control buttons placed at the bottom of player panel */}
+                <div className="player-control-buttons">
+                  {/* Negotiate button */}
+                  <button 
+                    onClick={this.handleNegotiate}
+                    className="negotiate-btn"
+                    title="End your turn and stay on this space"
+                    disabled={!currentPlayer}
+                  >
+                    Negotiate
+                  </button>
+                  
+                  {/* End Turn button */}
+                  <button 
+                    onClick={this.handleEndTurn}
+                    disabled={
+                      !currentPlayer || 
+                      !this.state.hasSelectedMove ||
+                      (this.hasDiceRollSpace() && !hasRolledDice)
+                    }
+                    className="end-turn-btn"
+                  >
+                    End Turn
+                  </button>
+                </div>
               </div>
             </div>
           </div>
           
-          {/* Card display component - place at the bottom of the layout */}
+          {/* Card display component */}
           {currentPlayer && (
             <div className="card-display-container">
               <CardDisplay
@@ -1198,9 +1290,8 @@ window.GameBoard = class GameBoard extends React.Component {
               />
             </div>
           )}
-        </div>
         
-        {/* Dice Roll component - show when active */}
+        {/* Dice Roll component */}
         {showDiceRoll && (
           <div className="dice-roll-wrapper">
             <DiceRoll
@@ -1215,26 +1306,6 @@ window.GameBoard = class GameBoard extends React.Component {
             />
           </div>
         )}
-        
-        <div className="game-controls">
-          {/* End Turn button (Roll Dice button moved to space info area) */}
-          <button 
-            onClick={this.handleEndTurn}
-            disabled={
-              !currentPlayer || 
-              // Player must select a move
-              !this.state.hasSelectedMove ||
-              // If dice roll is visible or was required (space icon shows), they must have rolled
-              (this.hasDiceRollSpace() && !hasRolledDice)
-            }
-            className="end-turn-btn"
-          >
-            End Turn
-          </button>
-          
-          {/* Toggle Cards button moved to PlayerInfo component */}
-          {/* Game instructions button moved to header */}
-        </div>
         
         {/* Card draw animation */}
         {cardDrawAnimation && newCardData && (
@@ -1352,7 +1423,7 @@ window.GameBoard = class GameBoard extends React.Component {
   }
 }
 
-console.log('GameBoard.js code execution finished');
-
 // Export SpaceExplorer component for use in other files
 window.SpaceExplorer = SpaceExplorer;
+
+console.log('GameBoard.js code execution finished');

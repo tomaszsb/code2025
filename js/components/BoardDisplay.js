@@ -168,7 +168,20 @@ window.BoardDisplay = class BoardDisplay extends React.Component {
     // Check if BoardSpaceRenderer exists before using it
     if (window.BoardSpaceRenderer && typeof window.BoardSpaceRenderer.renderBoard === 'function') {
       console.log('BoardDisplay: Using BoardSpaceRenderer to render the board');
-      return window.BoardSpaceRenderer.renderBoard(this.props);
+      // Debug the props we're passing to the board renderer
+      if (this.props.selectedMove) {
+        console.log('BoardDisplay: Rendering with selectedMove=', this.props.selectedMove);
+      }
+      
+      // Ensure we pass a complete props object to the renderer
+      const completeProps = {
+        ...this.props,
+        selectedSpace: this.props.selectedSpace || null,
+        selectedMove: this.props.selectedMove || null,
+        availableMoves: this.props.availableMoves || []
+      };
+      
+      return window.BoardSpaceRenderer.renderBoard(completeProps);
     } else {
       console.error('BoardDisplay: BoardSpaceRenderer is not available yet, showing placeholder');
       // Return a placeholder while waiting for BoardSpaceRenderer to be defined

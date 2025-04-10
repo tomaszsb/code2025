@@ -576,6 +576,14 @@ window.GameBoard = class GameBoard extends React.Component {
         selectedMove: spaceId,   // Store the destination space
         hasSelectedMove: true,   // Mark that player has selected their move
         exploredSpace: exploredSpaceData // Set the explored space for the space explorer panel
+      }, () => {
+        // After state update, log the selected move for debugging
+        console.log('Selected move updated:', this.state.selectedMove);
+        console.log('Current state:', {
+          selectedSpace: this.state.selectedSpace,
+          selectedMove: this.state.selectedMove,
+          hasSelectedMove: this.state.hasSelectedMove
+        });
       });
       
       console.log('Move selected:', spaceId, '- Will be executed on End Turn');

@@ -524,6 +524,14 @@ window.BoardSpaceRenderer = {
     // Check if this is the selected destination for the current turn
     const isSelectedMove = selectedMove === space.id;
     
+    // Log when a space is marked as available or selected for debugging
+    if (isAvailableMove) {
+      console.log(`BoardSpaceRenderer: Space ${space.id} (${space.name}) is marked as an available move`);
+    }
+    if (isSelectedMove) {
+      console.log(`BoardSpaceRenderer: Space ${space.id} (${space.name}) is marked as the SELECTED move destination`);
+    }
+    
     // Check if this space has dice roll options
     const hasDiceRoll = this.hasDiceRollOptions(space, diceRollData);
     
@@ -532,18 +540,32 @@ window.BoardSpaceRenderer = {
     if (space.type) classes.push(`space-type-${space.type.toLowerCase()}`);
     if (selectedSpace === space.id) classes.push('selected');
     if (isAvailableMove) classes.push('available-move');
-    if (isSelectedMove) classes.push('selected-move enlarged'); // Add enlarged class for selected moves
+    if (isSelectedMove) {
+      classes.push('selected-move');
+      classes.push('enlarged');
+      classes.push('destination-marked'); // Add additional class for better visibility
+    }
     if (hasDiceRoll) classes.push('has-dice-roll');
     
     // Format the visit type text
     const visitTypeText = space.visitType ? 
       (space.visitType.toLowerCase() === 'first' ? 'First Visit' : 'Subsequent Visit') : '';
     
+    // Prepare inline style for selected move to ensure it's always visible
+    const spaceStyle = {};
+    if (isSelectedMove) {
+      // Add a red highlight border for the selected move
+      spaceStyle.borderColor = '#e74c3c';
+      spaceStyle.borderWidth = '3px';
+      spaceStyle.boxShadow = '0 0 8px rgba(231, 76, 60, 0.7)';
+    }
+    
     return (
       <div 
         key={space.id} 
         className={classes.join(' ')}
         onClick={() => onSpaceClick && onSpaceClick(space.id)}
+        style={spaceStyle}
       >
         <div className="space-content">
           <div className="space-name">{space.name}</div>
@@ -558,8 +580,27 @@ window.BoardSpaceRenderer = {
           
           {/* Space Explorer is now always visible - no longer need to show a message */}
           
-          {/* Removed move indicator with details - Space Explorer now provides this functionality */}
-          {/* Green move details bubble has been removed as requested */}
+          {/* Selected move indicator - shows a visible tag */}
+          {isSelectedMove && (
+          <div className="destination-tag" style={{
+            position: 'absolute',
+            top: '-10px',
+            right: '-10px',
+            backgroundColor: '#e74c3c',
+            color: 'white',
+            padding: '3px 6px',
+            borderRadius: '10px',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            zIndex: 5,
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+          }}>
+            Destination
+          </div>
+        )}
+          
+        {/* Removed move indicator with details - Space Explorer now provides this functionality */}
+        {/* Green move details bubble has been removed as requested */}
         </div>
         
         {/* Player tokens */}

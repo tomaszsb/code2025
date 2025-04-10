@@ -53,6 +53,7 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     // Log initial state of used buttons
     console.log('SpaceInfo: Mounted with usedButtons:', this.state.usedButtons);
   }
+  
   // Determine background color based on space type/phase
   getPhaseColor(type) {
     if (!type) return '#f8f9fa';
@@ -90,6 +91,7 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     // Return the color for the phase or default if not found
     return borderColors[type.toUpperCase()] || '#ddd';
   }
+  
   // Render available moves
   renderAvailableMoves() {
     const { availableMoves, onMoveSelect } = this.props;
@@ -116,6 +118,69 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     );
   }
   
+  // Evaluate conditional card draw text
+  shouldShowCardForCondition(cardText) {
+    console.log('SpaceInfo: Evaluating card condition:', cardText);
+    
+    // Special case for owner-fund-initiation space
+    if (this.props.space && this.props.space.name === "OWNER-FUND-INITIATION") {
+      console.log('SpaceInfo: Special handling for OWNER-FUND-INITIATION space');
+      
+      // Check which condition we're evaluating
+      const isCheckingBankCard = cardText.includes('scope') && cardText.includes('≤ $ 4 M');
+      const isCheckingInvestorCard = cardText.includes('scope') && cardText.includes('> $ 4 M');
+      
+      if (!isCheckingBankCard && !isCheckingInvestorCard) {
+        return true; // Not one of our special conditions
+      }
+      
+      // Get current player and calculate scope
+      const currentPlayer = window.GameState?.getCurrentPlayer?.();
+      if (!currentPlayer || !currentPlayer.cards) {
+        console.log('SpaceInfo: Cannot determine player scope, defaulting to showing card');
+        return true; // Default to showing the card if we can't determine scope
+      }
+      
+      // Calculate scope (similar to PlayerInfo.extractScope)
+      let totalScope = 0;
+      const wCards = currentPlayer.cards.filter(card => card.type === 'W');
+      wCards.forEach(card => {
+        const cost = parseFloat(card['Estimated Job Costs']);
+        if (!isNaN(cost)) {
+          totalScope += cost;
+        }
+      });
+      
+      console.log(`SpaceInfo: Player scope calculated as ${totalScope.toLocaleString()}`);
+      
+      // $4M threshold in numeric format
+      const threshold = 4000000;
+      
+      // Compare with threshold
+      const isUnder4M = totalScope <= threshold;
+      
+      // Return based on specific condition
+      if (isCheckingBankCard) {
+        console.log(`SpaceInfo: Bank Card condition (scope ≤ $4M): ${isUnder4M}`);
+        return isUnder4M; // Show Bank Card if scope ≤ $4M
+      }
+      
+      if (isCheckingInvestorCard) {
+        console.log(`SpaceInfo: Investor Card condition (scope > $4M): ${!isUnder4M}`);
+        return !isUnder4M; // Show Investor Card if scope > $4M
+      }
+    }
+    
+    // Default behavior for other spaces and conditions
+    if (!cardText || !cardText.includes('if ')) {
+      return true;
+    }
+    
+    // General case for all other conditions
+    console.log('SpaceInfo: Using general condition handling');
+    return true;
+  }
+
   // Render a button to draw cards
   renderDrawCardsButton(cardType, amount) {
     // Check if button has been used
@@ -157,6 +222,12 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     const cardCode = validCardTypes[cardType];
     if (!cardCode) {
       console.log('SpaceInfo: No valid card type found for:', cardType);
+      return null;
+    }
+    
+    // Check if this card should be shown based on conditions
+    if (!this.shouldShowCardForCondition(amount)) {
+      console.log('SpaceInfo: Not showing card button due to condition not met:', amount);
       return null;
     }
     
@@ -515,6 +586,12 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
           {normalPriorityFields.filter(field => field.isCard).map(field => {
             // Only show fields that have content
             if (space[field.key] && space[field.key].trim() !== '') {
+              // Check if this card should be shown based on conditions
+              if (!this.shouldShowCardForCondition(space[field.key])) {
+                console.log('SpaceInfo: Not showing card section due to condition not met:', field.label, space[field.key]);
+                return null;
+              }
+              
               return (
                 <div key={field.key} className="space-section card-section">
                   <div className="space-section-label">{field.label}:</div>
@@ -551,7 +628,7 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
   }
 }
 
-console.log('SpaceInfo.js code execution is finished')
+console.log('SpaceInfo.js code execution is finished - modified to handle conditional card drawing');
 
 // Add log statements to debugging methods
 function logSpaceNegotiateUsage(spaceName) {

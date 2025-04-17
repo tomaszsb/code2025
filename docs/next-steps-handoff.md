@@ -20,7 +20,7 @@ Now that both the card system and dice roll system are fully implemented, focus 
 
 - ~~**Complete the Card UI**~~ ✓ COMPLETED!
 - ~~**Enhance Dice Roll Integration**~~ ✓ COMPLETED! Dice roll system has been significantly improved with 3D visuals and better space integration
-- **Implement Negotiation Mechanics**: Add the ability to retry dice rolls as indicated in the CSV data
+- ~~**Implement Negotiation Mechanics**~~ ✓ COMPLETED! Dedicated NegotiationManager now enforces space-specific negotiation rules based on CSV data
 
 ### 2. Optimize Performance
 
@@ -56,11 +56,10 @@ For each enhancement:
 
 ### Immediate Tasks (1-2 Weeks)
 
-1. **Negotiation Mechanics Implementation**
-   - Implement the ability to retry dice rolls
-   - Add cost calculations for negotiations
-   - Create UI for negotiation decisions
-   - Update space information to show negotiation options
+1. ~~**Negotiation Mechanics Implementation**~~
+   - ✓ COMPLETED! Implemented a dedicated NegotiationManager that handles all negotiation logic
+   - ✓ COMPLETED! Negotiate button is properly disabled for spaces where negotiation isn't allowed
+   - ✓ COMPLETED! Added proper tooltips for the negotiate button to explain when it can be used
 
 2. **Visual Feedback Enhancements**
    - Add animations for player movement between spaces

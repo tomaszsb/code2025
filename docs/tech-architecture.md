@@ -13,6 +13,7 @@ App
     ├── PlayerInfo
     ├── SpaceInfo
     ├── BoardDisplay
+    │   └── SpaceExplorer (when a space is clicked)
     ├── DiceRoll
     └── CardDisplay
         ├── CardDetailView
@@ -61,7 +62,17 @@ App
   - Handles space click events
   - Dynamically adjusts layout based on space count
 
-### 6. DiceRoll Component
+### 6. SpaceExplorer Component (Refactored)
+- **Purpose**: Displays detailed information about a selected space
+- **Responsibilities**:
+  - Shows comprehensive space properties (description, actions, outcomes)
+  - Displays card requirements and resource effects
+  - Renders dice roll outcomes table
+  - Provides visual cues for space types
+  - Implements robust error handling with error boundaries
+  - Uses structured logging with severity levels
+
+### 7. DiceRoll Component
 - **Purpose**: Handles dice rolling mechanics
 - **Responsibilities**:
   - Renders 3D dice with animations
@@ -71,10 +82,10 @@ App
   - Maintains roll history
   - Shows outcomes directly on space info card
 
-### 7. Card Components (Refactored)
+### 8. Card Components (Refactored)
 The card system has been refactored into six focused components:
 
-#### 7.1 CardDisplay Component
+#### 8.1 CardDisplay Component
 - **Purpose**: Main card management component
 - **Responsibilities**:
   - Coordinates other card-related components
@@ -83,7 +94,7 @@ The card system has been refactored into six focused components:
   - Handles card selection
   - Orchestrates card animations and dialogs
 
-#### 7.2 CardDetailView Component
+#### 8.2 CardDetailView Component
 - **Purpose**: Displays detailed card information
 - **Responsibilities**:
   - Shows full card details in a popup
@@ -91,14 +102,14 @@ The card system has been refactored into six focused components:
   - Provides play and discard buttons
   - Handles closing the detail view
 
-#### 7.3 CardAnimations Component
+#### 8.3 CardAnimations Component
 - **Purpose**: Manages card animations
 - **Responsibilities**:
   - Provides visual effects for card drawing
   - Renders animated card display
   - Shows card type and information during animation
 
-#### 7.4 WorkCardDialogs Component
+#### 8.4 WorkCardDialogs Component
 - **Purpose**: Handles W card specific dialogs
 - **Responsibilities**:
   - Shows discard requirement dialogs
@@ -106,7 +117,7 @@ The card system has been refactored into six focused components:
   - Tracks discard and replacement progress
   - Provides UI for selecting cards for replacement
 
-#### 7.5 CardTypeUtils (Utility)
+#### 8.5 CardTypeUtils (Utility)
 - **Purpose**: Provides utility functions for card handling
 - **Responsibilities**:
   - Determines card colors based on type
@@ -115,7 +126,7 @@ The card system has been refactored into six focused components:
   - Builds detail fields list based on card type
   - Gets player color for styling
 
-#### 7.6 CardActions (Utility)
+#### 8.6 CardActions (Utility)
 - **Purpose**: Provides action handlers for cards
 - **Responsibilities**:
   - Processes playing a card
@@ -158,6 +169,14 @@ The card system has been refactored into six focused components:
   - Handles header mapping
   - Processes different file types (spaces, cards, dice roll data)
 
+### 5. SpaceExplorerLogger
+- **Purpose**: Provides logging and UI fixes for SpaceExplorer component
+- **Responsibilities**:
+  - Implements CSS fixes for vertical alignment issues
+  - Adjusts heights and margins for proper display
+  - Logs explorer state changes
+  - Applies fixes on a scheduled basis
+
 ## Data Flow
 
 1. **Initialization**:
@@ -173,7 +192,15 @@ The card system has been refactored into six focused components:
    - GameBoard updates available moves through MoveLogic
    - When a player ends their turn, GameState advances to the next player
 
-3. **Dice Rolling**:
+3. **Space Exploration**:
+   - When a space is clicked on the board, SpaceExplorer component is shown
+   - SpaceExplorer processes the space data and displays detailed information
+   - If the space requires dice rolling, a dice indicator is shown
+   - Card requirements and resource effects are displayed
+   - If dice roll data exists for the space, a table of potential outcomes is rendered
+   - SpaceExplorerLogger applies UI fixes and logs state changes
+
+4. **Dice Rolling**:
    - When required, DiceRoll component is displayed
    - Player clicks to roll the dice
    - 3D dice animation shows the rolling process
@@ -184,7 +211,7 @@ The card system has been refactored into six focused components:
    - SpaceInfo displays the categorized outcomes
    - Player selects a move or ends their turn
 
-4. **Card Management (Refactored Flow)**:
+5. **Card Management (Refactored Flow)**:
    - Cards are drawn based on space requirements or dice roll outcomes
    - GameBoard passes drawn cards to CardDisplay component
    - CardDisplay coordinates with CardActions to add cards to player's hand
@@ -196,7 +223,7 @@ The card system has been refactored into six focused components:
    - All card operations update the player's cards in GameState
    - Card effects are applied to gameplay
 
-5. **Visit Types**:
+6. **Visit Types**:
    - When a player moves to a space, GameState determines if it's a first or subsequent visit
    - Different outcomes and available moves may result based on visit type
    - SpaceInfo displays information relevant to the visit type
@@ -214,7 +241,17 @@ The game distinguishes between first and subsequent visits to spaces:
   - Space description and actions
   - Card drawing
 
-### 2. Dice Rolling System
+### 2. Space Exploration System (Enhanced)
+The refactored space exploration system:
+- Provides detailed space information in a modular structure
+- Shows descriptions, actions, outcomes, card requirements, and resource effects
+- Displays dice roll outcome tables with categorized results
+- Features robust error handling with error boundary implementation
+- Uses structured logging with different severity levels (debug, info, warn, error)
+- Handles null/undefined values gracefully
+- Uses a data-driven approach for rendering card types and resources
+
+### 3. Dice Rolling System
 The enhanced dice rolling mechanic:
 - Uses a 3D animated 6-sided die with realistic appearance
 - Provides smooth rolling animations with proper CSS transforms
@@ -229,7 +266,7 @@ The enhanced dice rolling mechanic:
   - Quality outcomes
   - Multiplier outcomes
 
-### 3. Card System (Refactored)
+### 4. Card System (Refactored)
 The card system is now modularized for better separation of concerns:
 - Six focused components with clear responsibilities:
   - **CardDisplay**: Main component that coordinates others
@@ -255,7 +292,7 @@ The card system is now modularized for better separation of concerns:
 - Animated card drawing provides visual feedback
 - Card effects are integrated with gameplay
 
-### 4. Space Navigation
+### 5. Space Navigation
 Movement between spaces follows these rules:
 - Each space defines its potential next spaces
 - Available moves are filtered based on game state and visit type
@@ -350,6 +387,7 @@ Movement between spaces follows these rules:
 - Visit type logic spans multiple files
 - Dice roll outcome processing is complex
 - ~~Large CardDisplay component has many responsibilities~~ ✓ ADDRESSED with refactoring!
+- ~~Complex SpaceExplorer render method with mixed concerns~~ ✓ ADDRESSED with refactoring!
 
 ### 3. Feature Gaps
 - ~~Card UI is not yet implemented~~ ✓ COMPLETED!
@@ -370,15 +408,21 @@ Movement between spaces follows these rules:
 9. When modifying card components, be mindful of the loading order in Index.html:
    - CardTypeUtils.js and CardActions.js must load before other card components
    - Each card component now has a focused responsibility - modify the appropriate file
+10. When working with SpaceExplorer.js, follow the modular approach:
+    - Each rendering concern is in its own method
+    - Use the structured logging methods (logDebug, logInfo, logWarn, logError)
+    - Handle errors appropriately with try/catch blocks
+    - Validate data with the hasValidValue helper method
 
 ## Planned Enhancements
 
 1. ~~Complete the card UI implementation~~ ✓ COMPLETED!
 2. ~~Refine the dice roll outcome processing~~ ✓ COMPLETED!
 3. ~~Refactor the large CardDisplay.js component~~ ✓ COMPLETED!
-4. ~~Verify and fix the negotiation mechanic implementation~~ ✓ CONFIRMED!
-5. Add animations and improved visual feedback for player movement
-6. Enhance the educational content
-7. Optimize performance for larger game boards
+4. ~~Refactor the SpaceExplorer.js component~~ ✓ COMPLETED!
+5. ~~Verify and fix the negotiation mechanic implementation~~ ✓ CONFIRMED!
+6. Add animations and improved visual feedback for player movement
+7. Enhance the educational content
+8. Optimize performance for larger game boards
 
 This document reflects the current state of the codebase and will be updated as development progresses.

@@ -1,4 +1,3 @@
-// Remove the incorrectly placed row component that was added outside the render method
 // BoardSpaceRenderer.js - Handles rendering of board spaces
 console.log('BoardSpaceRenderer.js file is beginning to be used');
 console.log('BoardSpaceRenderer: Fixed board layout - standardized space sizes to 120px width × 60px height with column 3 at exactly 50px width, eliminated row spacing completely (0px), aligned all spaces for better visual layout, and made empty spaces visible for debugging');
@@ -133,6 +132,12 @@ console.log('BoardSpaceRenderer: Fixed board layout - standardized space sizes t
     transform: none;
     box-shadow: none;
     border: none;
+  }
+  
+  /* Basic player token animation */
+  .player-token {
+    transition: transform 0.4s ease, opacity 0.4s ease;
+    opacity: 1;
   }
   
   /* Style for the explorer hint inside the clicked space */
@@ -606,14 +611,22 @@ window.BoardSpaceRenderer = {
         {/* Player tokens */}
         {playersOnSpace.length > 0 && (
           <div className="player-tokens">
-            {playersOnSpace.map(player => (
-              <div 
-                key={player.id}
-                className="player-token"
-                style={{ backgroundColor: player.color }}
-                title={player.name}
-              />
-            ))}
+            {playersOnSpace.map(player => {
+              // Track if this is the current player
+              const isCurrentPlayer = window.GameState.currentPlayerIndex === window.GameState.players.indexOf(player);
+              
+              return (
+                <div 
+                  key={player.id}
+                  className={`player-token ${isCurrentPlayer ? 'current-player' : ''}`}
+                  style={{ 
+                    backgroundColor: player.color,
+                    transform: isCurrentPlayer ? 'scale(1.2)' : 'scale(1)'
+                  }}
+                  title={player.name}
+                />
+              );
+            })}
           </div>
         )}
       </div>

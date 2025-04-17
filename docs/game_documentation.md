@@ -1,3 +1,36 @@
+### Player Token Animations
+
+The game now includes animations for player tokens as they move between spaces:
+
+1. **Token Animation System**:
+   - CSS transitions provide smooth movement and visibility effects
+   - Current player's token is visually highlighted for better identification
+   - Organized in a dedicated CSS file for maintainability
+
+2. **Implementation Details**:
+   - Player tokens use transform and opacity transitions
+   - Current player token is scaled up slightly with a subtle glow effect
+   - Hover effects added for better interactivity
+   - Maintained separation of styling concerns with external CSS
+
+3. **Related Files**:
+   - `BoardSpaceRenderer.js` - Contains player token rendering logic
+   - `player-animations.css` - Contains all animation and highlighting styles
+   - No inline CSS used, following project standards
+
+```css
+/* Example of player token animation styles */
+.player-token {
+  transition: transform 0.5s ease-out, opacity 0.3s ease;
+  position: relative;
+}
+
+.player-token.current-player {
+  transform: scale(1.2);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8), 0 0 10px rgba(255, 255, 0, 0.6);
+}
+```
+
 # Project Management Game Documentation
 
 ## Overview

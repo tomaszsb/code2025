@@ -65,8 +65,8 @@ For each enhancement:
    - ✓ COMPLETED! Added clarifying comments for future developers
 
 2. **Visual Feedback Enhancements**
-   - Add animations for player movement between spaces
-   - Improve highlighting of the active player
+   - ✓ PARTIALLY COMPLETED! Added basic animations for player movement between spaces
+   - ✓ PARTIALLY COMPLETED! Improved highlighting of the active player
    - Enhance available moves indication
    - Add transitions between game states
 

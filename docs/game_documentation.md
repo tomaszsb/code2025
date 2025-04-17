@@ -142,8 +142,8 @@ A complete card management system has been implemented with the following featur
    - W Cards (Work Type): Represent different types of work in the project
    - B Cards (Bank): Related to financial aspects of the project
    - I Cards (Investor): Represent investor-related events
-   - L Cards (Leadership): Focus on team and leadership challenges
-   - E Cards (Environment): Address external factors affecting the project
+   - L Cards (Life): Focus on team and life challenges
+   - E Cards (Expeditor): Address external factors affecting the project
 
 3. **Card Integration**:
    - Cards are drawn based on space requirements and dice roll outcomes
@@ -192,7 +192,7 @@ A complete card management system has been implemented with the following featur
    - Allows viewing detailed card information
    - Supports playing and discarding cards
    - Provides visual feedback when drawing new cards
-   - Includes special handling for Work (W) card discard requirements
+   - Includes special handling for Work Type (W) card discard requirements
 
 ### Space Information
 
@@ -451,7 +451,7 @@ When working with the refactored card system:
 2. The main CardDisplay component coordinates the other components
 3. Card utilities like colors and field mappings are in CardTypeUtils.js
 4. Card action handlers (play, discard, draw) are in CardActions.js
-5. Special dialogs for Work cards are in WorkCardDialogs.js
+5. Special dialogs for Work Type cards are in WorkCardDialogs.js
 
 ## Troubleshooting
 

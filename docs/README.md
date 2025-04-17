@@ -96,8 +96,8 @@ Five types of cards affect gameplay:
 - W (Work Type) - Different types of project work
 - B (Bank) - Financial aspects of the project
 - I (Investor) - Investor-related events
-- L (Leadership) - Team and leadership challenges
-- E (Environment) - External factors affecting the project
+- L (Life) - Team and life challenges
+- E (Expeditor) - External factors affecting the project
 
 The card system has been refactored into six focused components:
 - **CardDisplay.js** - Core component that orchestrates the others
@@ -143,7 +143,7 @@ The codebase has undergone significant improvements:
    - Detailed card view with relevant fields based on card type
    - Card playing and discarding functionality
    - Animated card drawing with visual feedback
-   - Special handling for Work (W) card requirements
+   - Special handling for Work Type (W) card requirements
 
 3. **Component Refactoring**
    - Monolithic CardDisplay component (700+ lines) split into six focused components

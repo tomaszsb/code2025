@@ -21,3 +21,189 @@
   transform: scale(1.3);
   z-index: 3;
 }
+
+/* StaticPlayerStatus component styles */
+.static-player-status {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  padding: 15px;
+  /* The border will be set dynamically via JavaScript */
+}
+
+.static-player-status.empty {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+.static-player-status.error {
+  background-color: #fff4f4;
+  border: 2px solid #ff5555;
+  color: #d32f2f;
+  padding: 20px;
+  text-align: center;
+}
+
+.static-player-status-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.static-player-status-color-indicator {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  margin-right: 10px;
+  /* The background-color and box-shadow will be set dynamically via JavaScript */
+}
+
+.static-player-status-name-container {
+  flex: 1;
+}
+
+.static-player-status-name {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 4px;
+  color: white;
+  font-weight: bold;
+  margin-bottom: 5px;
+  /* The background-color will be set dynamically via JavaScript */
+}
+
+.static-player-status-space {
+  font-size: 0.9em;
+  color: #666;
+}
+
+.static-player-status-section-title {
+  font-weight: bold;
+  margin: 15px 0 5px 0;
+  padding-bottom: 3px;
+  border-bottom: 1px solid #eee;
+}
+
+.status-resources {
+  padding: 5px 0;
+}
+
+.static-player-status-resource-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+
+.status-financial {
+  margin-top: 10px;
+  background-color: #f5f5f5;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.status-financial h4 {
+  margin: 0 0 5px 0;
+  font-size: 0.9em;
+}
+
+.status-financial-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+
+.surplus-value {
+  color: #34a853;
+  font-weight: bold;
+}
+
+.deficit-value {
+  color: #ea4335;
+  font-weight: bold;
+}
+
+/* Card count styles */
+.card-counts-container {
+  margin-top: 5px;
+  padding: 5px 0;
+}
+
+.card-counts-total {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  padding: 3px 0;
+  margin-bottom: 5px;
+  border-bottom: 1px dotted #eee;
+}
+
+.card-counts-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.card-type-count {
+  display: flex;
+  align-items: center;
+  margin: 2px 0;
+}
+
+.card-type-indicator {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  color: white;
+  text-align: center;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 18px;
+  border-radius: 3px;
+  margin-right: 8px;
+}
+
+.card-type-name {
+  flex: 1;
+  font-size: 0.9em;
+}
+
+.card-type-value {
+  font-weight: bold;
+  width: 30px;
+  text-align: right;
+}
+
+.static-player-status-scope-container {
+  margin-top: 5px;
+}
+
+.static-player-status-scope-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.static-player-status-scope-table th {
+  text-align: left;
+  padding: 5px;
+  border-bottom: 1px solid #ddd;
+  background-color: #f5f5f5;
+}
+
+.static-player-status-scope-table td {
+  padding: 5px;
+  border-bottom: 1px solid #eee;
+}
+
+.static-player-status-scope-table .total-row {
+  font-weight: bold;
+  background-color: #f9f9f9;
+}
+
+.static-player-status-no-scope {
+  color: #888;
+  font-style: italic;
+}

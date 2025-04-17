@@ -13,6 +13,7 @@ window.GameBoard = class GameBoard extends React.Component {
     // Initialize Managers
     this.cardManager = new window.CardManager(this);
     this.diceManager = new window.DiceManager(this);
+    this.negotiationManager = new window.NegotiationManager(this);
     
     this.state = {
       players: GameState.players || [],
@@ -282,83 +283,7 @@ window.GameBoard = class GameBoard extends React.Component {
     console.log('Middle column updated to show new player position:', newPlayerPosition);
   }
 
-  // Handle negotiation button click
-  handleNegotiate = () => {
-    console.log('GameBoard: Negotiate button clicked');
-    
-    // Get the current player
-    const currentPlayer = this.getCurrentPlayer();
-    if (!currentPlayer) {
-      console.log('GameBoard: No current player found');
-      return;
-    }
-    
-    // Get the current space
-    const currentSpace = this.state.spaces.find(s => s.id === currentPlayer.position);
-    if (!currentSpace) {
-      console.log('GameBoard: Current space not found');
-      return;
-    }
-    
-    // Only record the time spent on the space
-    if (currentSpace.Time && currentSpace.Time.trim() !== '') {
-      const timeToAdd = parseInt(currentSpace.Time, 10) || 0;
-      if (timeToAdd > 0) {
-        console.log(`GameBoard: Adding ${timeToAdd} days to player time from negotiate`);
-        
-        // Update GameState directly - Only update in one place, not both
-        const playerIndex = GameState.players.findIndex(p => p.id === currentPlayer.id);
-        if (playerIndex >= 0) {
-          GameState.players[playerIndex].resources.time += timeToAdd;
-        }
-        GameState.saveState();
-      }
-    }
-    
-    // Move to next player's turn (keep player on same space)
-    GameState.nextPlayerTurn();
-    
-    // Get the new current player
-    const newCurrentPlayer = GameState.getCurrentPlayer();
-    const newPlayerPosition = newCurrentPlayer ? newCurrentPlayer.position : null;
-    
-    // Get the space the player landed on
-    const newSpace = this.state.spaces.find(s => s.id === newPlayerPosition);
-    
-    // Create a deep copy of the player's status for the static view
-    const playerSnapshot = newCurrentPlayer ? {
-      ...newCurrentPlayer,
-      resources: { ...newCurrentPlayer.resources },
-      cards: [...(newCurrentPlayer.cards || [])],
-      // Force the color to be the current player's color for consistent UI
-      color: newCurrentPlayer.color
-    } : null;
-    
-    // Create a deep copy of the space info for the static view
-    const spaceSnapshot = newSpace ? { ...newSpace } : null;
-    
-    // Update state
-    this.setState({
-      players: [...GameState.players],
-      currentPlayerIndex: GameState.currentPlayerIndex,
-      selectedSpace: newPlayerPosition, // Set to new player's position
-      selectedMove: null,               // Clear the selected move
-      hasSelectedMove: false,           // Reset flag for the next player's turn
-      showDiceRoll: false,              // Hide dice roll component
-      diceRollSpace: null,              // Clear dice roll space info
-      hasRolledDice: false,             // Reset dice roll status
-      diceOutcomes: null,               // Reset dice outcomes
-      lastDiceRoll: null,               // Reset last dice roll
-      currentPlayerOnLanding: playerSnapshot, // Store snapshot of player status
-      currentSpaceOnLanding: spaceSnapshot,    // Store snapshot of space
-      exploredSpace: newSpace          // Update space explorer to show the current player's space
-    });
-    
-    // Update available moves for new player
-    this.updateAvailableMoves();
-    
-    console.log('Turn ended via negotiate, next player:', GameState.currentPlayerIndex, 'on space:', newPlayerPosition);
-  }
+  // Negotiate functionality moved to NegotiationManager
   
   // Toggle card display visibility
   toggleCardDisplay = () => {

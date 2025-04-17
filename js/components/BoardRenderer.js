@@ -56,6 +56,12 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
             >
               Game Instructions
             </button>
+            <button
+              onClick={gameBoard.negotiationManager.resetGame}
+              className="reset-game-btn"
+            >
+              Reset Game
+            </button>
           </div>
         </div>
         
@@ -144,10 +150,10 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
               <div className="player-control-buttons">
                 {/* Negotiate button */}
                 <button 
-                  onClick={gameBoard.handleNegotiate}
+                  onClick={gameBoard.negotiationManager.handleNegotiate}
                   className="negotiate-btn"
-                  title="End your turn and stay on this space"
-                  disabled={!currentPlayer}
+                  title={gameBoard.negotiationManager.getNegotiateButtonTooltip()}
+                  disabled={!currentPlayer || !gameBoard.negotiationManager.isNegotiationAllowed()}
                 >
                   Negotiate
                 </button>

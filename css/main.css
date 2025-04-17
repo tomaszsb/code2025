@@ -211,6 +211,15 @@ button:disabled {
   background-color: #2d9249;
 }
 
+.reset-game-btn {
+  background-color: #f44336;
+  margin: 0;
+}
+
+.reset-game-btn:hover {
+  background-color: #d32f2f;
+}
+
 .roll-dice-btn {
   background-color: #fbbc05;
   color: #333;

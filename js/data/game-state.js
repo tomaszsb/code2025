@@ -409,6 +409,12 @@ window.GameState = {
     localStorage.removeItem('game_players');
     localStorage.removeItem('game_currentPlayer');
     localStorage.removeItem('game_status');
+    
+    // Reset memory state too
+    this.players = [];
+    this.currentPlayerIndex = 0;
+    this.gameStarted = false;
+    this.gameEnded = false;
   },
   
   // Load card data from CSV

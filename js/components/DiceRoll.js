@@ -1,5 +1,5 @@
 // DiceRoll.js - Component for dice rolling mechanic
-console.log('DiceRoll.js file is being processed');
+console.log('DiceRoll.js file is beginning to be used');
 
 window.DiceRoll = class DiceRoll extends React.Component {
   constructor(props) {
@@ -532,4 +532,4 @@ window.DiceRoll = class DiceRoll extends React.Component {
   }
 }
 
-console.log('DiceRoll.js execution finished');
+console.log('DiceRoll.js code execution finished');

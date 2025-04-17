@@ -114,6 +114,57 @@ window.PlayerInfo = class PlayerInfo extends React.Component {
     // Extract scope from player's W cards
     const playerScope = this.extractScope(player);
     
+    // Format money with commas
+    const formattedMoney = player.resources.money.toLocaleString();
+    
+    // Extract the player's current money and total scope cost
+    const playerMoney = player.resources.money || 0;
+    const totalScopeCost = playerScope.totalCost || 0;
+    
+    // Calculate the actual financial status by comparing money with scope cost
+    let actualSurplus = 0;
+    let actualDeficit = 0;
+    
+    if (playerMoney >= totalScopeCost) {
+      actualSurplus = playerMoney - totalScopeCost;
+    } else {
+      actualDeficit = totalScopeCost - playerMoney;
+    }
+    
+    const formattedSurplus = actualSurplus.toLocaleString();
+    const formattedDeficit = actualDeficit.toLocaleString();
+    
+    // Also log the calculation for debugging
+    console.log('PlayerInfo: Financial Status Calculation - Money:', playerMoney, 'Scope Cost:', totalScopeCost);
+    console.log('PlayerInfo: Calculated - Surplus:', actualSurplus, 'Deficit:', actualDeficit);
+    
+    // Define style for financial status section
+    const financialSectionStyle = {
+      marginTop: '10px',
+      backgroundColor: '#f5f5f5',
+      padding: '8px',
+      borderRadius: '4px'
+    };
+    
+    // Define styles for financial items
+    const financialItemStyle = {
+      display: 'flex',
+      justifyContent: 'space-between',
+      padding: '3px 0'
+    };
+    
+    // Define style for surplus (green)
+    const surplusStyle = {
+      color: '#34a853',
+      fontWeight: actualSurplus > 0 ? 'bold' : 'normal'
+    };
+    
+    // Define style for deficit (red)
+    const deficitStyle = {
+      color: '#ea4335',
+      fontWeight: actualDeficit > 0 ? 'bold' : 'normal'
+    };
+    
     // Define styles for the player card when it's their turn or not
     const cardStyle = {
       padding: '12px',
@@ -265,11 +316,27 @@ window.PlayerInfo = class PlayerInfo extends React.Component {
           <div className="player-resources" style={resourcesStyle}>
             <div className="resource" style={resourceItemStyle}>
               <span className="resource-label">Money:</span>
-              <span className="resource-value">${player.resources.money}</span>
+              <span className="resource-value">${formattedMoney}</span>
             </div>
             <div className="resource" style={resourceItemStyle}>
               <span className="resource-label">Time:</span>
               <span className="resource-value">{player.resources.time} days</span>
+            </div>
+            
+            {/* Financial Status Section - Surplus or Deficit */}
+            <div style={financialSectionStyle}>
+              <h5 style={{ margin: '0 0 5px 0', fontSize: '0.9em' }}>Financial Status:</h5>
+              {actualSurplus > 0 ? (
+                <div style={financialItemStyle}>
+                  <span>Surplus:</span>
+                  <span style={surplusStyle}>+${formattedSurplus}</span>
+                </div>
+              ) : (
+                <div style={financialItemStyle}>
+                  <span>Deficit:</span>
+                  <span style={deficitStyle}>-${formattedDeficit}</span>
+                </div>
+              )}
             </div>
           </div>
           

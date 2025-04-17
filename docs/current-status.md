@@ -59,9 +59,12 @@ After reviewing the codebase, I've identified several key aspects of the current
    - ✓ COMPLETED! Documentation has been updated with information about component refactoring.
    - Additional technical documentation could still be improved for complex features.
 
-5. **Negotiation Mechanics**:
-   - The ability to retry dice rolls is defined in the data but not yet implemented.
-   - This is a planned feature that would enhance strategic gameplay.
+5. **Negotiation Mechanics**: ✓ IMPLEMENTED!
+   - Negotiation is the ability for a player to remain on the same space and try again on their next turn.
+   - CSV data indicates which spaces allow negotiation (yes/no).
+   - When negotiation is allowed, players have the option to either accept the current space outcome (End Turn) or "negotiate" to stay on the same space.
+   - When negotiating, all actions taken during the current turn get discarded with the exception of time penalties.
+   - The UI includes a "Negotiate" button alongside the "End Turn" button.
 
 6. **Visual Feedback**:
    - Player movement lacks animations and visual cues.

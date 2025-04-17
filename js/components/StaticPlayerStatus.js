@@ -27,16 +27,40 @@ window.StaticPlayerStatus = class StaticPlayerStatus extends React.Component {
     const { player, space } = this.props;
     if (!player || !space) return;
     
+    // Get the scope information first
+    const scope = this.extractScope(player);
+    const playerMoney = player.resources?.money || 0;
+    const totalScopeCost = scope.totalCost || 0;
+    
+    // Calculate the actual financial status by comparing money with scope cost
+    let actualSurplus = 0;
+    let actualDeficit = 0;
+    
+    if (playerMoney >= totalScopeCost) {
+      actualSurplus = playerMoney - totalScopeCost;
+    } else {
+      actualDeficit = totalScopeCost - playerMoney;
+    }
+    
+    // Log the calculation for debugging
+    console.log('StaticPlayerStatus: Financial Status Calculation - Money:', playerMoney, 'Scope Cost:', totalScopeCost);
+    console.log('StaticPlayerStatus: Calculated - Surplus:', actualSurplus, 'Deficit:', actualDeficit);
+    
     // Create a snapshot of the player's status
     this.setState({
       playerStatus: {
         name: player.name,
         color: player.color,
-        money: player.resources?.money || 0,
+        money: playerMoney,
         time: player.resources?.time || 0,
         position: player.position,
-        // Get a snapshot of the scope items
-        scope: this.extractScope(player)
+        // Use calculated financial status
+        financialStatus: {
+          surplus: actualSurplus,
+          deficit: actualDeficit
+        },
+        // Store scope items
+        scope: scope
       },
       spaceInfo: {
         name: space.name,
@@ -120,11 +144,31 @@ window.StaticPlayerStatus = class StaticPlayerStatus extends React.Component {
         <div className="status-resources">
           <div className="static-player-status-resource-item">
             <span>Money:</span>
-            <span>${playerStatus.money}</span>
+            <span>${playerStatus.money.toLocaleString()}</span>
           </div>
           <div className="static-player-status-resource-item">
             <span>Time:</span>
             <span>{playerStatus.time} days</span>
+          </div>
+          
+          {/* Financial Status - Surplus or Deficit */}
+          <div className="status-financial" style={{marginTop: '10px', backgroundColor: '#f5f5f5', padding: '8px', borderRadius: '4px'}}>
+            <h4 style={{margin: '0 0 5px 0', fontSize: '0.9em'}}>Financial Status:</h4>
+            {playerStatus.financialStatus.surplus > 0 ? (
+              <div style={{display: 'flex', justifyContent: 'space-between', padding: '3px 0'}}>
+                <span>Surplus:</span>
+                <span style={{color: '#34a853', fontWeight: 'bold'}}>
+                  +${playerStatus.financialStatus.surplus.toLocaleString()}
+                </span>
+              </div>
+            ) : (
+              <div style={{display: 'flex', justifyContent: 'space-between', padding: '3px 0'}}>
+                <span>Deficit:</span>
+                <span style={{color: '#ea4335', fontWeight: 'bold'}}>
+                  -${playerStatus.financialStatus.deficit.toLocaleString()}
+                </span>
+              </div>
+            )}
           </div>
         </div>
         

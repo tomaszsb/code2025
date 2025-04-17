@@ -50,8 +50,22 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
       this.setState({ currentPlayerId: currentPlayer.id });
     }
     
+    // Add event listener for reset buttons event
+    window.addEventListener('resetSpaceInfoButtons', this.handleResetButtons);
+    
     // Log initial state of used buttons
     console.log('SpaceInfo: Mounted with usedButtons:', this.state.usedButtons);
+  }
+  
+  componentWillUnmount() {
+    // Remove event listener
+    window.removeEventListener('resetSpaceInfoButtons', this.handleResetButtons);
+  }
+  
+  // Handler for the reset buttons event
+  handleResetButtons = () => {
+    console.log('SpaceInfo: Received resetSpaceInfoButtons event, clearing all used buttons');
+    this.setState({ usedButtons: [] });
   }
   
   // Determine background color based on space type/phase

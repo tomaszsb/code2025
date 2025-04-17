@@ -57,7 +57,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
               Game Instructions
             </button>
             <button
-              onClick={gameBoard.negotiationManager.resetGame}
+              onClick={() => { window.GameState.startNewGame(); window.location.reload(); }}
               className="reset-game-btn"
             >
               Reset Game

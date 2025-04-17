@@ -10,6 +10,7 @@ The `NegotiationManager` component is responsible for handling the negotiation m
 - Handle the negotiation action when initiated by a player
 - Provide tooltip text explaining negotiation functionality
 - Update the player's time resource when negotiation occurs
+- Reset UI states such as used buttons when negotiation occurs
 
 ## Class Methods
 
@@ -41,6 +42,7 @@ Processes the negotiation action when a player clicks the negotiate button.
 - Applies any time penalty from the space to the player
 - Moves to the next player's turn while keeping the current player on the same space
 - Updates the game board state
+- Dispatches a custom event to reset SpaceInfo button states
 - Logs the completion of the negotiation action
 
 ### getNegotiateButtonTooltip()
@@ -48,13 +50,6 @@ Provides tooltip text for the negotiate button based on whether negotiation is a
 
 **Returns:**
 - `string`: Tooltip text explaining the negotiate button functionality
-
-### resetGame()
-Resets the game state and reloads the page.
-
-**Note:**
-- This method is marked for future refactoring as it does not strictly belong in the NegotiationManager
-- Currently maintained for backward compatibility
 
 ## Integration with GameBoard
 
@@ -78,6 +73,23 @@ const canNegotiate = gameBoard.negotiationManager.isNegotiationAllowed();
 gameBoard.negotiationManager.handleNegotiate();
 ```
 
+## Integration with SpaceInfo
+
+The NegotiationManager communicates with SpaceInfo components through a custom event system:
+
+1. When negotiation happens, NegotiationManager dispatches a `resetSpaceInfoButtons` event
+2. SpaceInfo components listen for this event and reset their button states when it's received
+3. This ensures all card draw buttons are re-enabled after negotiation
+
+```javascript
+// In NegotiationManager.js
+const resetEvent = new CustomEvent('resetSpaceInfoButtons');
+window.dispatchEvent(resetEvent);
+
+// In SpaceInfo.js
+window.addEventListener('resetSpaceInfoButtons', this.handleResetButtons);
+```
+
 ## Recent Improvements
 
 ### 1. Enhanced Negotiation Permission Checking
@@ -89,14 +101,16 @@ gameBoard.negotiationManager.handleNegotiate();
 - Replaced ambiguous comment "Only update in one place, not both" with clearer explanation
 - Added context about why the player's time resource should only be modified in one location
 
-### 3. Addressed Single Responsibility Principle Violation
-- Added a TODO comment indicating the `resetGame` function should be moved to a more appropriate component
-- Maintained backward compatibility by keeping the function with clear documentation
+### 3. Added Event-Based UI State Reset
+- Added a custom event system to reset SpaceInfo button states
+- Ensured card draw buttons are properly re-enabled after negotiation
+- Fixed issue where dice roll outcome buttons remained disabled after negotiation
 
 ### 4. Improved Logging
 - Added completion log statement at the end of the `handleNegotiate` function
 - Added method-level logging at the beginning of each method
 - Enhanced existing logs with more detailed information
+- Added logging for the new event-based reset system
 
 ## Best Practices for Future Development
 
@@ -105,8 +119,8 @@ gameBoard.negotiationManager.handleNegotiate();
    - Consider standardizing on a single property in future versions
 
 2. **Refactoring Recommendations**:
-   - Move the `resetGame` function to a dedicated GameManager component or the GameState object
-   - Consider extracting state update logic to a dedicated method for better maintainability
+   - Consider creating a dedicated GameManager component for game-wide operations
+   - Use the event system for other cross-component communications
 
 3. **Logging Patterns**:
    - Maintain the established pattern of logging method entry points

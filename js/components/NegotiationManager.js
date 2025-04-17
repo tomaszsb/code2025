@@ -55,20 +55,47 @@ class NegotiationManager {
       return;
     }
     
-    // Only record the time spent on the space
+    // Get the player's original resources from when they landed on the space
+    const originalPlayerSnapshot = this.gameBoard.state.currentPlayerOnLanding;
+    
+    if (!originalPlayerSnapshot) {
+      console.log('NegotiationManager: No player snapshot found, cannot reset resources');
+      return;
+    }
+    
+    console.log('NegotiationManager: Found player snapshot from landing:', originalPlayerSnapshot);
+    
+    // Calculate time penalty to add
+    let timeToAdd = 0;
     if (currentSpace.Time && currentSpace.Time.trim() !== '') {
-      const timeToAdd = parseInt(currentSpace.Time, 10) || 0;
+      timeToAdd = parseInt(currentSpace.Time, 10) || 0;
       if (timeToAdd > 0) {
         console.log(`NegotiationManager: Adding ${timeToAdd} days to player time from negotiate`);
-        
-        // Update GameState directly to avoid redundant updates
-        // The player's time resource should only be modified here, not in multiple places
-        const playerIndex = window.GameState.players.findIndex(p => p.id === currentPlayer.id);
-        if (playerIndex >= 0) {
-          window.GameState.players[playerIndex].resources.time += timeToAdd;
-        }
-        window.GameState.saveState();
       }
+    }
+    
+    // Update GameState directly to avoid redundant updates
+    const playerIndex = window.GameState.players.findIndex(p => p.id === currentPlayer.id);
+    if (playerIndex >= 0) {
+      // Get the current time value for reference
+      const currentTime = window.GameState.players[playerIndex].resources.time;
+      
+      // Reset resources to original values from when player landed on space
+      window.GameState.players[playerIndex].resources = {
+        ...originalPlayerSnapshot.resources,
+        // Keep only the time penalty from this turn
+        time: originalPlayerSnapshot.resources.time + timeToAdd
+      };
+      
+      // Reset cards to original state (remove any cards drawn during this turn)
+      window.GameState.players[playerIndex].cards = [...originalPlayerSnapshot.cards];
+      
+      console.log('NegotiationManager: Reset player resources and cards to original values');
+      console.log(`NegotiationManager: Original money: ${originalPlayerSnapshot.resources.money}, Current money: ${window.GameState.players[playerIndex].resources.money}`);
+      console.log(`NegotiationManager: Original time: ${originalPlayerSnapshot.resources.time}, Current time: ${window.GameState.players[playerIndex].resources.time}`);
+      console.log('NegotiationManager: Reset usedButtons to enable all card draw options again');
+      
+      window.GameState.saveState();
     }
     
     // Move to next player's turn (keep player on same space)
@@ -107,8 +134,14 @@ class NegotiationManager {
       lastDiceRoll: null,               // Reset last dice roll
       currentPlayerOnLanding: playerSnapshot, // Store snapshot of player status
       currentSpaceOnLanding: spaceSnapshot,   // Store snapshot of space
-      exploredSpace: newSpace          // Update space explorer to show the current player's space
+      exploredSpace: newSpace,          // Update space explorer to show the current player's space
+      usedButtons: []                   // Reset usedButtons to enable all buttons again
     });
+    
+    // Also trigger a reset on any SpaceInfo components by dispatching a custom event
+    const resetEvent = new CustomEvent('resetSpaceInfoButtons');
+    window.dispatchEvent(resetEvent);
+    console.log('NegotiationManager: Dispatched resetSpaceInfoButtons event to reset all button states');
     
     // Update available moves for new player
     this.gameBoard.updateAvailableMoves();
@@ -126,14 +159,9 @@ class NegotiationManager {
     return "End your turn, stay on this space, and only take the time penalty";
   }
   
-  // Reset the game and start over
-  // TODO: This method should be moved to GameState or a dedicated GameManager component
-  // It's kept here temporarily for backward compatibility
-  resetGame = () => {
-    console.log('NegotiationManager: Resetting game');
-    window.GameState.clearSavedState();
-    window.location.reload();
-  }
+  // The resetGame method has been removed from NegotiationManager
+  // It was violating the Single Responsibility Principle
+  // Use window.GameState.startNewGame() instead
 }
 
 // Export NegotiationManager for use in other files

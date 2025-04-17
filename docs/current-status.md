@@ -16,7 +16,7 @@ After reviewing the codebase, I've identified several key aspects of the current
 9. **Proper Code Practices**: Files include logging statements and avoid inline CSS as required.
 10. **Component Refactoring**: Large components have been broken down into smaller, focused ones for improved maintainability.
 
-### Completed Enhancements
+### Recent Improvements
 
 1. **Enhanced Dice Roll System**:
    - ✓ COMPLETED! Dice roll system now features 3D visual effects and improved animations.
@@ -38,6 +38,13 @@ After reviewing the codebase, I've identified several key aspects of the current
    - ✓ COMPLETED! Component loading order has been adjusted in HTML files for proper dependency loading.
    - ✓ COMPLETED! Console.log statements added at file start and end for easier debugging.
    - ✓ COMPLETED! Enhanced logging with severity levels (debug, info, warn, error) implemented.
+   
+4. **Negotiation Mechanics**:
+   - ✓ COMPLETED! Removed resetGame method from NegotiationManager following the Single Responsibility Principle.
+   - ✓ COMPLETED! Implemented event-based system to reset UI button states during negotiation.
+   - ✓ COMPLETED! Fixed issue where dice roll outcome buttons remained disabled after negotiation.
+   - ✓ COMPLETED! Added proper event listener cleanup in SpaceInfo component.
+   - ✓ COMPLETED! Updated all documentation to reflect these improvements.
 
 ### Areas for Improvement
 
@@ -63,6 +70,13 @@ After reviewing the codebase, I've identified several key aspects of the current
    - Additional technical documentation could still be improved for complex features.
 
 5. **Negotiation Mechanics**: ✓ IMPROVED!
+   - ✓ COMPLETED! Removed resetGame method from NegotiationManager to follow Single Responsibility Principle.
+   - ✓ COMPLETED! Updated code to use GameState.startNewGame() directly for game resets.
+   - ✓ COMPLETED! Fixed negotiation to properly reset player's resources and cards to their original state.
+   - ✓ COMPLETED! Implemented event-based system to reset UI button states during negotiation.
+   - ✓ COMPLETED! Fixed issue where dice roll outcome buttons remained disabled after negotiation.
+   - ✓ COMPLETED! Added detailed logging to track resource changes during negotiation.
+   - ✓ COMPLETED! Documentation updated to reflect these improvements.
    - Negotiation is the ability for a player to remain on the same space and try again on their next turn.
    - CSV data indicates which spaces allow negotiation (yes/no) in the "Negotiate" column.
    - When negotiation is allowed, players have the option to either accept the current space outcome (End Turn) or "negotiate" to stay on the same space.

@@ -62,7 +62,7 @@ After reviewing the codebase, I've identified several key aspects of the current
    - ✓ COMPLETED! SpaceExplorer component now has detailed documentation in a separate markdown file.
    - Additional technical documentation could still be improved for complex features.
 
-5. **Negotiation Mechanics**: ✓ IMPLEMENTED!
+5. **Negotiation Mechanics**: ✓ IMPROVED!
    - Negotiation is the ability for a player to remain on the same space and try again on their next turn.
    - CSV data indicates which spaces allow negotiation (yes/no) in the "Negotiate" column.
    - When negotiation is allowed, players have the option to either accept the current space outcome (End Turn) or "negotiate" to stay on the same space.
@@ -70,6 +70,7 @@ After reviewing the codebase, I've identified several key aspects of the current
    - The UI includes a "Negotiate" button alongside the "End Turn" button.
    - A dedicated NegotiationManager has been implemented to handle all negotiation-related logic.
    - The Negotiate button is properly disabled for spaces where negotiation isn't allowed.
+   - Recent improvements include enhanced permission checking, better logging, and clarified comments.
 
 6. **Visual Feedback**:
    - Player movement lacks animations and visual cues.

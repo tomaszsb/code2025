@@ -8,6 +8,7 @@ class NegotiationManager {
   
   // Check if negotiation is allowed for the current space
   isNegotiationAllowed = () => {
+    console.log('NegotiationManager: Checking if negotiation is allowed');
     const currentPlayer = this.gameBoard.getCurrentPlayer();
     if (!currentPlayer) {
       console.log('NegotiationManager: No current player found, negotiation not allowed');
@@ -23,9 +24,10 @@ class NegotiationManager {
     }
     
     // Check if negotiation is allowed for this space
-    // First check the rawNegotiate field which comes directly from CSV
+    // Use both rawNegotiate (directly from CSV) and Negotiate fields for backward compatibility
+    // These should be synchronized in data processing, but we check both to ensure reliability
     const negotiationAllowed = currentSpace.rawNegotiate === "YES" || currentSpace.Negotiate === "YES";
-    console.log(`NegotiationManager: Negotiation allowed for space ${currentSpace.name}: ${negotiationAllowed} (rawNegotiate=${currentSpace.rawNegotiate})`);
+    console.log(`NegotiationManager: Negotiation allowed for space ${currentSpace.name}: ${negotiationAllowed} (rawNegotiate=${currentSpace.rawNegotiate}, Negotiate=${currentSpace.Negotiate})`);
     return negotiationAllowed;
   }
   
@@ -59,7 +61,8 @@ class NegotiationManager {
       if (timeToAdd > 0) {
         console.log(`NegotiationManager: Adding ${timeToAdd} days to player time from negotiate`);
         
-        // Update GameState directly - Only update in one place, not both
+        // Update GameState directly to avoid redundant updates
+        // The player's time resource should only be modified here, not in multiple places
         const playerIndex = window.GameState.players.findIndex(p => p.id === currentPlayer.id);
         if (playerIndex >= 0) {
           window.GameState.players[playerIndex].resources.time += timeToAdd;
@@ -111,10 +114,12 @@ class NegotiationManager {
     this.gameBoard.updateAvailableMoves();
     
     console.log('NegotiationManager: Turn ended via negotiate, next player:', window.GameState.currentPlayerIndex, 'on space:', newPlayerPosition);
+    console.log('NegotiationManager: Negotiation action completed successfully');
   }
   
   // Get tooltip text for the negotiate button
   getNegotiateButtonTooltip = () => {
+    console.log('NegotiationManager: Getting negotiate button tooltip');
     if (!this.isNegotiationAllowed()) {
       return "Negotiation is not allowed on this space";
     }
@@ -122,6 +127,8 @@ class NegotiationManager {
   }
   
   // Reset the game and start over
+  // TODO: This method should be moved to GameState or a dedicated GameManager component
+  // It's kept here temporarily for backward compatibility
   resetGame = () => {
     console.log('NegotiationManager: Resetting game');
     window.GameState.clearSavedState();

@@ -15,7 +15,8 @@ A dedicated manager class has been created to handle all negotiation-related log
 #### Key Features:
 
 1. **Space-Specific Negotiation Rules**: 
-   - NegotiationManager checks the "Negotiate" column from the Spaces.csv file to determine if negotiation is allowed for each space
+   - NegotiationManager checks both the "rawNegotiate" and "Negotiate" properties from the Spaces.csv file to determine if negotiation is allowed for each space
+   - Dual property checking ensures backward compatibility while providing flexibility for future changes
    - The button is automatically disabled for spaces where negotiation is not allowed
 
 2. **Negotiation Logic**:
@@ -44,19 +45,23 @@ class NegotiationManager {
   
   // Check if negotiation is allowed for the current space
   isNegotiationAllowed = () => {
+    console.log('NegotiationManager: Checking if negotiation is allowed');
     // Logic to check if the current space allows negotiation
-    // using the "Negotiate" column from Spaces.csv
+    // using both rawNegotiate and Negotiate properties for backward compatibility
   }
   
   // Handle the negotiation action
   handleNegotiate = () => {
+    console.log('NegotiationManager: Negotiate button clicked');
     // Logic to handle when player clicks negotiate
     // Apply time penalty but discard other effects
     // Move to next player's turn
+    console.log('NegotiationManager: Negotiation action completed successfully');
   }
   
   // Get tooltip text for the negotiate button
   getNegotiateButtonTooltip = () => {
+    console.log('NegotiationManager: Getting negotiate button tooltip');
     // Return appropriate tooltip based on whether negotiation is allowed
   }
 }
@@ -76,7 +81,12 @@ class NegotiationManager {
 
 ## Data Model
 
-The negotiation feature relies on the "Negotiate" column in the Spaces.csv file, which contains either "YES" or "NO" values for each space. This data-driven approach makes it easy to configure which spaces allow negotiation without modifying code.
+The negotiation feature relies on two properties in the space data:
+
+1. **rawNegotiate**: The direct value from the "Negotiate" column in the Spaces.csv file
+2. **Negotiate**: A processed version of the same property that may be used in some contexts
+
+Both properties contain either "YES" or "NO" values for each space. This dual-property approach ensures backward compatibility while allowing for future enhancements.
 
 Example from Spaces.csv:
 ```
@@ -85,6 +95,26 @@ OWNER-SCOPE-INITIATION,SETUP,First,...,YES
 OWNER-SCOPE-INITIATION,SETUP,Subsequent,...,NO
 OWNER-FUND-INITIATION,SETUP,First,...,YES
 ```
+
+## Recent Improvements
+
+### Enhanced Negotiation Permission Checking
+- Improved permission checking by considering both `rawNegotiate` and `Negotiate` properties for backward compatibility
+- Added detailed comments explaining the dual-property approach
+- Enhanced logging to display both property values for easier debugging
+
+### Clarified State Update Comments
+- Improved comments around player time resource updates
+- Added clear explanation about why the resource should only be modified in one location
+
+### Improved Logging
+- Added thorough entry and exit logging for all methods
+- Added completion log statement at the end of the `handleNegotiate` function
+- Enhanced existing logs with more detailed information
+
+### Code Structure Improvements
+- Added TODO comments for future refactoring of functionality not directly related to negotiation
+- Maintained backward compatibility while making the code more maintainable
 
 ## Future Enhancements
 

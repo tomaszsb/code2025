@@ -49,7 +49,8 @@ A digital board game that simulates the lifecycle of a construction project. The
   - [x] Create dice rolling mechanic
   - [x] Connect dice outcomes to space-specific results
   - [x] Implement branching path logic based on dice results
-  - [ ] Implement negotiation mechanic to retry outcomes
+  - [x] Implement negotiation mechanic to retry outcomes
+  - [x] Enhance negotiation mechanic with improved logging and code clarity
   - [ ] Balance outcome probability for engaging gameplay
 
 - **Current Status**:

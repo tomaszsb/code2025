@@ -158,7 +158,9 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Moving inline styles and JavaScript style injection to external CSS files
    - Improved performance by reducing DOM manipulation
    - Enhanced maintainability by centralizing styling
-   - Example: BoardSpaceRenderer.js refactoring to use external CSS
+   - Examples: BoardSpaceRenderer.js and DiceRoll.js refactoring to use external CSS
+   - Properly scoping CSS selectors to prevent styling conflicts between components
+   - Naming animations carefully to avoid conflicts between components
 
 ## Implementation Guidelines
 
@@ -258,13 +260,25 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Use CSS files for component-specific styles
    - Avoid inline styles
    - Keep all styling for a component in a dedicated CSS file
-   - Example: board-space-renderer.css for all board space styling
+   - Use parent selectors to properly scope styles (e.g., '.dice-roll-container .dice-face')
+   - Example: board-space-renderer.css and dice-animations.css for component-specific styling
 
-3. **Visual Consistency**
+3. **Animation Naming**
+   - Use component-specific prefixes for animation names to avoid conflicts
+   - Rename animations when extracting CSS from JavaScript to avoid collisions
+   - Example: 'dice-roll-animation' instead of generic 'roll-animation'
+
+4. **Visual Consistency**
    - Maintain consistent spacing
    - Use a unified color palette
    - Keep animations consistent across components
    - Example: Consistent card styling across different card types
+
+5. **CSS Conflicts Management**
+   - Resolve selector conflicts by increasing specificity instead of using !important
+   - Add component class prefixes to prevent style bleeding between components
+   - Test CSS changes thoroughly to ensure they don't affect other components
+   - Example: Using '.board-space .dice-icon' and '.dice-roll-container .dice-icon' to style similar elements differently
 
 ### Documentation
 
@@ -289,4 +303,4 @@ This document consolidates lessons learned, best practices, and optimization rec
 
 ---
 
-*Last Updated: April 18, 2025*
+*Last Updated: April 18, 2025 (Updated with dice CSS extraction lessons)*

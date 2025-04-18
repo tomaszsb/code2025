@@ -165,8 +165,8 @@
   line-height: 1.1;
 }
 
-/* Dice roll indicator */
-.dice-roll-indicator {
+/* Board space dice roll indicator */
+.board-space .dice-roll-indicator {
   position: absolute;
   bottom: 3px;
   right: 3px;
@@ -179,7 +179,7 @@
   align-items: center;
 }
 
-.dice-icon {
+.board-space .dice-icon {
   width: 10px;
   height: 10px;
   background-color: #666;

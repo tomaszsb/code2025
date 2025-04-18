@@ -206,7 +206,8 @@ console.log('game-components.css file is beginning to be used');
   border: 0.125rem solid #1abc9c;
 }
 
-/* ====== DICE STYLES ====== */
+/* ====== DICE INDICATOR STYLES ====== */
+/* These styles are for dice indicators on board spaces, not the dice-roll component itself */
 .dice-roll-indicator {
   position: absolute;
   top: 0.313rem;
@@ -240,94 +241,6 @@ console.log('game-components.css file is beginning to be used');
 
 .has-dice-roll {
   position: relative;
-}
-
-/* Dice outcomes in space info */
-.dice-outcomes-display {
-  margin: var(--spacing-lg) 0;
-  padding: var(--spacing-md);
-  background-color: #f8f9fa;
-  border-radius: var(--border-radius-md);
-  border: 1px solid #e9ecef;
-  box-shadow: var(--shadow-sm);
-}
-
-.dice-outcome-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: var(--spacing-md);
-  padding-bottom: var(--spacing-sm);
-  border-bottom: 1px solid #e9ecef;
-}
-
-.dice-result-badge {
-  width: 2.25rem;
-  height: 2.25rem;
-  background-color: #3498db;
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 0.75rem;
-  font-weight: bold;
-  font-size: 1.125rem;
-  box-shadow: var(--shadow-sm);
-}
-
-.dice-result-title h4 {
-  margin: 0;
-  color: #2c3e50;
-  font-size: 1rem;
-}
-
-.dice-outcome-categories {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.outcome-category {
-  flex: 1;
-  min-width: 30%;
-  padding: var(--spacing-sm);
-  background-color: white;
-  border-radius: var(--border-radius-sm);
-  border-left: 0.188rem solid #3498db;
-}
-
-.outcome-category-title {
-  margin: 0 0 0.375rem 0;
-  color: #2c3e50;
-  font-size: 0.813rem;
-  font-weight: bold;
-}
-
-.outcome-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.outcome-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.125rem 0;
-  font-size: 0.75rem;
-  border-bottom: 1px dashed #e9ecef;
-}
-
-.outcome-item:last-child {
-  border-bottom: none;
-}
-
-.outcome-type {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-.outcome-value {
-  color: #3498db;
 }
 
 /* ====== SPACE EXPLORER STYLES ====== */

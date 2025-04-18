@@ -223,26 +223,26 @@
 }
 
 /* Fix for outcome display in dice table */
-.dice-outcome span {
+.explorer-dice-table .dice-outcome span {
   display: block;
   margin-bottom: 6px;
 }
 
-.dice-outcome span:last-child {
+.explorer-dice-table .dice-outcome span:last-child {
   margin-bottom: 0;
 }
 
 /* Style for different outcome types */
-.outcome-move {
+.explorer-dice-table .outcome-move {
   color: #4285f4;
   font-weight: bold;
 }
 
-.outcome-card {
+.explorer-dice-table .outcome-card {
   color: #34a853;
 }
 
-.outcome-resource {
+.explorer-dice-table .outcome-resource {
   color: #ea4335;
 }
 
@@ -324,7 +324,7 @@
   align-items: center;
 }
 
-.dice-icon {
+.explorer-dice-indicator .dice-icon {
   display: inline-block;
   width: 16px;
   height: 16px;

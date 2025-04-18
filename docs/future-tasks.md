@@ -44,6 +44,7 @@ This document consolidates the project's future direction, priorities, and timel
 - Improve error handling and recovery
 - ~~Convert SpaceExplorer to use external CSS instead of inline styles~~
 - ~~Remove inline styles and style injection from BoardSpaceRenderer.js~~
+- ~~Extract DiceRoll.js CSS to a dedicated CSS file and resolve style conflicts~~
 
 ### 2. Educational Content Integration
 - Add tooltips explaining project management concepts
@@ -126,4 +127,4 @@ This roadmap will be reviewed and updated monthly to reflect:
 
 ---
 
-*Last Updated: April 18, 2025*
+*Last Updated: April 18, 2025 (Updated with dice-animations.css completion)*

@@ -3,8 +3,13 @@
 ## Overview
 The SpaceExplorer component displays detailed information about a selected game board space. It provides a comprehensive view of space properties including descriptions, actions, outcomes, card requirements, resource effects, and dice roll outcomes.
 
-## Recent Refactoring Improvements
-The SpaceExplorer component has been recently refactored to improve its structure, performance, and maintainability. See completed-tasks.md for the full list of improvements made to this component.
+## Recent Changes
+The SpaceExplorer component has been updated with the following improvements:
+
+- **Closable Functionality**: The component can now be fully closed using the close button, hiding the space explorer panel
+- **Reopening Mechanism**: A "Show Explorer" button appears when the explorer is closed, allowing users to reopen it
+- **CSS-Only Styling**: Removed all inline styles and direct DOM style manipulation, moving styles to space-explorer.css
+- **Improved Documentation**: Added JSDoc comments and improved code documentation
 
 ## Component Props
 

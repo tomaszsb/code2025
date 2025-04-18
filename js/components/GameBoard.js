@@ -292,7 +292,10 @@ window.GameBoard = class GameBoard extends React.Component {
     }));
   }
   
-  // Handler for close button in space explorer
+  /**
+   * Handler for close button in space explorer
+   * Actually closes the explorer by setting showSpaceExplorer to false
+   */
   handleCloseExplorer = () => {
     // Actually close the space explorer
     this.setState({
@@ -306,7 +309,10 @@ window.GameBoard = class GameBoard extends React.Component {
     }
   }
   
-  // Handler to open the space explorer
+  /**
+   * Handler to open the space explorer
+   * Shows the explorer again after it's been closed
+   */
   handleOpenExplorer = () => {
     this.setState({
       showSpaceExplorer: true

@@ -4,6 +4,12 @@ console.log('space-explorer-logger.js file is beginning to be used');
 /**
  * SpaceExplorerLogger - Module for handling Space Explorer layout and logging
  * Handles element visibility, class management, and logging of explorer state
+ * 
+ * Key features:
+ * - Dynamically adds CSS classes to elements for styling
+ * - Provides logging for space explorer actions
+ * - Works with close/open functionality via the handleCloseExplorer method in GameBoard.js
+ * - Uses CSS from space-explorer.css rather than injecting inline styles
  */
 window.SpaceExplorerLogger = {
   // Configuration

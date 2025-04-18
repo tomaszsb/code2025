@@ -81,6 +81,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
             />
               
             {/* Space Explorer - Only visible when showSpaceExplorer is true */}
+            {/* The showSpaceExplorer flag is toggled by GameBoard.handleCloseExplorer and GameBoard.handleOpenExplorer */}
             {this.props.showSpaceExplorer && (
               <div className="space-explorer-container">
                 {window.SpaceExplorer && (
@@ -97,6 +98,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
             )}
             
             {/* When Space Explorer is closed, show a small button to reopen it */}
+            {/* Clicking this button calls GameBoard.handleOpenExplorer */}
             {!this.props.showSpaceExplorer && (
               <div className="open-explorer-container">
                 <button 

@@ -1,5 +1,14 @@
 /* space-explorer.css - Styles for Space Explorer component */
 
+/**
+ * This file contains styles for the Space Explorer panel and related UI elements
+ * 
+ * Key features:
+ * - Styling for the Space Explorer panel and its contents
+ * - Support for showing/hiding the explorer with close and open buttons
+ * - Styling for the explorer header, dice tables, cards, and resources
+ * - Classes for JavaScript to toggle via the space-explorer-logger.js
+ */
 /* Board and explorer container */
 .board-and-explorer-container {
   position: relative;

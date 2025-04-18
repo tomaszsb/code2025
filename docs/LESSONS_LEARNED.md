@@ -66,7 +66,9 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Use CSS classes instead of inline styles
    - Group related styles in CSS files
    - Use CSS variables for shared values
-   - Example: Consolidated card styling in game-components.css
+   - Avoid direct DOM style manipulation; use class toggling instead
+   - Move inline styles to external CSS files for better maintainability
+   - Example: Refactoring BoardSpaceRenderer.js to use external CSS instead of injecting styles through JavaScript
 
 ### Data Management
 
@@ -118,6 +120,13 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Test thoroughly after each change
    - Example: The card system refactoring was done as a focused effort
 
+5. **Style Injection Through JavaScript**
+   - Previous implementations injected styles directly through JavaScript
+   - This approach creates maintenance issues and adds complexity
+   - Keep styles in external CSS files
+   - Use class names for styling instead of programmatic style manipulation
+   - Example: BoardSpaceRenderer.js refactoring to eliminate style element injection
+
 ### What Worked Well
 
 1. **CSV-Driven Approach**
@@ -136,13 +145,19 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Breaking large components into smaller ones improved maintenance
    - Clear separation of concerns improved code quality
    - Made debugging easier
-   - Example: Card system refactoring
+   - Example: Card system refactoring and BoardSpaceRenderer refactoring
 
 4. **Logging**
    - Console logs at the beginning and end of each file helped with debugging
    - Made it easier to track execution flow
    - Simplified troubleshooting
    - Example: All component files now include proper logging
+
+5. **CSS Extraction**
+   - Moving inline styles and JavaScript style injection to external CSS files
+   - Improved performance by reducing DOM manipulation
+   - Enhanced maintainability by centralizing styling
+   - Example: BoardSpaceRenderer.js refactoring to use external CSS
 
 ## Implementation Guidelines
 
@@ -241,7 +256,8 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Group related styles together
    - Use CSS files for component-specific styles
    - Avoid inline styles
-   - Example: Separate files for board, cards, dice, etc.
+   - Keep all styling for a component in a dedicated CSS file
+   - Example: board-space-renderer.css for all board space styling
 
 3. **Visual Consistency**
    - Maintain consistent spacing
@@ -261,7 +277,8 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Keep documentation up to date with code changes
    - Focus on high-level concepts and architecture
    - Include examples for complex functionality
-   - Example: This best practices document
+   - Document refactoring efforts and their benefits
+   - Example: board-space-renderer-improvements.md document
 
 3. **Logging Standards**
    - Include meaningful log messages

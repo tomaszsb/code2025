@@ -1,7 +1,22 @@
 // SpaceExplorer.js file is beginning to be used
 console.log('SpaceExplorer.js file is beginning to be used');
 
-// SpaceExplorer component for displaying details of spaces when exploring the board
+/**
+ * SpaceExplorer component for displaying details of spaces when exploring the board
+ * 
+ * This component shows detailed information about board spaces including:
+ * - Space name and visit type (first/subsequent)
+ * - Description, action, and outcome information
+ * - Card information
+ * - Dice roll outcomes
+ * - Resources required/provided
+ * 
+ * Features:
+ * - Close button functionality (uses the onClose prop from GameBoard.handleCloseExplorer)
+ * - Error boundary implementation for robust error handling
+ * - Structured logging for improved debugging
+ * - Responsive layout that adjusts to content
+ */
 class SpaceExplorer extends React.Component {
   constructor(props) {
     super(props);

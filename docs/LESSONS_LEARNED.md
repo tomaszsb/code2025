@@ -12,14 +12,21 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Each component should have one clear responsibility
    - Break large components (over 300-400 lines) into smaller focused ones
    - Example: The CardDisplay component was refactored from 700+ lines into six focused components
+   - Example: The GameBoard component was refactored to use manager classes for different responsibilities
 
-2. **Component Hierarchy**
+2. **Manager Pattern**
+   - Use manager classes for related functionality
+   - Each manager should have a clear, single purpose
+   - Managers should reference the parent component for state updates
+   - Example: TurnManager, SpaceSelectionManager, and SpaceExplorerManager classes
+
+3. **Component Hierarchy**
    - Parent components should coordinate child components
    - Child components should be focused on specific UI or functionality
    - Pass only the required props to child components
-   - Example: GameBoard manages game state while BoardDisplay handles only the visual representation
+   - Example: GameBoard manages managers while BoardRenderer handles only the visual representation
 
-3. **File Structure**
+4. **File Structure**
    - Keep related functionality in the same folder
    - Separate utility functions into their own files
    - Group components by feature when possible
@@ -127,34 +134,46 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Use class names for styling instead of programmatic style manipulation
    - Example: BoardSpaceRenderer.js refactoring to eliminate style element injection
 
+6. **Direct Method Access**
+   - Previous implementation accessed methods directly from other components
+   - This creates tight coupling between components
+   - Use manager classes or events for communication
+   - Example: Converting direct GameBoard method access to manager-based access
+
 ### What Worked Well
 
-1. **CSV-Driven Approach**
+1. **Manager Component Pattern**
+   - The manager component pattern significantly improved code organization
+   - Clear separation of concerns made the code more maintainable
+   - Easier to add new features without modifying existing code
+   - Example: TurnManager, SpaceSelectionManager, and SpaceExplorerManager
+
+2. **CSV-Driven Approach**
    - Using CSV files for game content worked well
    - Kept data separate from code
    - Made content updates easier
    - Example: Spaces, cards, and dice roll data in CSV files
 
-2. **Snake Board Layout**
+3. **Snake Board Layout**
    - The visual snake layout was effective
    - Created a clear game progression
    - Easy to understand for players
    - Example: BoardDisplay's row-based layout
 
-3. **Component Refactoring**
+4. **Component Refactoring**
    - Breaking large components into smaller ones improved maintenance
    - Clear separation of concerns improved code quality
    - Made debugging easier
-   - Example: Card system refactoring and BoardSpaceRenderer refactoring
+   - Example: Card system refactoring, GameBoard refactoring, and BoardSpaceRenderer refactoring
 
-4. **Logging**
+5. **Logging**
    - Console logs at the beginning and end of each file helped with debugging
    - Made it easier to track execution flow
    - Simplified troubleshooting
    - Example: All component files now include proper logging with standardized format
    - Recently standardized game-state.js logging to match other components
 
-5. **CSS Extraction**
+6. **CSS Extraction**
    - Moving inline styles and JavaScript style injection to external CSS files
    - Improved performance by reducing DOM manipulation
    - Enhanced maintainability by centralizing styling
@@ -166,19 +185,25 @@ This document consolidates lessons learned, best practices, and optimization rec
 
 ### Adding New Features
 
-1. **Start Simple**
+1. **Apply the Manager Pattern**
+   - Create a manager class for each major responsibility
+   - Keep managers focused on a single responsibility
+   - Update all references to use managers consistently
+   - Example: GameBoard component refactoring with TurnManager, SpaceSelectionManager, and SpaceExplorerManager
+
+2. **Start Simple**
    - Begin with minimal viable implementation
    - Get the basic functionality working first
    - Add refinements incrementally
    - Example: The dice roll system started simple before 3D visuals were added
 
-2. **Feature Integration**
+3. **Feature Integration**
    - Plan how the feature will integrate with existing code
    - Identify integration points before implementation
    - Use existing patterns when possible
    - Example: Card animations integrated with the existing card system
 
-3. **Testing Strategy**
+4. **Testing Strategy**
    - Plan test cases before implementation
    - Test edge cases and failure modes
    - Verify across different browsers
@@ -190,7 +215,7 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Trace execution flow through the component
    - Understand all dependencies
    - Review related components
-   - Example: Reviewing card components before making changes to CardDisplay
+   - Example: Reviewing all manager references before modifying any manager class
 
 2. **Make Targeted Changes**
    - Focus changes on specific functionality
@@ -203,6 +228,12 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Deprecate old methods rather than removing immediately
    - Add new functionality without breaking existing code
    - Example: Adding new card types without breaking existing card processing
+
+4. **Update All References**
+   - When moving functionality, update all references to that functionality
+   - Check both direct method calls and event listeners
+   - Use search tools to find all references
+   - Example: Updating all isVisitingFirstTime() references when moving to SpaceSelectionManager
 
 ### Debugging Tips
 
@@ -217,12 +248,14 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Card animation timing issues
    - Event listener cleanup missing
    - Props not passed correctly
-   - Example: Checking for missing props in componentDidMount
+   - Method references not updated after refactoring
+   - Example: Checking for missing props in componentDidMount or methods being called from the wrong manager
 
 3. **Diagnostic Techniques**
    - Use React DevTools to inspect component hierarchy
    - Check localStorage content for state issues
    - Review console for warnings/errors
+   - Review component lifecycle order
    - Example: Checking localStorage when state persistence issues occur
 
 ## Coding Standards
@@ -246,6 +279,12 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Implement error boundaries for component failures
    - Log detailed error information
    - Example: SpaceExplorer's componentDidCatch implementation
+
+4. **Manager Pattern**
+   - Each manager should have a clear responsibility
+   - Managers should access parent component through a reference
+   - Managers should update state through the parent component
+   - Example: TurnManager.js, SpaceSelectionManager.js, SpaceExplorerManager.js
 
 ### CSS Guidelines
 
@@ -293,14 +332,89 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Focus on high-level concepts and architecture
    - Include examples for complex functionality
    - Document refactoring efforts and their benefits
-   - Example: board-space-renderer-improvements.md document
+   - Example: board-space-renderer-improvements.md and gameboard-refactoring.md documents
 
 3. **Logging Standards**
    - Include meaningful log messages
    - Use appropriate log levels
    - Add beginning and end logs for each file
-   - Example: Console logs in StaticPlayerStatus.js
+   - Include the source component in log messages
+   - Example: Console logs in StaticPlayerStatus.js and manager components
+
+## Manager Component Pattern
+
+### Benefits of Manager Pattern
+
+1. **Improved Separation of Concerns**
+   - Each manager handles a specific aspect of the game
+   - Main component remains focused on coordination
+   - Example: TurnManager handling only turn-related operations
+
+2. **Enhanced Maintainability**
+   - Smaller, focused files are easier to understand and modify
+   - Changes to one aspect don't affect others
+   - Example: Modifying negotiation logic without touching turn management
+
+3. **Better Testability**
+   - Managers can be tested in isolation
+   - Easier to mock dependencies
+   - Example: Testing SpaceSelectionManager without a full GameBoard
+
+4. **Simplified Debugging**
+   - Errors are isolated to specific managers
+   - Log messages clearly indicate the source
+   - Example: "TurnManager: Turn ended" vs generic "Turn ended" message
+
+### Implementing Manager Pattern
+
+1. **Create Manager Classes**
+   - One class per responsibility area
+   - Constructor accepts parent component reference
+   - Methods perform specific operations
+   - Example: TurnManager for turn operations, SpaceSelectionManager for space operations
+
+2. **Initialize Managers**
+   - Create manager instances in constructor
+   - Store as component properties
+   - Example: `this.turnManager = new TurnManager(this);`
+
+3. **State Updates**
+   - Managers use this.gameBoard.setState() for updates
+   - Avoid direct state manipulation
+   - Example: TurnManager.handleEndTurn() updating game state
+
+4. **Method Delegation**
+   - Route method calls to appropriate managers
+   - Update all references to use managers
+   - Example: BoardRenderer using turnManager.getCurrentPlayer() instead of direct access
+
+5. **Cross-Manager Communication**
+   - Managers can access other managers through gameBoard reference
+   - Use events for complex interactions
+   - Example: NegotiationManager using turnManager for player access
+
+### Common Pitfalls
+
+1. **Missed References**
+   - Not updating all method references when moving to managers
+   - Check all files that might use the method
+   - Example: Missing updates in BoardRenderer or SpaceInfo
+
+2. **Circular Dependencies**
+   - Managers depending on each other directly creates tight coupling
+   - Use gameBoard as intermediary for cross-manager access
+   - Example: NegotiationManager accessing TurnManager through gameBoard
+
+3. **Inconsistent State Updates**
+   - Some state updates happening directly, others through managers
+   - Ensure all state updates go through the appropriate manager
+   - Example: Updating player position through TurnManager, not directly
+
+4. **Incomplete Documentation**
+   - Not documenting manager responsibilities and relationships
+   - Document manager purpose and methods
+   - Example: Creating gameboard-refactoring.md to document the approach
 
 ---
 
-*Last Updated: April 18, 2025 (Updated with dice CSS extraction lessons)*
+*Last Updated: April 18, 2025 (Updated with GameBoard manager pattern lessons)*

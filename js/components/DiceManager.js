@@ -63,8 +63,8 @@ class DiceManager {
       }
     }
     
-    // Get current player
-    const currentPlayer = this.gameBoard.getCurrentPlayer();
+    // Get current player - using TurnManager
+    const currentPlayer = this.gameBoard.turnManager.getCurrentPlayer();
     const currentPosition = currentPlayer ? currentPlayer.position : null;
     
     // Update the diceOutcomes and lastDiceRoll state for SpaceInfo component
@@ -149,8 +149,8 @@ class DiceManager {
   handleDiceRollMoveSelect = (space) => {
     console.log('DiceManager: Move selected from dice roll outcomes:', space.name);
     
-    // Get current player position to maintain correct space card
-    const currentPlayer = this.gameBoard.getCurrentPlayer();
+    // Get current player position to maintain correct space card - using TurnManager
+    const currentPlayer = this.gameBoard.turnManager.getCurrentPlayer();
     const currentPosition = currentPlayer ? currentPlayer.position : null;
     
     // Don't move the player immediately, just store the selection
@@ -167,7 +167,7 @@ class DiceManager {
   
   // Check if the current space requires a dice roll
   hasDiceRollSpace = () => {
-    const currentPlayer = this.gameBoard.getCurrentPlayer();
+    const currentPlayer = this.gameBoard.turnManager.getCurrentPlayer();
     if (!currentPlayer) return false;
     
     // If we've already rolled dice this turn, we don't need to roll again
@@ -185,7 +185,7 @@ class DiceManager {
   // Handle roll dice button click
   handleRollDiceClick = () => {
     // First try to use the selected space
-    const selectedSpace = this.gameBoard.getSelectedSpace();
+    const selectedSpace = this.gameBoard.spaceSelectionManager.getSelectedSpace();
     let spaceName;
     let visitType;
     let spaceId;
@@ -193,11 +193,11 @@ class DiceManager {
     if (selectedSpace && selectedSpace.name) {
       // If a space is selected, use it
       spaceName = selectedSpace.name;
-      visitType = selectedSpace.visitType || (this.gameBoard.isVisitingFirstTime() ? 'first' : 'subsequent');
+      visitType = selectedSpace.visitType || (this.gameBoard.spaceSelectionManager.isVisitingFirstTime() ? 'first' : 'subsequent');
       spaceId = selectedSpace.id;
     } else {
       // If no space is selected, use the current player's position
-      const currentPlayer = this.gameBoard.getCurrentPlayer();
+      const currentPlayer = this.gameBoard.turnManager.getCurrentPlayer();
       if (currentPlayer) {
         spaceId = currentPlayer.position;
         const currentSpace = this.gameBoard.state.spaces.find(s => s.id === spaceId);

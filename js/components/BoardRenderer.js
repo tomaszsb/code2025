@@ -39,7 +39,8 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
     
     const currentPlayer = players[currentPlayerIndex];
     const selectedSpaceObj = spaces.find(space => space.id === selectedSpace);
-    const visitType = gameBoard.isVisitingFirstTime() ? 'first' : 'subsequent';
+    // Use spaceSelectionManager instead of directly calling isVisitingFirstTime from gameBoard
+    const visitType = gameBoard.spaceSelectionManager.isVisitingFirstTime() ? 'first' : 'subsequent';
     
     return (
       <div className="game-container">
@@ -51,7 +52,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
             </div>
             {/* Game instructions button moved to header */}
             <button
-              onClick={gameBoard.toggleInstructions}
+              onClick={gameBoard.spaceSelectionManager.toggleInstructions}
               className="instructions-btn"
             >
               Game Instructions
@@ -75,7 +76,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
               selectedSpace={selectedSpace}
               selectedMove={selectedMove}
               availableMoves={availableMoves}
-              onSpaceClick={gameBoard.handleSpaceClick}
+              onSpaceClick={gameBoard.spaceSelectionManager.handleSpaceClick}
               diceRollData={diceRollData}
               showSpaceExplorer={true} 
             />
@@ -86,12 +87,12 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
               <div className="space-explorer-container">
                 {window.SpaceExplorer && (
                   <window.SpaceExplorer 
-                    space={exploredSpace || gameBoard.getSelectedSpace()}
+                    space={exploredSpace || gameBoard.spaceSelectionManager.getSelectedSpace()}
                     visitType={exploredSpace ? 
                       (GameState.hasPlayerVisitedSpace(currentPlayer, exploredSpace.name) ? 'subsequent' : 'first')
                       : 'first'}
                     diceRollData={diceRollData}
-                    onClose={gameBoard.handleCloseExplorer}
+                    onClose={gameBoard.spaceExplorerManager.handleCloseExplorer}
                   />
                 )}
               </div>
@@ -103,7 +104,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
               <div className="open-explorer-container">
                 <button 
                   className="open-explorer-btn"
-                  onClick={gameBoard.handleOpenExplorer}
+                  onClick={gameBoard.spaceExplorerManager.handleOpenExplorer}
                   title="Show space details"
                 >
                   Show Explorer
@@ -132,7 +133,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
                   diceOutcomes={gameBoard.state.diceOutcomes}
                   diceRoll={gameBoard.state.lastDiceRoll}
                   availableMoves={availableMoves}
-                  onMoveSelect={gameBoard.handleSpaceClick}
+                  onMoveSelect={gameBoard.spaceSelectionManager.handleSpaceClick}
                   onDrawCards={gameBoard.handleDrawCards}
                   onRollDice={gameBoard.diceManager.handleRollDiceClick}
                   hasRolledDice={hasRolledDice}
@@ -177,7 +178,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
                   
                 {/* End Turn button */}
                 <button 
-                  onClick={gameBoard.handleEndTurn}
+                  onClick={gameBoard.turnManager.handleEndTurn}
                   disabled={
                     !currentPlayer || 
                     !gameBoard.state.hasSelectedMove ||
@@ -255,7 +256,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
         )}
         
         {/* Game Instructions Panel */}
-        {showInstructions && instructionsData && this.renderInstructionsPanel(instructionsData, gameBoard.toggleInstructions)}
+        {showInstructions && instructionsData && this.renderInstructionsPanel(instructionsData, gameBoard.spaceSelectionManager.toggleInstructions)}
       </div>
     );
   }

@@ -62,6 +62,13 @@ This document serves as a consolidated record of all completed tasks in the proj
   - WorkCardDialogs.js: Special dialogs for W card mechanics
   - CardActions.js: Action handlers for card interactions
 - ✓ COMPLETED! SpaceExplorer.js has been refactored with modular structure and improved error handling
+- ✓ COMPLETED! The GameBoard.js component has been refactored to use separate manager components:
+  - TurnManager.js: Handles turn transitions and player states
+  - SpaceSelectionManager.js: Manages space selection and available moves
+  - SpaceExplorerManager.js: Controls the Space Explorer panel behavior
+- ✓ COMPLETED! Updated all component references to use manager components consistently
+- ✓ COMPLETED! Fixed NegotiationManager to use TurnManager for player access
+- ✓ COMPLETED! Fixed DiceManager to use TurnManager and SpaceSelectionManager properly
 - ✓ COMPLETED! Each component now has a single responsibility for better maintainability
 - ✓ COMPLETED! Utility functions have been extracted into separate files for reusability
 - ✓ COMPLETED! Component loading order has been adjusted in HTML files for proper dependency loading
@@ -80,7 +87,7 @@ This document serves as a consolidated record of all completed tasks in the proj
 
 ## Negotiation Mechanics
 
-- ✓ COMPLETED! Implement negotiation mechanic to retry outcomes
+- ✓ COMPLETED! Implement negotiation mechanic to stay on the same space until next turn
 - ✓ COMPLETED! Enhance negotiation mechanic with improved logging and code clarity
 - ✓ COMPLETED! Implemented a dedicated NegotiationManager that handles all negotiation logic
 - ✓ COMPLETED! Removed resetGame method from NegotiationManager following the Single Responsibility Principle
@@ -126,9 +133,11 @@ This document serves as a consolidated record of all completed tasks in the proj
 - ✓ COMPLETED! Created comprehensive player-animation-enhancements.md documentation
 - ✓ COMPLETED! Documented dice-roll-improvements in a dedicated file
 - ✓ COMPLETED! Created detailed documentation for the NegotiationManager component
+- ✓ COMPLETED! Created detailed documentation for the GameBoard refactoring in gameboard-refactoring.md
+- ✓ COMPLETED! Updated all guiding documentation to reflect the manager component pattern implementation
 - ✓ COMPLETED! Documented lessons learned from previous implementations
 - ✓ COMPLETED! Updated documentation to reflect the BoardSpaceRenderer.js CSS refactoring
 
 ## Last Updated
 
-April 18, 2025 (Updated with dice CSS extraction)
+April 18, 2025 (Updated with GameBoard manager component pattern implementation and related fixes)

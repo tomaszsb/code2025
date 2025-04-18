@@ -9,7 +9,7 @@ class NegotiationManager {
   // Check if negotiation is allowed for the current space
   isNegotiationAllowed = () => {
     console.log('NegotiationManager: Checking if negotiation is allowed');
-    const currentPlayer = this.gameBoard.getCurrentPlayer();
+    const currentPlayer = this.gameBoard.turnManager.getCurrentPlayer();
     if (!currentPlayer) {
       console.log('NegotiationManager: No current player found, negotiation not allowed');
       return false;
@@ -42,7 +42,7 @@ class NegotiationManager {
     }
     
     // Get the current player
-    const currentPlayer = this.gameBoard.getCurrentPlayer();
+    const currentPlayer = this.gameBoard.turnManager.getCurrentPlayer();
     if (!currentPlayer) {
       console.log('NegotiationManager: No current player found');
       return;
@@ -109,13 +109,7 @@ class NegotiationManager {
     const newSpace = this.gameBoard.state.spaces.find(s => s.id === newPlayerPosition);
     
     // Create a deep copy of the player's status for the static view
-    const playerSnapshot = newCurrentPlayer ? {
-      ...newCurrentPlayer,
-      resources: { ...newCurrentPlayer.resources },
-      cards: [...(newCurrentPlayer.cards || [])],
-      // Force the color to be the current player's color for consistent UI
-      color: newCurrentPlayer.color
-    } : null;
+    const playerSnapshot = newCurrentPlayer ? this.gameBoard.turnManager.createPlayerSnapshot(newCurrentPlayer) : null;
     
     // Create a deep copy of the space info for the static view
     const spaceSnapshot = newSpace ? { ...newSpace } : null;
@@ -144,7 +138,7 @@ class NegotiationManager {
     console.log('NegotiationManager: Dispatched resetSpaceInfoButtons event to reset all button states');
     
     // Update available moves for new player
-    this.gameBoard.updateAvailableMoves();
+    this.gameBoard.spaceSelectionManager.updateAvailableMoves();
     
     console.log('NegotiationManager: Turn ended via negotiate, next player:', window.GameState.currentPlayerIndex, 'on space:', newPlayerPosition);
     console.log('NegotiationManager: Negotiation action completed successfully');

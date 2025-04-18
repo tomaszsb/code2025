@@ -102,7 +102,10 @@ This document serves as a consolidated record of all completed tasks in the proj
 
 ## Visual Improvements
 
-- ✓ IMPROVED! Basic player movement animations added with smooth transitions
+- ✓ COMPLETED! Player movement animations implemented with arrival and departure effects
+- ✓ COMPLETED! Added ghost tokens that fade out from previous spaces when a player moves
+- ✓ COMPLETED! Implemented animated transitions with bounce effects for token movement
+- ✓ COMPLETED! Enhanced player animations with directional movement support
 - ✓ IMPROVED! Visual highlighting of the current player's token for better turn visibility
 - ✓ IMPROVED! Added dedicated CSS file for player animations
 - ✓ COMPLETED! Implemented CSS transitions for player token movements
@@ -140,4 +143,4 @@ This document serves as a consolidated record of all completed tasks in the proj
 
 ## Last Updated
 
-April 18, 2025 (Updated with GameBoard manager component pattern implementation and related fixes)
+April 18, 2025 (Updated with player movement animation implementation)

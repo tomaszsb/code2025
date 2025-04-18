@@ -181,6 +181,14 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Properly scoping CSS selectors to prevent styling conflicts between components
    - Naming animations carefully to avoid conflicts between components
 
+7. **Animation Approach**
+   - Using CSS animations for visual effects instead of JavaScript animations
+   - Implementing proper state tracking for animations (previous vs. current position)
+   - Creating "ghost tokens" to visually represent movement origins
+   - Applying animation classes based on game state changes
+   - Using z-index management to ensure proper layering of animated elements
+   - Example: Player token movement animations with arrival and departure effects
+
 ## Implementation Guidelines
 
 ### Adding New Features
@@ -417,4 +425,4 @@ This document consolidates lessons learned, best practices, and optimization rec
 
 ---
 
-*Last Updated: April 18, 2025 (Updated with GameBoard manager pattern lessons)*
+*Last Updated: April 18, 2025 (Updated with player movement animation lessons)*

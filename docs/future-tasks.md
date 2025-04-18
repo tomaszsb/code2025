@@ -14,7 +14,7 @@ This document consolidates the project's future direction, priorities, and timel
 - Test with multiple players and scenarios
 
 ### 2. Visual Feedback Enhancements
-- Add animations for player movement between spaces
+- ~~Add animations for player movement between spaces~~ (COMPLETED!)
 - Improve highlighting of the active player
 - Add visual cues for available moves
 - Implement transitions between game states
@@ -141,4 +141,4 @@ This roadmap will be reviewed and updated monthly to reflect:
 
 ---
 
-*Last Updated: April 18, 2025 (Updated with GameBoard.js manager component pattern completion)*
+*Last Updated: April 18, 2025 (Updated with player movement animation completion)*

@@ -32,6 +32,19 @@ window.BoardSpaceRenderer = {
     // Find players on this space
     const playersOnSpace = players.filter(player => player.position === space.id);
     
+    // Find players who are moving to this space (their previous position was different)
+    const playersMovingToSpace = players.filter(player => 
+      player.position === space.id && 
+      player.previousPosition !== null && 
+      player.previousPosition !== player.position
+    );
+    
+    // Find players who just moved from this space
+    const playersMovedFromSpace = players.filter(player => 
+      player.previousPosition === space.id && 
+      player.position !== space.id
+    );
+    
     // Check if this space is an available move
     const isAvailableMove = availableMoves.some(move => move.id === space.id);
     
@@ -97,12 +110,44 @@ window.BoardSpaceRenderer = {
               // Track if this is the current player
               const isCurrentPlayer = window.GameState.currentPlayerIndex === window.GameState.players.indexOf(player);
               
+              // Check if this player just moved to this space
+              const justMoved = player.previousPosition !== null && player.previousPosition !== player.position;
+              
+              // Calculate animation classes based on movement
+              let animationClass = '';
+              if (justMoved) {
+                // Get information about the previous space to determine movement direction
+                const previousSpace = window.GameState.spaces.find(s => s.id === player.previousPosition);
+                const currentSpace = window.GameState.spaces.find(s => s.id === player.position);
+                
+                if (previousSpace && currentSpace) {
+                  console.log(`BoardSpaceRenderer: Player ${player.name} moved from ${previousSpace.name} to ${currentSpace.name}`);
+                  animationClass = 'player-moved-in';
+                }
+              }
+              
               return (
                 <div 
                   key={player.id}
-                  className={`player-token ${isCurrentPlayer ? 'current-player' : ''}`}
+                  className={`player-token ${isCurrentPlayer ? 'current-player' : ''} ${animationClass}`}
                   style={{ backgroundColor: player.color }}
                   title={player.name}
+                />
+              );
+            })}
+          </div>
+        )}
+        
+        {/* Render ghost tokens for players who just moved from this space */}
+        {playersMovedFromSpace.length > 0 && (
+          <div className="player-tokens player-tokens-moving-out">
+            {playersMovedFromSpace.map(player => {
+              return (
+                <div 
+                  key={`${player.id}-ghost`}
+                  className="player-token player-moved-out"
+                  style={{ backgroundColor: player.color }}
+                  title={`${player.name} (moved)`}
                 />
               );
             })}

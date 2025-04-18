@@ -1,36 +1,3 @@
-### Player Token Animations
-
-The game now includes animations for player tokens as they move between spaces:
-
-1. **Token Animation System**:
-   - CSS transitions provide smooth movement and visibility effects
-   - Current player's token is visually highlighted for better identification
-   - Organized in a dedicated CSS file for maintainability
-
-2. **Implementation Details**:
-   - Player tokens use transform and opacity transitions
-   - Current player token is scaled up slightly with a subtle glow effect
-   - Hover effects added for better interactivity
-   - Maintained separation of styling concerns with external CSS
-
-3. **Related Files**:
-   - `BoardSpaceRenderer.js` - Contains player token rendering logic
-   - `player-animations.css` - Contains all animation and highlighting styles
-   - No inline CSS used, following project standards
-
-```css
-/* Example of player token animation styles */
-.player-token {
-  transition: transform 0.5s ease-out, opacity 0.3s ease;
-  position: relative;
-}
-
-.player-token.current-player {
-  transform: scale(1.2);
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8), 0 0 10px rgba(255, 255, 0, 0.6);
-}
-```
-
 # Project Management Game Documentation
 
 ## Overview
@@ -150,6 +117,39 @@ A complete card management system has been implemented with the following featur
    - Card effects are applied to gameplay
    - Cards are stored in the player's game state
    - Cards can be viewed, played, or discarded by the player
+
+### Player Token Animations
+
+The game now includes animations for player tokens as they move between spaces:
+
+1. **Token Animation System**:
+   - CSS transitions provide smooth movement and visibility effects
+   - Current player's token is visually highlighted for better identification
+   - Organized in a dedicated CSS file for maintainability
+
+2. **Implementation Details**:
+   - Player tokens use transform and opacity transitions
+   - Current player token is scaled up slightly with a subtle glow effect
+   - Hover effects added for better interactivity
+   - Maintained separation of styling concerns with external CSS
+
+3. **Related Files**:
+   - `BoardSpaceRenderer.js` - Contains player token rendering logic
+   - `player-animations.css` - Contains all animation and highlighting styles
+   - No inline CSS used, following project standards
+
+```css
+/* Example of player token animation styles */
+.player-token {
+  transition: transform 0.5s ease-out, opacity 0.3s ease;
+  position: relative;
+}
+
+.player-token.current-player {
+  transform: scale(1.2);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8), 0 0 10px rgba(255, 255, 0, 0.6);
+}
+```
 
 ## How The Game Works
 
@@ -453,6 +453,10 @@ When working with the refactored card system:
 4. Card action handlers (play, discard, draw) are in CardActions.js
 5. Special dialogs for Work Type cards are in WorkCardDialogs.js
 
+## Future Development
+
+For planned enhancements to the game, see the future-tasks.md file.
+
 ## Troubleshooting
 
 ### Common Issues
@@ -474,3 +478,7 @@ When working with the refactored card system:
 5. Verify that dice outcomes are being properly categorized
 6. Check CSS classes for proper animation sequencing
 7. Look for the console.log messages at the beginning and end of each card component file to confirm loading
+
+---
+
+*Last Updated: April 18, 2025*

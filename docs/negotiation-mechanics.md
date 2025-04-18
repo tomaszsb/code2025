@@ -1,49 +1,47 @@
-# Negotiation Mechanics Implementation
+# Negotiation System Documentation
 
 ## Overview
 
-The negotiation feature allows players to stay on the same space and try again on their next turn, paying only the time penalty for the space. This provides a strategic option when players get unfavorable dice rolls or card draws and would prefer to try again rather than proceed with the current outcome.
+The negotiation system is a core gameplay mechanic that allows players to stay on the same space and try again on their next turn, rather than being forced to move to a new space. This document covers both the game design aspects and technical implementation of the negotiation system.
 
-The implementation follows a modular approach with a dedicated NegotiationManager class that handles all negotiation-related functionality.
+## Game Design Aspects
 
-## Implementation Details
+### Core Concept
 
-### NegotiationManager.js
+Negotiation represents a project management decision to persist with a challenging task rather than moving on to something else. In real-world project management, this might involve:
 
-A dedicated manager class has been created to handle all negotiation-related logic, following the same pattern used for other game mechanics like the CardManager and DiceManager. This keeps the code modular and maintainable.
+- Requesting more time to complete a deliverable
+- Trying different approaches to solve a problem
+- Working with stakeholders to overcome obstacles
+- Revising plans or requirements to better match reality
 
-#### Key Features:
+### Game Mechanics
 
-1. **Space-Specific Negotiation Rules**: 
-   - NegotiationManager checks both the "rawNegotiate" and "Negotiate" properties from the Spaces.csv file to determine if negotiation is allowed for each space
-   - Dual property checking ensures backward compatibility while providing flexibility for future changes
-   - The button is automatically disabled for spaces where negotiation is not allowed
+1. **Eligible Spaces**: Only certain spaces allow negotiation (indicated in the CSV by "YES" in the "Negotiate" column).
 
-2. **Negotiation Logic**:
-   - When a player uses the Negotiate button, they stay on their current space
-   - They only incur the time penalty from the space (if any)
-   - All other actions from the current turn are discarded (money, cards, etc.)
-   - Resources are reset to their original values when the player first landed on the space
-   - Any cards drawn during the turn are removed from the player's hand
-   - All UI state is reset, including button usage status (usedButtons)
-   - The turn moves to the next player
+2. **Player Choice**: When on a negotiable space, players can choose to either:
+   - Accept the current outcome and move to a new space (End Turn)
+   - Negotiate to stay on the same space and try again next turn (Negotiate)
 
-3. **User Interface Integration**:
-   - The Negotiate button has dynamic tooltips that explain when and why negotiation is available or unavailable
-   - The button is properly disabled when negotiation is not allowed
+3. **Cost of Negotiation**: When negotiating, the player incurs:
+   - The time penalty from the space (if any)
+   - The opportunity cost of not moving forward
 
-4. **Game State Management**:
-   - The manager properly updates the game state after negotiation
-   - It interacts with the GameState to ensure proper turn progression
+4. **Reset Effects**: When negotiating, all actions taken during the current turn are discarded with the exception of time penalties. This includes:
+   - Cards drawn
+   - Money spent
+   - Any other resource changes
 
-5. **Event-Based Communication**:
-   - Uses a custom event system to reset UI state across components
-   - Dispatches a resetSpaceInfoButtons event when negotiation occurs
-   - SpaceInfo components listen for this event and reset their button states
+5. **Strategic Implications**: 
+   - Negotiation creates risk-reward decision points
+   - Players must weigh the cost of time against potential benefits
+   - Creates tension between persistence and forward progress
 
-### Code Structure
+## Technical Implementation
 
-The NegotiationManager follows the component manager pattern established in the codebase:
+### NegotiationManager Component
+
+The `NegotiationManager` class handles all negotiation-related functionality:
 
 ```javascript
 class NegotiationManager {
@@ -51,113 +49,162 @@ class NegotiationManager {
     this.gameBoard = gameBoard;
   }
   
-  // Check if negotiation is allowed for the current space
-  isNegotiationAllowed = () => {
-    console.log('NegotiationManager: Checking if negotiation is allowed');
-    // Logic to check if the current space allows negotiation
-    // using both rawNegotiate and Negotiate properties for backward compatibility
-  }
-  
-  // Handle the negotiation action
-  handleNegotiate = () => {
-    console.log('NegotiationManager: Negotiate button clicked');
-    // Logic to handle when player clicks negotiate
-    // Apply time penalty but discard other effects
-    // Move to next player's turn
-    
-    // Dispatch event to reset UI button states
-    const resetEvent = new CustomEvent('resetSpaceInfoButtons');
-    window.dispatchEvent(resetEvent);
-    
-    console.log('NegotiationManager: Negotiation action completed successfully');
-  }
-  
-  // Get tooltip text for the negotiate button
-  getNegotiateButtonTooltip = () => {
-    console.log('NegotiationManager: Getting negotiate button tooltip');
-    // Return appropriate tooltip based on whether negotiation is allowed
-  }
-  
-  // Note: The resetGame function has been removed, as it violated the
-  // Single Responsibility Principle. Game reset functionality now uses
-  // window.GameState.startNewGame() directly.
+  // Methods
+  isNegotiationAllowed()
+  handleNegotiate()
+  getNegotiateButtonTooltip()
 }
 ```
 
-## Integration with Existing Components
+### Key Methods
 
-### GameBoard.js
-- The NegotiationManager is initialized in the GameBoard constructor alongside other managers
-- The old handleNegotiate method has been removed from GameBoard, with that functionality now in NegotiationManager
+#### `isNegotiationAllowed()`
 
-### BoardRenderer.js
-- The Negotiate button now uses methods from NegotiationManager:
-  - `onClick={gameBoard.negotiationManager.handleNegotiate}`
-  - `title={gameBoard.negotiationManager.getNegotiateButtonTooltip()}`
-  - `disabled={!currentPlayer || !gameBoard.negotiationManager.isNegotiationAllowed()}`
+Determines if negotiation is permitted for the current space.
 
-### SpaceInfo.js
-- Added event listener for resetSpaceInfoButtons events
-- Implemented handleResetButtons method to clear usedButtons state
-- Properly removes event listener in componentWillUnmount
+- Retrieves the current player's position
+- Checks the space's `rawNegotiate` and `Negotiate` properties
+- Returns boolean indicating if negotiation is allowed
+- Implements backward compatibility by checking both properties
 
-## Data Model
+#### `handleNegotiate()`
 
-The negotiation feature relies on two properties in the space data:
+Processes the negotiation action when a player chooses to negotiate:
 
-1. **rawNegotiate**: The direct value from the "Negotiate" column in the Spaces.csv file
-2. **Negotiate**: A processed version of the same property that may be used in some contexts
+1. Verifies negotiation is allowed for the current space
+2. Applies any time penalty to the player
+3. Resets the player's resources to their state when they landed on the space
+   - Money is reset to original value
+   - Cards are reset to original state (removing any cards drawn this turn)
+4. Moves to the next player's turn while keeping the current player on the same space
+5. Updates the game board state
+6. Dispatches a custom event to reset UI button states
 
-Both properties contain either "YES" or "NO" values for each space. This dual-property approach ensures backward compatibility while allowing for future enhancements.
+#### `getNegotiateButtonTooltip()`
 
-Example from Spaces.csv:
+Provides appropriate tooltip text for the negotiate button:
+- If negotiation is allowed: "End your turn, stay on this space, and only take the time penalty"
+- If not allowed: "Negotiation is not allowed on this space"
+
+### Integration with GameBoard
+
+The NegotiationManager is initialized in the GameBoard component:
+
+```javascript
+// In GameBoard.js constructor
+this.negotiationManager = new window.NegotiationManager(this);
 ```
-Space Name,Phase,Visit Type,...,Negotiate
-OWNER-SCOPE-INITIATION,SETUP,First,...,YES
-OWNER-SCOPE-INITIATION,SETUP,Subsequent,...,NO
-OWNER-FUND-INITIATION,SETUP,First,...,YES
+
+The GameBoard component renders the Negotiate button conditionally based on whether negotiation is allowed:
+
+```javascript
+{this.negotiationManager.isNegotiationAllowed() && (
+  <button 
+    className="negotiate-button" 
+    onClick={this.negotiationManager.handleNegotiate}
+    title={this.negotiationManager.getNegotiateButtonTooltip()}
+  >
+    Negotiate
+  </button>
+)}
 ```
+
+### Integration with SpaceInfo
+
+The NegotiationManager communicates with SpaceInfo components through a custom event system:
+
+1. When negotiation happens, NegotiationManager dispatches a `resetSpaceInfoButtons` event
+2. SpaceInfo components listen for this event and reset their button states
+3. This ensures all card draw buttons are re-enabled after negotiation
+
+```javascript
+// In NegotiationManager.js
+const resetEvent = new CustomEvent('resetSpaceInfoButtons');
+window.dispatchEvent(resetEvent);
+
+// In SpaceInfo.js
+window.addEventListener('resetSpaceInfoButtons', this.handleResetButtons);
+```
+
+### Data Structure
+
+Negotiation is controlled by the `Negotiate` field in the spaces CSV file:
+
+| Space Name | ... | Negotiate | ... |
+|------------|-----|-----------|-----|
+| SPACE-A    | ... | YES       | ... |
+| SPACE-B    | ... | NO        | ... |
+
+Both `rawNegotiate` and `Negotiate` properties are maintained in the space objects for backward compatibility.
+
+## UI Components
+
+### Negotiate Button
+
+The negotiate button appears in the game controls when:
+- The player is on a space that allows negotiation
+- It's the player's turn
+- The player has not already selected a move
+
+The button includes a tooltip explaining its function and consequences.
+
+### Visual Feedback
+
+When negotiation occurs:
+- The player token remains on the same space
+- The turn indicator moves to the next player
+- A brief animation indicates the negotiation action
+- The player's time resource visibly updates
+- Card draw buttons are reset to their initial state
 
 ## Recent Improvements
 
-### Enhanced Negotiation Permission Checking
-- Improved permission checking by considering both `rawNegotiate` and `Negotiate` properties for backward compatibility
-- Added detailed comments explaining the dual-property approach
-- Enhanced logging to display both property values for easier debugging
+### 1. Enhanced Permission Checking
+- Improved comments explaining the dual property check system
+- Enhanced logging to display both property values
+- Maintained backward compatibility 
 
-### Fixed Button State Reset Issues
-- Added event-based system to reset UI button states when negotiation occurs
-- Fixed issue where dice roll outcome buttons remained disabled after negotiation
-- Ensured proper cleanup of event listeners when components unmount
+### 2. State Update Clarification
+- Clearer explanations of state updates
+- Better context for time resource modification
 
-### Clarified State Update Comments
-- Improved comments around player time resource updates
-- Added clear explanation about why the resource should only be modified in one location
+### 3. Event-Based UI Reset
+- Added custom event system to reset SpaceInfo buttons
+- Ensured card draw buttons properly re-enable
+- Fixed issues with dice roll outcome buttons
 
-### Improved Logging
-- Added thorough entry and exit logging for all methods
-- Added completion log statement at the end of the `handleNegotiate` function
-- Enhanced existing logs with more detailed information
-- Added logging for the event system
-
-### Code Structure Improvements
-- Removed resetGame method that didn't belong in the NegotiationManager
-- Maintained backward compatibility while making the code more maintainable
+### 4. Improved Logging
+- Added completion log statement
+- Enhanced existing logs with more details
+- Added logging for the event-based reset system
 
 ## Future Enhancements
 
-Potential future improvements to the negotiation system:
+### Planned Improvements
+1. Add visual indicator for spaces that allow negotiation
+2. Implement variable negotiation costs based on space type
+3. Create advanced negotiation options with different outcomes
+4. Add tutorial content explaining the negotiation mechanic
+5. Implement a history log of negotiation decisions
 
-1. **Cost-Based Negotiation**: Add optional costs (money, resources) for negotiation on certain spaces
-2. **Visual Feedback**: Add animations or visual cues when negotiation occurs
-3. **Negotiation Limits**: Implement limits on how many times a player can negotiate in succession
-4. **Space-Specific Negotiation Effects**: Allow some spaces to have custom behavior when negotiating
-5. **Enhanced Event System**: Expand the event system for other cross-component communications
+### Implementation Priorities
+1. Enhance visual feedback for negotiation options
+2. Improve the event system for more reliable button resets
+3. Add analytics to track negotiation frequency and outcomes
+4. Create a more detailed tooltip with cost/benefit analysis
 
-## Conclusion
+## Testing Guidelines
 
-The negotiation mechanics have been fully implemented with a dedicated NegotiationManager that handles all negotiation logic. The implementation is data-driven, with the "Negotiate" column in Spaces.csv controlling which spaces allow negotiation. The user interface has been updated to properly enable/disable the Negotiate button based on these rules and provide helpful tooltips.
+When testing the negotiation system:
 
-Recent improvements have enhanced the system by adding an event-based mechanism to reset UI state when negotiation occurs, ensuring that all aspects of the game state are properly reset between turns.
+1. Check that only spaces with "YES" for Negotiate allow negotiation
+2. Verify that time penalties are correctly applied during negotiation
+3. Confirm that other resources (money, cards) are properly reset
+4. Test the button enable/disable logic works correctly
+5. Verify that the turn advances to the next player
+6. Check that UI state is properly reset after negotiation
+7. Test with multiple players to ensure correct functionality
 
-This follows the project's architectural pattern of using manager classes for specific gameplay mechanics and maintains a clean separation of concerns. The code is well-structured, properly logged, and follows all required coding practices.
+---
+
+*Last Updated: April 18, 2025*

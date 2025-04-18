@@ -8,21 +8,7 @@ This document details the implementation of player token animations in the Proje
 
 ### Core Animation System
 
-A basic animation system has been implemented with the following features:
-
-1. **CSS Transitions**: 
-   - Smooth movement animations using CSS transitions
-   - Opacity and transform effects for visual polish
-   - All styling kept in external CSS file
-
-2. **Current Player Highlighting**:
-   - Current player's token is visually distinct
-   - Slight size increase (1.2x scale)
-   - Subtle glow effect using box-shadow
-
-3. **Interactive Elements**:
-   - Hover effects for better user engagement
-   - Clear visual identification of active player
+See completed-tasks.md for a detailed list of completed player animation enhancements.
 
 ### Files Modified
 
@@ -100,26 +86,9 @@ A basic animation system has been implemented with the following features:
 }
 ```
 
-## Future Enhancements
+## Future Development
 
-While the current implementation provides basic animation functionality, there are several potential enhancements that could be made in the future:
-
-1. **Path Animation**:
-   - Animate tokens along the actual path between spaces
-   - Show intermediate steps during movement
-
-2. **Enhanced Visual Effects**:
-   - Add bounce or elastic effects on arrival
-   - Include particle effects or trails during movement
-   - Implement different animation styles for different player types
-
-3. **Sound Integration**:
-   - Add audio feedback synchronized with animations
-   - Different sounds for different move types
-
-4. **Performance Optimizations**:
-   - Use requestAnimationFrame for smoother animations
-   - Implement hardware acceleration hints
+For planned enhancements to the player animation system, see the future-tasks.md file.
 
 ## Maintenance Notes
 
@@ -132,3 +101,7 @@ When working with the player animation system:
 5. Follow the project's guidelines for avoiding inline CSS
 
 The basic animation framework is now in place, providing a foundation for more advanced visual feedback enhancements in the future.
+
+---
+
+*Last Updated: April 18, 2025*

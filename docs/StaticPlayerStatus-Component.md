@@ -80,7 +80,7 @@ The component implements structured logging with different severity levels:
 - WARN: Potential issues that don't prevent operation
 - ERROR: Problems that affect component functionality
 
-## Feature Enhancements
+## Recent Enhancements
 
 Recent enhancements to the component include:
 1. Removal of space effect section to focus strictly on player resources
@@ -88,6 +88,10 @@ Recent enhancements to the component include:
 3. Implementation of error boundaries for improved reliability
 4. Enhanced logging for better debugging
 5. External CSS for improved maintainability
+
+## Future Development
+
+For planned enhancements to the StaticPlayerStatus component, see the future-tasks.md file.
 
 ## Code Example
 
@@ -113,3 +117,7 @@ If the component fails to display or shows incorrect data:
 2. Verify that player and space objects are being passed correctly
 3. Ensure CSS files are properly loaded
 4. Check GameState for correct player data structure
+
+---
+
+*Last Updated: April 18, 2025*

@@ -101,9 +101,4 @@ From the player's perspective:
 
 ## Future Enhancements
 
-The visit tracking system enables future enhancements such as:
-
-1. More complex branching paths based on visit history
-2. Accumulated effects from multiple visits to the same space
-3. Better integration with the card system
-4. More sophisticated scorekeeping based on movement efficiency
+See future-tasks.md for a comprehensive list of planned visit tracking system enhancements.

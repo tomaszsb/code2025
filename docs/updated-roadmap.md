@@ -31,9 +31,7 @@ A digital board game that simulates the lifecycle of a construction project. The
   - [x] Create card data structure and storage
   - [x] Connect card drawing to specific board spaces
   - [x] Implement basic card actions (draw, discard)
-  - [ ] Create card display component that efficiently shows cards in player's hand
-  - [ ] Implement expandable "card drawer" for detailed viewing
-  - [ ] Create resource tracking for player stats based on cards
+  - [Tasks moved to future-tasks.md]
 
 - **Current Status**:
   - Card CSV data is prepared and available
@@ -51,7 +49,7 @@ A digital board game that simulates the lifecycle of a construction project. The
   - [x] Implement branching path logic based on dice results
   - [x] Implement negotiation mechanic to retry outcomes
   - [x] Enhance negotiation mechanic with improved logging and code clarity
-  - [ ] Balance outcome probability for engaging gameplay
+  - [Tasks moved to future-tasks.md]
 
 - **Current Status**:
   - Dice rolling component is fully implemented
@@ -66,10 +64,7 @@ A digital board game that simulates the lifecycle of a construction project. The
 
 - **Tasks**:
   - [x] Define board spaces to represent project phases
-  - [ ] Add educational tooltips explaining PM concepts
-  - [ ] Implement realistic project constraints (time, budget, scope)
-  - [ ] Create meaningful decision points that reflect real project challenges
-  - [ ] Balance difficulty for educational value
+  - [Tasks moved to future-tasks.md]
 
 - **Current Status**:
   - Board spaces represent project phases with appropriate categories
@@ -82,12 +77,7 @@ A digital board game that simulates the lifecycle of a construction project. The
 **Goal**: Refine the user experience and gather feedback.
 
 - **Tasks**:
-  - [ ] Enhance visual design for clarity and engagement
-  - [ ] Implement the "Pokedex"-style card reference system
-  - [ ] Add basic animations and feedback
-  - [ ] Conduct playtests with target audience
-  - [ ] Create tutorial and documentation
-  - [ ] Prepare marketing materials for educational institutions
+  - [Tasks moved to future-tasks.md]
 
 - **Current Status**:
   - Basic styling is in place
@@ -123,12 +113,8 @@ A digital board game that simulates the lifecycle of a construction project. The
 3. **Challenge**: Dice roll outcome processing
    **Solution**: Created dedicated DiceRollLogic utility and DiceRoll component
 
-## Immediate Next Steps
-1. Complete the card display UI to allow players to view and manage their cards
-2. Refine the dice roll outcomes to ensure balanced gameplay
-3. Add visual enhancements to make the game more engaging
-4. Conduct testing sessions to identify any bugs or usability issues
-5. Document the technical architecture to aid future development
+## Next Steps
+See future-tasks.md for a complete list of upcoming tasks, organized by priority and timeframe.
 
 ## Success Criteria Update
 - [x] Players can play through a complete game from start to finish

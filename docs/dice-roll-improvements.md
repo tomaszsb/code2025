@@ -6,37 +6,7 @@ The dice roll system has been significantly enhanced to provide a better visual 
 
 ## Implemented Improvements
 
-### 1. Enhanced 3D Dice Visuals
-- Added a realistic 3D dice with proper CSS transforms
-- Improved dot layout and styling for each face of the dice
-- Added depth and shading effects for a more polished appearance
-- Incorporated a result number badge for clear outcome display
-
-### 2. Improved Animation System
-- Created smoother and more dynamic rolling animations using CSS classes
-- Added phased animation for a more engaging dice roll experience
-- Implemented proper transition effects between states with CSS-based animations
-- Added visual cues to indicate when dice is actively rolling
-- Eliminated direct style manipulation for better performance and maintainability
-
-### 3. Space Card Integration
-- Dice rolling interface now fully integrated within the space card
-- Dice roll outcomes display directly on the space information card
-- Categorized outcomes by type (movement, cards, resources, other)
-- Added visual styling to differentiate outcome categories
-- Created a clear connection between dice results and their effects on gameplay
-
-### 4. UI/UX Improvements
-- Grayed out the Roll Dice button for spaces that don't have dice roll data
-- Added tooltips to provide contextual information
-- Improved layout and organization of outcome displays
-- Enhanced readability with appropriate typography hierarchy
-
-### 5. Component Optimization
-- Improved state management with better organization
-- Reduced unnecessary re-renders with optimized component lifecycle
-- Enhanced props passing between components for cleaner communication
-- Added proper cleanup to prevent memory leaks
+See completed-tasks.md for a detailed list of completed dice roll system enhancements.
 
 ## Technical Implementation Details
 
@@ -81,26 +51,7 @@ The dice roll system has been significantly enhanced to provide a better visual 
 
 ## Future Enhancements
 
-While significant improvements have been made to the dice roll system, some additional enhancements could be implemented in future updates:
-
-1. **Negotiation Mechanics**
-   - Add the ability to retry dice rolls as mentioned in the documentation
-   - Implement cost calculation for retrying rolls
-   - Create UI for negotiation decisions
-
-2. **Sound Effects**
-   - Add audio feedback for dice rolling
-   - Include different sounds for various outcome types
-
-3. **Accessibility Improvements**
-   - Add ARIA attributes for screen readers
-   - Ensure keyboard navigation support
-   - Add text alternatives for visual elements
-
-4. **Advanced Animations**
-   - Implement physics-based dice rolling
-   - Add particle effects for special outcomes
-   - Create smoother transitions between states
+See future-tasks.md for a comprehensive list of planned dice roll system enhancements.
 
 ## Testing Considerations
 

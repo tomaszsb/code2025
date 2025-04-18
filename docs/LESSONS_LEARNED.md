@@ -189,6 +189,14 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Using z-index management to ensure proper layering of animated elements
    - Example: Player token movement animations with arrival and departure effects
 
+8. **Visual Cues Implementation**
+   - Using CSS classes and DOM manipulation only after React rendering is complete
+   - Creating visual indicators for available moves that clearly guide the player
+   - Implementing cleanup methods to prevent memory leaks from animation timers
+   - Using transform effects for immediate visual feedback on selection
+   - Managing timing to ensure visual updates happen after state changes are processed
+   - Example: SpaceSelectionManager's updateAvailableMoveVisuals method and pulse animation
+
 ## Implementation Guidelines
 
 ### Adding New Features
@@ -327,6 +335,13 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Test CSS changes thoroughly to ensure they don't affect other components
    - Example: Using '.board-space .dice-icon' and '.dice-roll-container .dice-icon' to style similar elements differently
 
+6. **Visual Indicators and Feedback**
+   - Use animations to draw attention to important elements (e.g., pulse for available moves)
+   - Provide immediate visual feedback for user actions (e.g., enlarging a selected space)
+   - Use consistent color coding across the application (e.g., green for available moves)
+   - Create clear visual hierarchies using z-index, opacity, and animation timing
+   - Example: Pulsing animation for available moves in game-components.css
+
 ### Documentation
 
 1. **Code Comments**
@@ -401,6 +416,12 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Use events for complex interactions
    - Example: NegotiationManager using turnManager for player access
 
+6. **Resource Cleanup**
+   - Implement cleanup methods in all managers that use timers or event listeners
+   - Call cleanup methods when components unmount
+   - Clear timeouts and intervals to prevent memory leaks
+   - Example: SpaceSelectionManager.cleanup() clearing visualUpdateTimer
+
 ### Common Pitfalls
 
 1. **Missed References**
@@ -423,6 +444,11 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Document manager purpose and methods
    - Example: Creating gameboard-refactoring.md to document the approach
 
+5. **Uncleaned Resources**
+   - Failing to clear timers or remove event listeners when components unmount
+   - Implement cleanup methods for all managers and call them in componentWillUnmount
+   - Example: SpaceSelectionManager.cleanup() method being called in GameBoard.componentWillUnmount
+
 ---
 
-*Last Updated: April 18, 2025 (Updated with player movement animation lessons)*
+*Last Updated: April 18, 2025 (Updated with available moves visual cues implementation lessons)*

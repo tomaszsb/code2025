@@ -115,6 +115,10 @@ This document serves as a consolidated record of all completed tasks in the proj
 - ✓ COMPLETED! Implemented hover effects for better user engagement
 - ✓ COMPLETED! Extracted all BoardSpaceRenderer styles to external CSS file
 - ✓ COMPLETED! Eliminated all inline CSS and style injection from BoardSpaceRenderer.js
+- ✓ COMPLETED! Enhanced visual cues for available moves with pulsing animation and indicators
+- ✓ COMPLETED! Added "MOVE" labels and visual indicators to available move spaces
+- ✓ COMPLETED! Implemented visual feedback when a move is selected
+- ✓ COMPLETED! Created transition animations between different sets of available moves
 
 ## Space Visibility Filtering
 
@@ -143,4 +147,4 @@ This document serves as a consolidated record of all completed tasks in the proj
 
 ## Last Updated
 
-April 18, 2025 (Updated with player movement animation implementation)
+April 18, 2025 (Updated with available moves visual cues implementation)

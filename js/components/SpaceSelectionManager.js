@@ -4,11 +4,13 @@ console.log('SpaceSelectionManager.js file is beginning to be used');
 /**
  * SpaceSelectionManager class for handling space selection and available moves
  * Manages the logic for determining available moves, handling space clicks,
- * and checking space visit status
+ * checking space visit status, and providing visual cues for available moves
  */
 class SpaceSelectionManager {
   constructor(gameBoard) {
     this.gameBoard = gameBoard;
+    // Track DOM update timers to clear them when needed
+    this.visualUpdateTimer = null;
   }
   
   /**
@@ -36,9 +38,92 @@ class SpaceSelectionManager {
         showDiceRoll: false,
         diceRollSpace: null,
         diceRollVisitType: null
+      }, () => {
+        // Apply visual cues for available moves after state update
+        this.updateAvailableMoveVisuals();
       });
-      console.log('SpaceSelectionManager: Available moves updated:', result.length, 'moves available');
+      console.log('SpaceSelectionManager: Available moves updated:', result ? result.length : 0, 'moves available');
     }
+  }
+  
+  /**
+   * Apply visual cues to highlight available moves on the board
+   * Uses CSS classes instead of inline styles
+   */
+  updateAvailableMoveVisuals = () => {
+    // Clear any previous visual update timer
+    if (this.visualUpdateTimer) {
+      clearTimeout(this.visualUpdateTimer);
+    }
+    
+    // Wait for React to finish rendering before manipulating DOM
+    this.visualUpdateTimer = setTimeout(() => {
+      const { availableMoves, selectedMove } = this.gameBoard.state;
+      
+      // First, remove all visual indicators from all spaces
+      const allSpaces = document.querySelectorAll('.board-space');
+      allSpaces.forEach(space => {
+        space.classList.remove('available-move');
+        space.classList.remove('selected-move');
+        
+        // Remove any move indicators
+        const existingIndicators = space.querySelectorAll('.move-indicator');
+        existingIndicators.forEach(indicator => indicator.remove());
+      });
+      
+      // If there are no available moves, no need to continue
+      if (!availableMoves || availableMoves.length === 0) {
+        console.log('SpaceSelectionManager: No available moves to highlight');
+        return;
+      }
+      
+      // Apply visual cues to available move spaces
+      availableMoves.forEach(move => {
+        const spaceElement = document.getElementById(`space-${move.id}`);
+        if (spaceElement) {
+          // Add the available-move class for highlighting
+          spaceElement.classList.add('available-move');
+          
+          // Create a visual indicator for the move
+          const indicatorElement = document.createElement('div');
+          indicatorElement.className = 'move-indicator';
+          indicatorElement.textContent = 'MOVE';
+          
+          // Add details about the move if available
+          if (move.visitType) {
+            const detailsElement = document.createElement('div');
+            detailsElement.className = 'move-details';
+            detailsElement.textContent = move.visitType.charAt(0).toUpperCase() + move.visitType.slice(1) + ' visit';
+            indicatorElement.appendChild(detailsElement);
+          }
+          
+          // Add the indicator to the space
+          spaceElement.appendChild(indicatorElement);
+        }
+      });
+      
+      // If a move is selected, highlight it differently
+      if (selectedMove) {
+        const selectedSpaceElement = document.getElementById(`space-${selectedMove}`);
+        if (selectedSpaceElement) {
+          // Remove available-move class and add selected-move class
+          selectedSpaceElement.classList.remove('available-move');
+          selectedSpaceElement.classList.add('selected-move');
+          
+          // Replace the move indicator with a selected move indicator
+          const existingIndicators = selectedSpaceElement.querySelectorAll('.move-indicator');
+          existingIndicators.forEach(indicator => indicator.remove());
+          
+          const selectedIndicator = document.createElement('div');
+          selectedIndicator.className = 'move-indicator';
+          selectedIndicator.textContent = 'SELECTED';
+          selectedIndicator.style.backgroundColor = '#e74c3c'; // Use red background for selected move
+          selectedSpaceElement.appendChild(selectedIndicator);
+        }
+      }
+      
+      console.log('SpaceSelectionManager: Visual cues updated for available moves');
+    }, 100); // Short delay to ensure React has finished rendering
   }
   
   /**
@@ -71,11 +156,15 @@ class SpaceSelectionManager {
         hasSelectedMove: true,   // Mark that player has selected their move
         exploredSpace: exploredSpaceData // Set the explored space for the space explorer panel
       }, () => {
-        // After state update, log the selected move for debugging
+        // After state update, update visual cues to show selected move
+        this.updateAvailableMoveVisuals();
         console.log('SpaceSelectionManager: Selected move updated:', this.gameBoard.state.selectedMove);
       });
       
       console.log('SpaceSelectionManager: Move selected:', spaceId, '- Will be executed on End Turn');
+      
+      // Provide visual feedback for the selection
+      this.provideSelectionFeedback(spaceId);
     } else {
       // For non-move spaces, we update the space explorer panel but don't change the middle column
       this.gameBoard.setState({
@@ -84,6 +173,36 @@ class SpaceSelectionManager {
       
       console.log('SpaceSelectionManager: Space clicked for exploration:', spaceId);
     }
+  }
+  
+  /**
+   * Provide visual feedback when a move is selected
+   * Uses CSS classes for animation effects
+   * @param {string} spaceId - ID of the selected space
+   */
+  provideSelectionFeedback = (spaceId) => {
+    const spaceElement = document.getElementById(`space-${spaceId}`);
+    if (!spaceElement) return;
+    
+    // Add a temporary animation effect
+    spaceElement.classList.add('enlarged');
+    
+    // Remove the effect after animation completes
+    setTimeout(() => {
+      if (spaceElement) {
+        spaceElement.classList.remove('enlarged');
+      }
+    }, 300); // Duration matches CSS transition time
+  }
+  
+  /**
+   * Animate transitions between different sets of available moves
+   * Called when available moves change
+   */
+  animateAvailableMoveTransition = () => {
+    // This would ideally be called when moves change, such as after dice rolls
+    // Using existing CSS animations, we just need to update the classes
+    this.updateAvailableMoveVisuals();
   }
   
   /**
@@ -172,6 +291,19 @@ class SpaceSelectionManager {
     this.gameBoard.setState(prevState => ({
       showInstructions: !prevState.showInstructions
     }));
+  }
+  
+  /**
+   * Clean up any resources when component is unmounted
+   */
+  cleanup = () => {
+    // Clear any pending timers
+    if (this.visualUpdateTimer) {
+      clearTimeout(this.visualUpdateTimer);
+      this.visualUpdateTimer = null;
+    }
+    
+    console.log('SpaceSelectionManager: Cleaned up resources');
   }
 }
 

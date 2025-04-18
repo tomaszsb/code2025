@@ -88,6 +88,11 @@ window.GameBoard = class GameBoard extends React.Component {
       newCardData: null,
       showDiceRoll: false
     });
+    
+    // Clean up manager resources
+    if (this.spaceSelectionManager && typeof this.spaceSelectionManager.cleanup === 'function') {
+      this.spaceSelectionManager.cleanup();
+    }
   }
   
   // Toggle card display visibility

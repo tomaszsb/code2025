@@ -55,6 +55,9 @@ console.log('game-components.css file is beginning to be used');
 .board-space.available-move {
   animation: pulse 1.5s infinite;
   box-shadow: 0 0 0 0.125rem #27ae60, 0 0.313rem 0.938rem rgba(0, 0, 0, 0.2);
+  border: 2px solid #27ae60;
+  position: relative;
+  z-index: 5;
 }
 
 /* Selected move destination indicator */
@@ -62,6 +65,13 @@ console.log('game-components.css file is beginning to be used');
   transform: translateY(-0.188rem);
   box-shadow: 0 0 0 0.188rem #e74c3c, 0 0.313rem 0.938rem rgba(0, 0, 0, 0.2);
   position: relative;
+}
+
+/* Define pulse animation for available moves */
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0.125rem rgba(39, 174, 96, 0.7), 0 0.313rem 0.938rem rgba(0, 0, 0, 0.2); }
+  50% { box-shadow: 0 0 0 0.25rem rgba(39, 174, 96, 1), 0 0.313rem 1.25rem rgba(39, 174, 96, 0.4); }
+  100% { box-shadow: 0 0 0 0.125rem rgba(39, 174, 96, 0.7), 0 0.313rem 0.938rem rgba(0, 0, 0, 0.2); }
 }
 
 /* Enlarged space styling */

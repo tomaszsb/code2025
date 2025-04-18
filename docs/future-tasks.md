@@ -16,7 +16,7 @@ This document consolidates the project's future direction, priorities, and timel
 ### 2. Visual Feedback Enhancements
 - ~~Add animations for player movement between spaces~~ (COMPLETED!)
 - Improve highlighting of the active player
-- Add visual cues for available moves
+- ~~Add visual cues for available moves~~ (COMPLETED!)
 - Implement transitions between game states
 - Create consistent visual styling for different card types
 
@@ -141,4 +141,4 @@ This roadmap will be reviewed and updated monthly to reflect:
 
 ---
 
-*Last Updated: April 18, 2025 (Updated with player movement animation completion)*
+*Last Updated: April 18, 2025 (Updated with available moves visual cues completion)*

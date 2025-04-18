@@ -1,5 +1,5 @@
 // Game state management (Simplified)
-console.log('game-state.js file is being processed');
+console.log('game-state.js file is beginning to be used');
 
 window.GameState = {
   players: [],
@@ -565,4 +565,4 @@ window.GameState = {
   }
 };
 
-console.log('game-state.js execution finished');
+console.log('game-state.js code execution finished');

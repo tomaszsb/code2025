@@ -113,6 +113,7 @@ This document serves as a consolidated record of all completed tasks in the proj
 ## Logging and Documentation
 
 - ✓ COMPLETED! Console.log statements added at file start and end for easier debugging
+- ✓ COMPLETED! Standardized logging format across all files including game-state.js
 - ✓ COMPLETED! Enhanced logging with severity levels (debug, info, warn, error) implemented
 - ✓ COMPLETED! Updated all documentation to reflect the enhanced dice roll system
 - ✓ COMPLETED! The documentation now includes details about the card system implementation

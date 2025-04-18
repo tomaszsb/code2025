@@ -151,7 +151,8 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Console logs at the beginning and end of each file helped with debugging
    - Made it easier to track execution flow
    - Simplified troubleshooting
-   - Example: All component files now include proper logging
+   - Example: All component files now include proper logging with standardized format
+   - Recently standardized game-state.js logging to match other components
 
 5. **CSS Extraction**
    - Moving inline styles and JavaScript style injection to external CSS files

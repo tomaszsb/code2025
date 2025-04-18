@@ -38,7 +38,7 @@ window.GameBoard = class GameBoard extends React.Component {
       currentPlayerOnLanding: null, // Store snapshot of player status upon landing
       currentSpaceOnLanding: null,   // Store snapshot of space upon landing
       exploredSpace: null,      // Store currently explored space for details panel
-      showSpaceExplorer: true   // Flag set to always show space explorer panel
+      showSpaceExplorer: true   // Flag to show/hide space explorer panel
     };
     console.log("GameBoard: Space explorer is now always visible");
   }
@@ -292,18 +292,34 @@ window.GameBoard = class GameBoard extends React.Component {
     }));
   }
   
-  // Handler for close button in space explorer - now just updates content
+  // Handler for close button in space explorer
   handleCloseExplorer = () => {
-    // Instead of closing the space explorer, reset its content to the current player's space
+    // Actually close the space explorer
+    this.setState({
+      showSpaceExplorer: false
+    });
+    console.log('Space explorer closed');
+    
+    // Log using SpaceExplorerLogger if available
+    if (window.logSpaceExplorerToggle && typeof window.logSpaceExplorerToggle === 'function') {
+      window.logSpaceExplorerToggle(false, '');
+    }
+  }
+  
+  // Handler to open the space explorer
+  handleOpenExplorer = () => {
+    this.setState({
+      showSpaceExplorer: true
+    });
+    console.log('Space explorer opened');
+    
+    // Log using SpaceExplorerLogger if available
     const currentPlayer = this.getCurrentPlayer();
-    if (currentPlayer) {
-      const currentSpace = this.state.spaces.find(s => s.id === currentPlayer.position);
-      if (currentSpace) {
-        this.setState({
-          exploredSpace: currentSpace
-        });
-        console.log('Space explorer reset to current player space');
-      }
+    const currentSpace = currentPlayer ? this.state.spaces.find(s => s.id === currentPlayer.position) : null;
+    const spaceName = currentSpace ? currentSpace.name : '';
+    
+    if (window.logSpaceExplorerToggle && typeof window.logSpaceExplorerToggle === 'function') {
+      window.logSpaceExplorerToggle(true, spaceName);
     }
   }
   
@@ -407,6 +423,7 @@ window.GameBoard = class GameBoard extends React.Component {
         instructionsData={this.state.instructionsData}
         currentPlayerOnLanding={this.state.currentPlayerOnLanding}
         currentSpaceOnLanding={this.state.currentSpaceOnLanding}
+        showSpaceExplorer={this.state.showSpaceExplorer}
       />
     );
   }

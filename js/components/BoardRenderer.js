@@ -80,19 +80,34 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
               showSpaceExplorer={true} 
             />
               
-            {/* Space Explorer - Always visible */}
-            <div className="space-explorer-container">
-              {window.SpaceExplorer && (
-              <window.SpaceExplorer 
-                space={exploredSpace || gameBoard.getSelectedSpace()}
-              visitType={exploredSpace ? 
-                (GameState.hasPlayerVisitedSpace(currentPlayer, exploredSpace.name) ? 'subsequent' : 'first')
-                  : 'first'}
-                diceRollData={diceRollData}
-                  onClose={gameBoard.handleCloseExplorer}
+            {/* Space Explorer - Only visible when showSpaceExplorer is true */}
+            {this.props.showSpaceExplorer && (
+              <div className="space-explorer-container">
+                {window.SpaceExplorer && (
+                  <window.SpaceExplorer 
+                    space={exploredSpace || gameBoard.getSelectedSpace()}
+                    visitType={exploredSpace ? 
+                      (GameState.hasPlayerVisitedSpace(currentPlayer, exploredSpace.name) ? 'subsequent' : 'first')
+                      : 'first'}
+                    diceRollData={diceRollData}
+                    onClose={gameBoard.handleCloseExplorer}
                   />
                 )}
-            </div>
+              </div>
+            )}
+            
+            {/* When Space Explorer is closed, show a small button to reopen it */}
+            {!this.props.showSpaceExplorer && (
+              <div className="open-explorer-container">
+                <button 
+                  className="open-explorer-btn"
+                  onClick={gameBoard.handleOpenExplorer}
+                  title="Show space details"
+                >
+                  Show Explorer
+                </button>
+              </div>
+            )}
           </div>
             
           <div className="info-panels-container">

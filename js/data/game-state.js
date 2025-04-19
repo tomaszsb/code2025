@@ -23,6 +23,10 @@ window.GameState = {
       throw new Error('No spaces data provided or empty array!');
     }
     
+    // Initially set gameStarted to false to ensure the player setup screen is shown
+    // This will be set to true when a new game is started or a saved game is continued
+    this.gameStarted = false;
+    
     // Filter out invalid spaces
     const validSpaces = spacesData.filter(row => row['Space Name'] && row['Space Name'].trim() !== '');
     
@@ -392,7 +396,9 @@ window.GameState = {
       
       if (savedStatus) {
         const status = JSON.parse(savedStatus);
-        this.gameStarted = status.started || false;
+        // Don't set gameStarted to true here - let PlayerSetup handle this
+        // This allows the PlayerSetup screen to show with saved game options
+        this.gameStarted = false; // Explicitly set to false
         this.gameEnded = status.ended || false;
       }
     } catch (error) {

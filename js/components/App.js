@@ -39,10 +39,12 @@ window.App = class App extends React.Component {
             );
         }
         
-        // Render either GameBoard or PlayerSetup based on game state
+        // Check if the game should start or show setup
         if (GameState.gameStarted) {
             return <GameBoard />;
         } else {
+            // Show PlayerSetup which will handle saved games
+            // It will check if there's a saved game and offer to continue or start new
             return <PlayerSetup onSetupComplete={() => this.forceUpdate()} />;
         }
     }

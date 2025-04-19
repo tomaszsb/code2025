@@ -28,6 +28,32 @@ The game is a board-game style application that simulates a project management j
 
 ## Recent Modifications
 
+### Game Memory Management Enhancement
+
+The game now features improved memory management with user-friendly options for handling saved games:
+
+1. **Saved Game Detection**:
+   - When the game starts, it checks for previously saved game data in localStorage
+   - If a saved game is detected, players are presented with options to continue or start new
+   - The PlayerSetup component handles this logic in its initial rendering
+
+2. **Player Options**:
+   - Players can choose to "Continue Game" to resume their previous session
+   - Players can select "Start New Game" to clear saved data and start fresh
+   - The interface is intuitive and user-friendly with clearly labeled buttons
+
+3. **Implementation Details**:
+   - The PlayerSetup component uses `checkForSavedGame()` to detect saved games
+   - The GameState object's `loadSavedState()` method loads data but defers setting `gameStarted`
+   - The App component properly handles the flow between PlayerSetup and GameBoard
+   - Memory clearing is handled through the "Start New Game" option
+
+4. **Benefits**:
+   - Players can now start and stop gameplay across multiple sessions
+   - The game preserves progress including player positions, cards, and visit history
+   - The interface provides clear options without overwhelming the player
+   - Seamless integration with existing game state persistence
+
 ### Card System Refactoring
 
 The card system has been refactored from a single large component into a modular system with improved separation of concerns:
@@ -213,6 +239,101 @@ The game tracks spaces each player has visited in their `visitedSpaces` array. T
 - Card drawing opportunities
 
 ## Technical Implementation Details
+
+### Game Memory Management Flow
+
+```javascript
+// Memory management flow in PlayerSetup.js
+
+// 1. Check for saved game during initialization
+checkForSavedGame = () => {
+  try {
+    const savedPlayers = localStorage.getItem('game_players');
+    const savedStatus = localStorage.getItem('game_status');
+    
+    // Check if we have players saved and that the game was started
+    if (savedPlayers && savedStatus) {
+      const players = JSON.parse(savedPlayers);
+      const status = JSON.parse(savedStatus);
+      
+      // Only consider it a valid saved game if there are players and the game was started
+      return players && players.length > 0 && status.started === true;
+    }
+  } catch (error) {
+    console.error('Error checking for saved game:', error);
+  }
+  
+  return false;
+}
+
+// 2. Handle continuing with a saved game
+handleContinueGame = () => {
+  // Ensure gameStarted is true
+  GameState.gameStarted = true;
+  GameState.saveState();
+  
+  // Notify parent component to proceed to game board
+  this.props.onSetupComplete();
+}
+
+// 3. Handle starting a new game
+handleStartNewGame = () => {
+  // Clear saved game data and show the setup form
+  GameState.startNewGame();
+  this.setState({ 
+    hasSavedGame: false,
+    showSetupForm: true 
+  });
+}
+```
+
+```javascript
+// Memory management in GameState.js
+
+// Load state from localStorage
+loadSavedState() {
+  try {
+    const savedPlayers = localStorage.getItem('game_players');
+    const savedCurrentPlayer = localStorage.getItem('game_currentPlayer');
+    const savedStatus = localStorage.getItem('game_status');
+    
+    if (savedPlayers) {
+      this.players = JSON.parse(savedPlayers);
+    }
+    
+    if (savedCurrentPlayer) {
+      this.currentPlayerIndex = parseInt(savedCurrentPlayer);
+    }
+    
+    if (savedStatus) {
+      const status = JSON.parse(savedStatus);
+      // Don't set gameStarted to true here - let PlayerSetup handle this
+      // This allows the PlayerSetup screen to show with saved game options
+      this.gameStarted = false;
+      this.gameEnded = status.ended || false;
+    }
+  } catch (error) {
+    // Continue with default state if load fails
+    this.players = [];
+    this.currentPlayerIndex = 0;
+    this.gameStarted = false;
+    this.gameEnded = false;
+  }
+}
+
+// Clear saved state
+clearSavedState() {
+  localStorage.removeItem('game_players');
+  localStorage.removeItem('game_currentPlayer');
+  localStorage.removeItem('game_status');
+  
+  // Reset memory state too
+  this.players = [];
+  this.currentPlayerIndex = 0;
+  this.gameStarted = false;
+  this.gameEnded = false;
+}
+```
 
 ### Card System Refactoring
 
@@ -481,4 +602,4 @@ For planned enhancements to the game, see the future-tasks.md file.
 
 ---
 
-*Last Updated: April 18, 2025*
+*Last Updated: April 19, 2025* (Updated with game memory management enhancement)

@@ -57,12 +57,6 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
             >
               Game Instructions
             </button>
-            <button
-              onClick={() => { window.GameState.startNewGame(); window.location.reload(); }}
-              className="reset-game-btn"
-            >
-              Reset Game
-            </button>
           </div>
         </div>
         

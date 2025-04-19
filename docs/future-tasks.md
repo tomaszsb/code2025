@@ -21,8 +21,8 @@ This document consolidates the project's future direction, priorities, and timel
 - Create consistent visual styling for different card types
 
 ### 3. Performance Optimization
-- Reduce unnecessary re-renders in component tree
-- Optimize complex calculations in MoveLogic
+- ~~Reduce unnecessary re-renders in component tree~~ (COMPLETED with DiceRoll.js refactoring!)
+- ~~Optimize complex calculations in MoveLogic~~ (COMPLETED by using DiceRollLogic.js properly!)
 - Implement caching for frequently accessed data
 - Improve loading time for CSV data
 - ~~Review and optimize localStorage usage~~ (COMPLETED with memory management enhancement!)

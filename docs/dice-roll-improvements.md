@@ -8,6 +8,8 @@ The dice roll system has been significantly enhanced to provide a better visual 
 
 See completed-tasks.md for a detailed list of completed dice roll system enhancements.
 
+The most recent improvement is a strict data-driven approach that ensures dice outcomes are only shown when explicitly defined in the CSV data - see dice-roll-data-adhereence.md for detailed information about this enhancement.
+
 ## Technical Implementation Details
 
 ### Modified Files
@@ -19,8 +21,16 @@ See completed-tasks.md for a detailed list of completed dice roll system enhance
    - Removed toggle functionality in favor of direct space info integration
    - Eliminated direct style manipulation in favor of CSS classes
    - Added proper console logging for initialization and completion
+   - Updated to properly use DiceRollLogic.js for better separation of concerns
+   - Implemented strict adherence to CSV data with explicit space and visit type matching
 
-2. **GameBoard.js**
+2. **SpaceExplorer.js**
+   - Updated to only show dice outcomes for spaces with explicit CSV data entries
+   - Modified to require exact matching on both space name AND visit type
+   - Improved error handling and logging for dice data
+   - Enhanced dice roll indicator to only show for spaces with valid dice data
+
+3. **GameBoard.js**
    - Added new state variables to manage dice outcomes
    - Implemented handler functions to pass dice data to SpaceInfo
    - Modified component communication for better data flow

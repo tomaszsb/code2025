@@ -98,9 +98,9 @@ The game has been updated to show only one version of each space (first visit or
    - Main game container uses a reasonable minimum height that adapts to content
    - These changes eliminate excessive white space on the page
 
-### Enhanced Dice Roll System
+### Dice Roll System Implementation
 
-The dice roll system has been significantly enhanced to provide a better visual experience and improved integration with the space information display:
+A complete dice roll system has been implemented with the following features:
 
 1. **3D Dice Visualization**:
    - Realistic 3D dice with proper CSS transforms
@@ -119,6 +119,12 @@ The dice roll system has been significantly enhanced to provide a better visual 
    - Dice roll outcomes display directly on the space information card
    - Outcomes categorized by type (movement, cards, resources, other)
    - Roll Dice button is disabled for spaces that don't require dice rolls
+
+4. **Data-Driven Approach**:
+   - Dice outcomes are strictly based on CSV data with no assumptions
+   - Spaces only show dice roll outcomes when explicit entries exist in DiceRoll Info.csv
+   - Exact match required for both space name AND visit type
+   - No fallbacks or default behaviors for missing data
 
 ### Card System Implementation
 

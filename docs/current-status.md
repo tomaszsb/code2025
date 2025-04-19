@@ -29,11 +29,12 @@ After reviewing the codebase, I've identified several key aspects of the current
    - This enhancement allows players to continue games across multiple sessions
 
 2. **Enhanced Dice Roll System**:
-   - See completed-tasks.md for details on completed work
    - All dice-related CSS has been extracted to a dedicated dice-animations.css file
    - CSS selectors have been properly scoped to prevent styling conflicts
    - Animation names have been updated to avoid naming conflicts with other components
    - HTML files have been updated to include the new CSS file
+   - Strict data adherence implemented: spaces only show dice outcomes if explicitly defined in CSV
+   - No fallback behaviors or assumptions about dice data
 
 2. **Card UI Implementation**:
    - See completed-tasks.md for details on completed work

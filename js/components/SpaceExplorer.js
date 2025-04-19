@@ -80,14 +80,26 @@ class SpaceExplorer extends React.Component {
     if (!space || !diceRollData) return null;
     
     try {
-      // Filter dice roll data for the current space
+      // Filter dice roll data for the current space with exact visit type match
+      const visitType = space.visitType && space.visitType.toLowerCase(); // Extract current visit type
+      
+      if (!visitType) {
+        this.logWarn('Visit type not defined for space:', space.name);
+        return null;
+      }
+      
+      // Only show outcomes that match both space name AND visit type (strict matching)
       const spaceDiceData = diceRollData.filter(data => 
-        data['Space Name'] === space.name
+        data['Space Name'] === space.name && 
+        data['Visit Type'].toLowerCase() === visitType
       );
       
-      if (spaceDiceData.length === 0) return null;
+      if (spaceDiceData.length === 0) {
+        this.logInfo('No dice data found for', space.name, 'with visit type', visitType);
+        return null;
+      }
       
-      this.logInfo('Found dice data for space:', space.name);
+      this.logInfo('Found dice data for space:', space.name, 'visit type:', visitType);
       this.logDebug('Dice data count:', spaceDiceData.length);
       
       // Create a map of roll values to outcomes by outcome type
@@ -254,9 +266,20 @@ class SpaceExplorer extends React.Component {
   renderDiceRollIndicator() {
     const { space, diceRollData } = this.props;
     
-    if (!diceRollData || !diceRollData.some(data => data['Space Name'] === space.name)) {
-      return null;
-    }
+    // If no space or dice data, don't show indicator
+    if (!space || !diceRollData) return null;
+    
+    // Extract visit type
+    const visitType = space.visitType && space.visitType.toLowerCase();
+    if (!visitType) return null;
+    
+    // Check if there are any dice outcomes for this exact space and visit type combination
+    const hasDiceOutcomes = diceRollData.some(data => 
+      data['Space Name'] === space.name && 
+      data['Visit Type'].toLowerCase() === visitType
+    );
+    
+    if (!hasDiceOutcomes) return null;
     
     return (
       <div className="explorer-dice-indicator">

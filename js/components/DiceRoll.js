@@ -38,20 +38,36 @@ window.DiceRoll = class DiceRoll extends React.Component {
   // Load dice roll outcomes for the current space
   loadDiceOutcomes = () => {
     console.log('DiceRoll: Loading dice outcomes starting');
-    const { space, visitType, diceData } = this.props;
+    const { space, visitType } = this.props;
     
-    if (!space || !diceData) {
-      console.log('DiceRoll: No space or dice data available, skipping outcome loading');
+    if (!space) {
+      console.log('DiceRoll: No space available, skipping outcome loading');
       return;
     }
     
     console.log('DiceRoll: Searching for outcomes for space:', space.name, 'visit type:', visitType);
     
-    // Find dice outcomes that match this space and visit type
-    const outcomes = diceData.filter(data => 
+    // Get all dice roll data from DiceRollLogic
+    const diceRollData = window.DiceRollLogic.diceRollData;
+    
+    if (!diceRollData || diceRollData.length === 0) {
+      console.log('DiceRoll: No dice roll data available');
+      this.setState({ diceOutcomes: [] });
+      return;
+    }
+    
+    // Find exact matches for space name and visit type - no fallbacks
+    const outcomes = diceRollData.filter(data => 
       data['Space Name'] === space.name && 
       data['Visit Type'].toLowerCase() === visitType.toLowerCase()
     );
+    
+    // If no outcomes found, set empty array and log it
+    if (outcomes.length === 0) {
+      console.log('DiceRoll: No outcomes found for', space.name, visitType, '- showing no dice roll');
+      this.setState({ diceOutcomes: [] });
+      return;
+    }
     
     console.log('DiceRoll: Found', outcomes.length, 'matching dice outcomes');
     
@@ -121,132 +137,67 @@ window.DiceRoll = class DiceRoll extends React.Component {
 
   // Process the dice roll result to determine game outcomes
   processRollOutcome = (rollResult) => {
-  const { diceOutcomes } = this.state;
-  const { space, visitType, onShowOutcomes } = this.props;
-  
-  console.log('DiceRoll: Processing roll', rollResult, 'for space', space.name, 'visit type', visitType);
-  console.log('DiceRoll: Available outcomes:', diceOutcomes);
-  
-  if (!diceOutcomes || diceOutcomes.length === 0) {
-  console.log('DiceRoll: No outcomes available');
-  return { moves: [] };
-  }
-  
-  const outcomes = {};
-  
-  // Process each dice outcome data row
-  for (const outcomeData of diceOutcomes) {
-  const dieRollType = outcomeData['Die Roll'];
-  const outcomeValue = outcomeData[rollResult.toString()];
-  
-  console.log('DiceRoll: Processing outcome type', dieRollType, 'value:', outcomeValue);
-  
-  if (outcomeValue && outcomeValue.trim() !== '' && outcomeValue !== 'n/a') {
-    // Special case for W Cards Discard outcome
-    if (dieRollType === 'W Cards Discard' || dieRollType === 'discard W Cards') {
-      outcomes.discardWCards = outcomeValue;
-      console.log('DiceRoll: Detected W cards discard requirement:', outcomeValue);
-    } else {
-      outcomes[dieRollType] = outcomeValue;
+    const { space, visitType, onShowOutcomes } = this.props;
+    const { diceOutcomes } = this.state;
+    
+    console.log('DiceRoll: Processing roll', rollResult, 'for space', space.name, 'visit type', visitType);
+    console.log('DiceRoll: Available outcomes:', diceOutcomes);
+    
+    if (!space) {
+      console.log('DiceRoll: No space available');
+      return { moves: [] };
     }
-  }
-  }
-  
-  console.log('DiceRoll: Processed outcomes:', outcomes);
-  
-  // Pass the outcomes to the SpaceInfo component if callback exists
+    
+    if (!diceOutcomes || diceOutcomes.length === 0) {
+      console.log('DiceRoll: No outcomes available');
+      return { moves: [] };
+    }
+    
+    // Process the outcomes manually for more control
+    const outcomes = {};
+    
+    // Process each dice outcome data row
+    for (const outcomeData of diceOutcomes) {
+      const dieRollType = outcomeData['Die Roll'];
+      const outcomeValue = outcomeData[rollResult.toString()];
+      
+      console.log('DiceRoll: Processing outcome type', dieRollType, 'value:', outcomeValue);
+      
+      if (outcomeValue && outcomeValue.trim() !== '' && outcomeValue !== 'n/a') {
+        // Special case for W Cards Discard outcome
+        if (dieRollType === 'W Cards Discard' || dieRollType === 'discard W Cards') {
+          outcomes.discardWCards = outcomeValue;
+          console.log('DiceRoll: Detected W cards discard requirement:', outcomeValue);
+        } else {
+          outcomes[dieRollType] = outcomeValue;
+        }
+      }
+    }
+    
+    console.log('DiceRoll: Processed outcomes:', outcomes);
+    
+    // Pass the outcomes to the SpaceInfo component if callback exists
     if (onShowOutcomes && typeof onShowOutcomes === 'function') {
       onShowOutcomes(rollResult, outcomes);
     }
     
-    // If there's a "Next Step" outcome, convert it to available moves
+    // Find available moves based on the Next Step outcome if it exists
+    let availableMoves = [];
     if (outcomes['Next Step']) {
       const nextStepValue = outcomes['Next Step'];
       
-      // Extract the space name from the Next Step value
-      // (it might have explanatory text after a dash or space)
-      let nextSpaceName = nextStepValue;
+      console.log('DiceRoll: Finding spaces for Next Step:', nextStepValue);
       
-      if (nextSpaceName.includes(' - ')) {
-        nextSpaceName = nextSpaceName.split(' - ')[0].trim();
-      }
-      
-      console.log('DiceRoll: Finding spaces for', nextSpaceName);
-      
-      // Find the specified space
-      const availableMoves = this.findAvailableSpace(nextSpaceName);
+      // Use DiceRollLogic to find the available spaces
+      availableMoves = window.DiceRollLogic.findSpacesFromOutcome(window.GameState, nextStepValue);
       console.log('DiceRoll: Found available moves:', availableMoves.map(m => m.name).join(', '));
-      outcomes.moves = availableMoves;
-    } else {
-      outcomes.moves = [];
     }
+    
+    // Add moves to the outcomes object
+    outcomes.moves = availableMoves;
     
     console.log('DiceRoll: processRollOutcome completed');
     return outcomes;
-  }
-  
-  // Find a space for movement based on dice outcome
-  findAvailableSpace = (spaceName) => {
-    console.log('DiceRoll: Finding available spaces for', spaceName);
-    // Special case handling for multiple potential destinations in one outcome
-    if (spaceName.includes(' or ')) {
-      const spaceOptions = spaceName.split(' or ').map(name => name.trim());
-      
-      // Process each option
-      const availableMoves = [];
-      
-      for (const option of spaceOptions) {
-        console.log('DiceRoll: Processing option', option);
-        const spaces = this.findSpacesWithName(option);
-        availableMoves.push(...spaces);
-      }
-      
-      console.log('DiceRoll: findAvailableSpace completed with multiple options');
-      return availableMoves;
-    }
-    
-    // Regular single destination
-    console.log('DiceRoll: findAvailableSpace completed for single destination');
-    return this.findSpacesWithName(spaceName);
-  }
-  
-  // Find spaces with a matching name
-  findSpacesWithName = (name) => {
-    console.log('DiceRoll: Finding spaces matching name:', name);
-    const { visitType } = this.props;
-    const currentPlayer = window.GameState.getCurrentPlayer();
-    
-    // Clean the name to remove explanatory text
-    const cleanedName = window.GameState.extractSpaceName(name);
-    console.log('DiceRoll: Cleaned space name:', cleanedName);
-    
-    // Find all spaces that match this name
-    const matchingSpaces = window.GameState.spaces.filter(space => {
-      const spaceName = window.GameState.extractSpaceName(space.name);
-      return spaceName === cleanedName;
-    });
-    
-    console.log('DiceRoll: Found', matchingSpaces.length, 'matching spaces');
-    
-    // If no matches found, return empty array
-    if (matchingSpaces.length === 0) {
-      console.log('DiceRoll: No matching spaces found, returning empty array');
-      return [];
-    }
-    
-    // Determine if player has visited this space before
-    const hasVisitedSpace = window.GameState.hasPlayerVisitedSpace(currentPlayer, cleanedName);
-    const targetVisitType = hasVisitedSpace ? 'subsequent' : 'first';
-    console.log('DiceRoll: Target visit type for', cleanedName, 'is', targetVisitType);
-    
-    // Find the space with the right visit type, or use first one as fallback
-    const destinationSpace = matchingSpaces.find(space => 
-      space.visitType.toLowerCase() === targetVisitType.toLowerCase()
-    ) || matchingSpaces[0];
-    
-    console.log('DiceRoll: Selected destination space:', destinationSpace.id);
-    console.log('DiceRoll: findSpacesWithName completed');
-    return [destinationSpace];
   }
 
   // Render enhanced 3D dice with dots based on the result

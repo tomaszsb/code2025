@@ -122,6 +122,7 @@ See future-tasks.md for a complete list of upcoming tasks, organized by priority
 - [x] Multiple players can take turns effectively
 - [x] Game state persists when refreshing the page
 - [x] End game condition is properly detected
+- [x] Active player is clearly highlighted with visual cues
 - [ ] Players can view and manage their cards
 - [ ] The game provides meaningful educational content about project management
 

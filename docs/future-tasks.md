@@ -15,7 +15,7 @@ This document consolidates the project's future direction, priorities, and timel
 
 ### 2. Visual Feedback Enhancements
 - ~~Add animations for player movement between spaces~~ (COMPLETED!)
-- Improve highlighting of the active player
+- ~~Improve highlighting of the active player~~ (COMPLETED!)
 - ~~Add visual cues for available moves~~ (COMPLETED!)
 - Implement transitions between game states
 - Create consistent visual styling for different card types
@@ -46,7 +46,7 @@ This document consolidates the project's future direction, priorities, and timel
 - Apply the refactoring pattern to other appropriate components
 - ~~Refactor GameBoard.js into smaller, focused components~~ (COMPLETED!)
 - Extract additional utility functions for reusability
-- Complete standardization of logging practices across all components
+- ~~Complete standardization of logging practices across all components~~ (COMPLETED!)
 - Improve error handling and recovery
 - ~~Convert SpaceExplorer to use external CSS instead of inline styles~~ (COMPLETED!)
 - ~~Remove inline styles and style injection from BoardSpaceRenderer.js~~ (COMPLETED!)
@@ -141,4 +141,4 @@ This roadmap will be reviewed and updated monthly to reflect:
 
 ---
 
-*Last Updated: April 18, 2025 (Updated with available moves visual cues completion)*
+*Last Updated: April 18, 2025 (Updated with standardized logging completion and DiceRoll.js fix)*

@@ -82,6 +82,8 @@ window.GameBoard = class GameBoard extends React.Component {
   
   // Clean up any animations when unmounting
   componentWillUnmount() {
+    console.log('GameBoard: Cleaning up resources on unmount');
+    
     // Clear any pending animation timeouts
     this.setState({
       cardDrawAnimation: false,
@@ -93,6 +95,13 @@ window.GameBoard = class GameBoard extends React.Component {
     if (this.spaceSelectionManager && typeof this.spaceSelectionManager.cleanup === 'function') {
       this.spaceSelectionManager.cleanup();
     }
+    
+    // Clean up TurnManager resources
+    if (this.turnManager && typeof this.turnManager.cleanup === 'function') {
+      this.turnManager.cleanup();
+    }
+    
+    console.log('GameBoard: Resource cleanup completed');
   }
   
   // Toggle card display visibility

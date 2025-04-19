@@ -425,7 +425,7 @@ window.DiceRoll = class DiceRoll extends React.Component {
     }
     
     console.log('DiceRoll: Preparing to render dice UI');
-    return (
+    const renderedComponent = (
       <div className="dice-roll-container">
         <div className="dice-roll-header">
           <h3>Dice Roll - {space.name}</h3>
@@ -529,6 +529,7 @@ window.DiceRoll = class DiceRoll extends React.Component {
       </div>
     );
     console.log('DiceRoll: Render completed');
+    return renderedComponent;
   }
 }
 

@@ -106,6 +106,7 @@ This document serves as a consolidated record of all completed tasks in the proj
 - ✓ COMPLETED! Added ghost tokens that fade out from previous spaces when a player moves
 - ✓ COMPLETED! Implemented animated transitions with bounce effects for token movement
 - ✓ COMPLETED! Enhanced player animations with directional movement support
+- ✓ COMPLETED! Enhanced active player highlighting with pulsing effects and "YOUR TURN" indicator
 - ✓ IMPROVED! Visual highlighting of the current player's token for better turn visibility
 - ✓ IMPROVED! Added dedicated CSS file for player animations
 - ✓ COMPLETED! Implemented CSS transitions for player token movements
@@ -119,6 +120,9 @@ This document serves as a consolidated record of all completed tasks in the proj
 - ✓ COMPLETED! Added "MOVE" labels and visual indicators to available move spaces
 - ✓ COMPLETED! Implemented visual feedback when a move is selected
 - ✓ COMPLETED! Created transition animations between different sets of available moves
+- ✓ COMPLETED! Implemented event-based notification system for turn changes in TurnManager
+- ✓ COMPLETED! Added "YOUR TURN" text indicator with bounce-in animation
+- ✓ COMPLETED! Enhanced player info card with subtle animation effects
 
 ## Space Visibility Filtering
 
@@ -133,6 +137,7 @@ This document serves as a consolidated record of all completed tasks in the proj
 - ✓ COMPLETED! Console.log statements added at file start and end for easier debugging
 - ✓ COMPLETED! Standardized logging format across all files including game-state.js
 - ✓ COMPLETED! Enhanced logging with severity levels (debug, info, warn, error) implemented
+- ✓ COMPLETED! Fixed DiceRoll.js render method to include proper end-of-method logging
 - ✓ COMPLETED! Updated all documentation to reflect the enhanced dice roll system
 - ✓ COMPLETED! The documentation now includes details about the card system implementation
 - ✓ COMPLETED! Documentation has been updated with information about component refactoring
@@ -141,10 +146,11 @@ This document serves as a consolidated record of all completed tasks in the proj
 - ✓ COMPLETED! Documented dice-roll-improvements in a dedicated file
 - ✓ COMPLETED! Created detailed documentation for the NegotiationManager component
 - ✓ COMPLETED! Created detailed documentation for the GameBoard refactoring in gameboard-refactoring.md
+- ✓ COMPLETED! Created detailed documentation for active player highlighting in active-player-highlighting.md
 - ✓ COMPLETED! Updated all guiding documentation to reflect the manager component pattern implementation
 - ✓ COMPLETED! Documented lessons learned from previous implementations
 - ✓ COMPLETED! Updated documentation to reflect the BoardSpaceRenderer.js CSS refactoring
 
 ## Last Updated
 
-April 18, 2025 (Updated with available moves visual cues implementation)
+April 18, 2025 (Updated with active player highlighting implementation and documentation)

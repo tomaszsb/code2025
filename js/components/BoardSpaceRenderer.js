@@ -132,7 +132,12 @@ window.BoardSpaceRenderer = {
                   className={`player-token ${isCurrentPlayer ? 'current-player' : ''} ${animationClass}`}
                   style={{ backgroundColor: player.color }}
                   title={player.name}
-                />
+                >
+                  {/* Your Turn indicator - only visible when enhanced by TurnManager */}
+                  {isCurrentPlayer && (
+                    <div className="your-turn-indicator">YOUR TURN</div>
+                  )}
+                </div>
               );
             })}
           </div>

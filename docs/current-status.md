@@ -78,6 +78,15 @@ After reviewing the codebase, I've identified several key aspects of the current
    - Ensured proper resource cleanup to prevent memory leaks
    - All visual enhancements follow the no-inline-CSS requirement
 
+9. **Active Player Highlighting Improvements**:
+   - See active-player-highlighting.md for detailed documentation
+   - Enhanced visual feedback for the active player with pulsing animations
+   - Added "YOUR TURN" indicator to the current player's token
+   - Implemented subtle animation for player info cards
+   - Created event-based system for turn changes and player position changes
+   - Centralized active player state management in TurnManager
+   - All visual enhancements follow the no-inline-CSS requirement
+
 ### Areas for Improvement
 
 1. **Complex Initialization Logic**: 

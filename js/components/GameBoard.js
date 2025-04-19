@@ -101,6 +101,16 @@ window.GameBoard = class GameBoard extends React.Component {
       this.turnManager.cleanup();
     }
     
+    // Clean up CardManager resources
+    if (this.cardManager && typeof this.cardManager.cleanup === 'function') {
+      this.cardManager.cleanup();
+    }
+    
+    // Clean up DiceManager resources
+    if (this.diceManager && typeof this.diceManager.cleanup === 'function') {
+      this.diceManager.cleanup();
+    }
+    
     console.log('GameBoard: Resource cleanup completed');
   }
   

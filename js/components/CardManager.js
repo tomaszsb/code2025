@@ -2,24 +2,107 @@
 console.log('CardManager.js file is beginning to be used');
 
 // CardManager class for handling card-related operations
+// Refactored to use GameStateManager event system
 class CardManager {
   constructor(gameBoard) {
+    console.log('CardManager: Initializing with event system integration');
     this.gameBoard = gameBoard;
+    
+    // Store event handler references for cleanup
+    this.eventHandlers = {
+      cardDrawn: this.handleCardDrawnEvent.bind(this),
+      cardPlayed: this.handleCardPlayedEvent.bind(this),
+      gameStateChanged: this.handleGameStateChangedEvent.bind(this)
+    };
+    
+    // Register event listeners with GameStateManager
+    this.registerEventListeners();
+    
+    console.log('CardManager: Successfully initialized with event system');
+  }
+  
+  // Register event listeners with GameStateManager
+  registerEventListeners() {
+    console.log('CardManager: Registering event listeners');
+    
+    // Add event handlers for card-related events
+    window.GameStateManager.addEventListener('cardDrawn', this.eventHandlers.cardDrawn);
+    window.GameStateManager.addEventListener('cardPlayed', this.eventHandlers.cardPlayed);
+    window.GameStateManager.addEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+    
+    console.log('CardManager: Event listeners registered');
+  }
+  
+  // Handle cardDrawn event from GameStateManager
+  handleCardDrawnEvent(event) {
+    console.log('CardManager: Card drawn event received', event.data);
+    
+    // Process card effects when a new card is drawn
+    if (event.data && event.data.card && event.data.player) {
+      this.processCardEffects(event.data.card, event.data.player, false);
+      
+      // Handle card animation if gameBoard is available
+      if (this.gameBoard && this.gameBoard.handleCardAnimation) {
+        this.gameBoard.handleCardAnimation(event.data.cardType, event.data.card);
+      }
+      
+      // Update UI if needed
+      this.updateGameBoardUI();
+    }
+  }
+  
+  // Handle cardPlayed event from GameStateManager
+  handleCardPlayedEvent(event) {
+    console.log('CardManager: Card played event received', event.data);
+    
+    // Process card effects when a card is played
+    if (event.data && event.data.card && event.data.player) {
+      this.processCardEffects(event.data.card, event.data.player, true);
+      
+      // Update UI if needed
+      this.updateGameBoardUI();
+    }
+  }
+  
+  // Handle gameStateChanged event from GameStateManager
+  handleGameStateChangedEvent(event) {
+    console.log('CardManager: Game state changed event received', event.data);
+    
+    // Only process discard events
+    if (event.data && event.data.changeType === 'cardDiscarded') {
+      console.log('CardManager: Card discard event processed');
+      
+      // Update UI if needed
+      this.updateGameBoardUI();
+    }
+  }
+  
+  // Update the GameBoard UI to reflect any changes
+  updateGameBoardUI() {
+    console.log('CardManager: Updating GameBoard UI');
+    
+    // Only update if gameBoard is available
+    if (this.gameBoard) {
+      this.gameBoard.setState({
+        players: [...window.GameStateManager.players]
+      });
+    }
   }
   
   // Process card effects when a card is drawn or played
+  // This method no longer directly updates player state
   processCardEffects = (card, player, isBeingPlayed = false) => {
     console.log('CardManager: Processing effects for card:', card, 'isBeingPlayed:', isBeingPlayed);
     
     if (!card || !player) return;
     
-    // Initialize deficit and surplus tracking if not present
-    if (!player.financialStatus) {
-      player.financialStatus = {
-        surplus: 0,
-        deficit: 0
-      };
-    }
+    // Track card effects to dispatch via events
+    const cardEffects = {
+      money: 0,
+      time: 0,
+      isDeficit: false,
+      cardType: card.type
+    };
     
     // Process different card types
     switch (card.type) {
@@ -38,10 +121,7 @@ class CardManager {
           
           if (!isNaN(amount)) {
             console.log(`CardManager: Adding ${amount.toLocaleString()} to player's wallet from Bank card`);
-            player.resources.money += amount;
-            player.financialStatus.surplus += amount;
-            // Save game state to persist the change
-            window.GameState.saveState();
+            cardEffects.money = amount;
           }
         }
         // Check for Effect text that might contain monetary values
@@ -53,10 +133,7 @@ class CardManager {
             const amount = parseInt(moneyMatch[1].replace(/,/g, ''), 10);
             if (!isNaN(amount)) {
               console.log(`CardManager: Adding ${amount.toLocaleString()} to player's wallet from Bank card effect`);
-              player.resources.money += amount;
-              player.financialStatus.surplus += amount;
-              // Save game state to persist the change
-              window.GameState.saveState();
+              cardEffects.money = amount;
             }
           }
         }
@@ -77,10 +154,7 @@ class CardManager {
           
           if (!isNaN(amount)) {
             console.log(`CardManager: Adding ${amount.toLocaleString()} to player's wallet from Investor card`);
-            player.resources.money += amount;
-            player.financialStatus.surplus += amount;
-            // Save game state to persist the change
-            window.GameState.saveState();
+            cardEffects.money = amount;
           }
         }
         // Check for Description that might contain monetary values
@@ -92,10 +166,7 @@ class CardManager {
             const amount = parseInt(moneyMatch[1].replace(/,/g, ''), 10);
             if (!isNaN(amount)) {
               console.log(`CardManager: Adding ${amount.toLocaleString()} to player's wallet from Investor card description`);
-              player.resources.money += amount;
-              player.financialStatus.surplus += amount;
-              // Save game state to persist the change
-              window.GameState.saveState();
+              cardEffects.money = amount;
             }
           }
         }
@@ -121,16 +192,12 @@ class CardManager {
               if (!isNaN(amount)) {
                 if (isNegative) {
                   console.log(`CardManager: Subtracting ${amount.toLocaleString()} from player's wallet from Expeditor card effect`);
-                  player.resources.money -= amount;
-                  player.financialStatus.deficit += amount;
-                  if (player.resources.money < 0) player.resources.money = 0; // Don't allow negative money
+                  cardEffects.money = -amount; // Negative amount for subtraction
+                  cardEffects.isDeficit = true;
                 } else {
                   console.log(`CardManager: Adding ${amount.toLocaleString()} to player's wallet from Expeditor card effect`);
-                  player.resources.money += amount;
-                  player.financialStatus.surplus += amount;
+                  cardEffects.money = amount;
                 }
-                // Save game state to persist the change
-                window.GameState.saveState();
               }
             }
           }
@@ -138,19 +205,106 @@ class CardManager {
           console.log('CardManager: Not processing Expeditor card effects because card is only being drawn, not played');
         }
         break;
-      
+        
       // Add other card types as needed
+      case 'W': // Work Type card
+        // Process Work Type card effects
+        if (isBeingPlayed && card['Estimated Job Costs']) {
+          const amount = parseInt(card['Estimated Job Costs']) || 0;
+          if (amount !== 0) {
+            console.log(`CardManager: Adding ${amount.toLocaleString()} to player's wallet from Work Type card`);
+            cardEffects.money = amount;
+          }
+        }
+        break;
+        
+      case 'L': // Life card
+        // Process Life card effects
+        // Example: Life cards might add or reduce time
+        if (isBeingPlayed && card['Time Effect']) {
+          const timeEffect = parseInt(card['Time Effect']) || 0;
+          if (timeEffect !== 0) {
+            console.log(`CardManager: Adding ${timeEffect} to player's time from Life card`);
+            cardEffects.time = timeEffect;
+          }
+        }
+        break;
     }
     
-    // Update the UI to reflect the changes
-    if (this.gameBoard) {
-      this.gameBoard.setState({
-        players: [...window.GameState.players]
-      });
+    // Apply card effects if any were calculated
+    if (cardEffects.money !== 0 || cardEffects.time !== 0) {
+      this.applyCardEffects(player, cardEffects);
     }
   };
   
-  // Handle drawing cards manually
+  // Apply card effects to player via GameStateManager events
+  applyCardEffects(player, effects) {
+    console.log('CardManager: Applying card effects to player', player.name, effects);
+    
+    // First, get the current player from GameStateManager to ensure we have the latest state
+    const playerIndex = window.GameStateManager.players.findIndex(p => p.id === player.id);
+    if (playerIndex < 0) {
+      console.log('CardManager: Player not found in GameStateManager');
+      return;
+    }
+    
+    const currentPlayer = window.GameStateManager.players[playerIndex];
+    
+    // Initialize financial status tracking if not present
+    if (!currentPlayer.financialStatus) {
+      currentPlayer.financialStatus = {
+        surplus: 0,
+        deficit: 0
+      };
+    }
+    
+    // Apply money effects
+    if (effects.money !== 0) {
+      console.log(`CardManager: Applying money effect of ${effects.money} to player ${currentPlayer.name}`);
+      
+      // Update resources
+      currentPlayer.resources.money += effects.money;
+      
+      // Update financial status trackers
+      if (effects.isDeficit) {
+        currentPlayer.financialStatus.deficit += Math.abs(effects.money);
+      } else {
+        currentPlayer.financialStatus.surplus += effects.money;
+      }
+      
+      // Ensure money doesn't go negative
+      if (currentPlayer.resources.money < 0) {
+        currentPlayer.resources.money = 0;
+      }
+    }
+    
+    // Apply time effects
+    if (effects.time !== 0) {
+      console.log(`CardManager: Applying time effect of ${effects.time} to player ${currentPlayer.name}`);
+      
+      // Update resources
+      currentPlayer.resources.time += effects.time;
+      
+      // Ensure time doesn't go negative
+      if (currentPlayer.resources.time < 0) {
+        currentPlayer.resources.time = 0;
+      }
+    }
+    
+    // Save state through GameStateManager
+    window.GameStateManager.saveState();
+    
+    // Dispatch event to inform other components about the change
+    window.GameStateManager.dispatchEvent('gameStateChanged', {
+      changeType: 'cardEffectsApplied',
+      playerId: currentPlayer.id,
+      player: currentPlayer,
+      effects: effects,
+      cardType: effects.cardType
+    });
+  }
+  
+  // Handle drawing cards manually - Updated to use event system
   handleDrawCards = (cardType, amount, currentPlayer, cardDisplayRef) => {
     console.log('CardManager: Drawing cards manually -', amount, cardType, 'cards');
     
@@ -163,16 +317,12 @@ class CardManager {
     
     // Draw the specified number of cards
     for (let i = 0; i < amount; i++) {
-      const drawnCard = window.GameState.drawCard(currentPlayer.id, cardType);
+      // Use GameStateManager to draw card (which will dispatch cardDrawn event)
+      const drawnCard = window.GameStateManager.drawCard(currentPlayer.id, cardType);
       
       if (drawnCard) {
-        // Process card effects immediately after drawing (isBeingPlayed = false)
-        this.processCardEffects(drawnCard, currentPlayer, false);
-        
-        // Use the GameBoard's animation method
-        if (this.gameBoard && this.gameBoard.handleCardAnimation) {
-          this.gameBoard.handleCardAnimation(cardType, drawnCard);
-        }
+        // We don't need to process card effects here anymore
+        // The event handler will take care of that
         
         drawnCards.push({
           type: cardType,
@@ -189,60 +339,31 @@ class CardManager {
     return drawnCards;
   };
   
-  // Handle card played by player
+  // Handle card played by player - Updated to use event system
   handleCardPlayed = (card, currentPlayer) => {
     console.log('CardManager: Card played:', card);
     
     if (!currentPlayer) return;
     
-    // Process card effects based on type
-    switch (card.type) {
-      case 'W': // Work Type card
-        // Example: Work Type cards might provide money
-        if (card['Estimated Job Costs']) {
-          const amount = parseInt(card['Estimated Job Costs']) || 0;
-          currentPlayer.resources.money += amount;
-          console.log(`Player earned $${amount} from Work Type card`);
-        }
-        break;
-        
-      case 'B': // Bank card
-        // Bank cards might have different effects
-        break;
-        
-      case 'I': // Investor card
-        // Investor cards might reduce time
-        currentPlayer.resources.time -= 5;
-        if (currentPlayer.resources.time < 0) currentPlayer.resources.time = 0;
-        break;
-        
-      case 'E': // Expeditor card
-        // Process Expeditor cards with isBeingPlayed=true when played from hand
-        this.processCardEffects(card, currentPlayer, true);
-        break;
-        
-      default:
-        console.log('Unknown card type:', card.type);
-    }
+    // Use GameStateManager to play card (which will dispatch cardPlayed event)
+    window.GameStateManager.playCard(currentPlayer.id, card.id);
     
-    // Update players to reflect changes
-    if (this.gameBoard) {
-      this.gameBoard.setState({
-        players: [...GameState.players]
-      });
-    }
-    
-    // Save game state
-    GameState.saveState();
+    // The event handler will take care of processing effects and updating UI
   };
   
-  // Handle card discarded by player
-  handleCardDiscarded = (card) => {
+  // Handle card discarded by player - Updated to use event system
+  handleCardDiscarded = (card, playerId) => {
     console.log('CardManager: Card discarded:', card);
-    // No specific actions needed for discarded cards currently
+    
+    if (!card || !playerId) return;
+    
+    // Use GameStateManager to discard card (which will dispatch gameStateChanged event)
+    window.GameStateManager.discardCard(playerId, card.id);
+    
+    // The event handler will take care of updating UI
   };
   
-  // Get color for card type
+  // Get color for card type - Utility method, unchanged
   getCardTypeColor = (cardType) => {
     switch (cardType) {
       case 'W': return '#4285f4'; // Blue for Work Type
@@ -254,7 +375,7 @@ class CardManager {
     }
   };
   
-  // Get full name for card type
+  // Get full name for card type - Utility method, unchanged
   getCardTypeName = (cardType) => {
     switch (cardType) {
       case 'W': return 'Work Type';
@@ -264,6 +385,18 @@ class CardManager {
       case 'E': return 'Expeditor';
       default: return 'Unknown';
     }
+  };
+  
+  // Clean up resources when no longer needed - New method
+  cleanup = () => {
+    console.log('CardManager: Cleaning up resources');
+    
+    // Remove all event listeners to prevent memory leaks
+    window.GameStateManager.removeEventListener('cardDrawn', this.eventHandlers.cardDrawn);
+    window.GameStateManager.removeEventListener('cardPlayed', this.eventHandlers.cardPlayed);
+    window.GameStateManager.removeEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+    
+    console.log('CardManager: Cleanup completed');
   };
 }
 

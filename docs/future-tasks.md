@@ -26,6 +26,7 @@ This document consolidates the project's future direction, priorities, and timel
 - ~~Implement caching for frequently accessed data~~ (COMPLETED with GameStateManager improvements!)
 - ~~Improve loading time for CSV data~~ (COMPLETED with GameStateManager caching!)
 - ~~Review and optimize localStorage usage~~ (COMPLETED with memory management enhancement and GameStateManager improvements!)
+- ONGOING: Continue event system integration with DiceManager and other components
 
 ### 4. End Game Experience
 - Implement proper game completion UI
@@ -120,6 +121,8 @@ When implementing these features, follow these guidelines:
 4. **Documentation**: Update documentation as features are developed
 5. **Testing**: Write tests for each new feature before implementation
 6. **Code Quality**: Maintain consistent coding patterns and avoid inline CSS
+7. **Event System**: Use the GameStateManager event system instead of direct state manipulation
+8. **Resource Cleanup**: Always add cleanup methods to properly remove event listeners
 
 ## Success Metrics
 
@@ -141,4 +144,4 @@ This roadmap will be reviewed and updated monthly to reflect:
 
 ---
 
-*Last Updated: April 19, 2025 (Updated with GameStateManager improvements completed)*
+*Last Updated: April 19, 2025 (Updated with CardManager event system integration)*

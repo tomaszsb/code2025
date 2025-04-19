@@ -1,5 +1,5 @@
-// Main App Component (Simplified)
-console.log('App.js file is being processed');
+// App.js file is beginning to be used
+console.log('App.js file is beginning to be used');
 
 window.App = class App extends React.Component {
     constructor(props) {
@@ -50,4 +50,4 @@ window.App = class App extends React.Component {
     }
 }
 
-console.log('App.js execution complete');
+console.log('App.js code execution finished');

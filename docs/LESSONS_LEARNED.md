@@ -308,7 +308,9 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Use descriptive, component-related class names
    - Follow a consistent naming convention
    - Avoid overly generic names
+   - Be consistent with CSS variable naming (use hyphens for multi-word variables)
    - Example: 'card-type-indicator' instead of just 'indicator'
+   - Example: Using `--spacing-sm` not `--spacingsm` for consistency with other variables
 
 2. **Style Organization**
    - Group related styles together
@@ -451,4 +453,4 @@ This document consolidates lessons learned, best practices, and optimization rec
 
 ---
 
-*Last Updated: April 18, 2025 (Updated with available moves visual cues implementation lessons)*
+*Last Updated: April 19, 2025 (Updated with CSS variable naming guidelines and fixes)*

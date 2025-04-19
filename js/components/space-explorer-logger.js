@@ -13,7 +13,7 @@ console.log('space-explorer-logger.js file is beginning to be used');
  */
 window.SpaceExplorerLogger = {
   // Configuration
-  checkIntervals: [300, 600, 1000, 1500, 2000], // Decreasing frequency checks
+  checkIntervals: [500], // Reduced to a single check to avoid excessive DOM manipulations
   
   // State tracking
   initialized: false,
@@ -59,24 +59,36 @@ window.SpaceExplorerLogger = {
   },
   
   /**
-   * Schedule application of fixes at decreasing frequency
+   * Schedule application of fixes with a safeguard against excessive calls
    */
   scheduleFixApplication: function() {
     console.log('SpaceExplorerLogger: Scheduling fix applications');
     
-    // Apply fixes at predefined intervals
-    this.checkIntervals.forEach(interval => {
-      setTimeout(() => {
-        console.log(`SpaceExplorerLogger: Applying scheduled fixes after ${interval}ms`);
-        this.applyAllFixes();
-      }, interval);
-    });
+    if (this.fixScheduled) {
+      console.log('SpaceExplorerLogger: Fix already scheduled, skipping');
+      return;
+    }
+    
+    this.fixScheduled = true;
+    
+    // Apply fixes once after a delay
+    setTimeout(() => {
+      console.log('SpaceExplorerLogger: Applying scheduled fixes');
+      this.applyAllFixes();
+      this.fixScheduled = false;
+    }, this.checkIntervals[0]);
   },
   
   /**
    * Apply all fixes at once by adding appropriate classes
    */
   applyAllFixes: function() {
+    // Check if the component is mounted in the DOM before applying fixes
+    if (!document.querySelector('.game-container')) {
+      console.log('SpaceExplorerLogger: Game container not found, delaying fixes');
+      return;
+    }
+    
     // Add classes to elements instead of directly setting styles
     this.addClassesToElements();
     
@@ -91,20 +103,53 @@ window.SpaceExplorerLogger = {
    */
   addClassesToElements: function() {
     try {
+      // Keep track of processed elements to avoid redundant operations
+      let elementsProcessed = 0;
+      
       // Find the explorer container and add class if needed
       const explorerContainer = document.querySelector('.space-explorer-container');
       if (explorerContainer && !explorerContainer.classList.contains('explorer-auto-height')) {
         explorerContainer.classList.add('explorer-auto-height');
+        elementsProcessed++;
       }
       
-      // Add classes to dice tables
-      const diceTables = document.querySelectorAll('.explorer-dice-table');
-      diceTables.forEach(table => {
-        if (!table.classList.contains('dice-table-fixed')) {
-          table.classList.add('dice-table-fixed');
+      // Safely add class to elements - with null checks and try/catch per selector
+      const addClassSafely = (selector, className, processingFn) => {
+        try {
+          const elements = document.querySelectorAll(selector);
+          if (!elements || elements.length === 0) return 0;
           
-          // Add alternating row classes to tbody rows
-          const rows = table.querySelectorAll('tbody tr');
+          let count = 0;
+          elements.forEach(element => {
+            if (!element) return;
+            
+            try {
+              if (!element.classList.contains(className)) {
+                element.classList.add(className);
+                count++;
+              }
+              
+              // Apply additional processing if provided
+              if (processingFn && typeof processingFn === 'function') {
+                processingFn(element);
+              }
+            } catch (innerError) {
+              console.error(`SpaceExplorerLogger: Error processing element ${selector}:`, innerError.message);
+            }
+          });
+          
+          return count;
+        } catch (outerError) {
+          console.error(`SpaceExplorerLogger: Error with selector ${selector}:`, outerError.message);
+          return 0;
+        }
+      };
+      
+      // Add classes to dice tables with safer approach
+      elementsProcessed += addClassSafely('.explorer-dice-table', 'dice-table-fixed', table => {
+        // Add alternating row classes to tbody rows
+        const rows = table.querySelectorAll('tbody tr');
+        if (rows && rows.length > 0) {
           rows.forEach((row, index) => {
             if (index % 2 === 0 && !row.classList.contains('row-alternate')) {
               row.classList.add('row-alternate');
@@ -113,17 +158,16 @@ window.SpaceExplorerLogger = {
         }
       });
       
-      // Add classes to outcome spans for proper styling
-      const outcomeSpans = document.querySelectorAll('.dice-outcome span');
-      outcomeSpans.forEach(span => {
+      // Process outcome spans with safer approach
+      elementsProcessed += addClassSafely('.dice-outcome span', '', span => {
         // Skip if already processed
-        if (span.dataset.processed) return;
+        if (span.dataset && span.dataset.processed) return;
         
         // Mark as processed to avoid duplicate processing
-        span.dataset.processed = 'true';
+        if (span.dataset) span.dataset.processed = 'true';
         
         // Add class based on content
-        const text = span.textContent.toLowerCase();
+        const text = span.textContent ? span.textContent.toLowerCase() : '';
         if (text.includes('move to')) {
           span.classList.add('outcome-move');
         } else if (text.includes('card')) {
@@ -133,35 +177,16 @@ window.SpaceExplorerLogger = {
         }
       });
       
-      // Add class to fix board spaces
-      document.querySelectorAll('.board-space').forEach(space => {
-        if (!space.classList.contains('space-vertical-fixed')) {
-          space.classList.add('space-vertical-fixed');
-        }
-      });
+      // Process other elements with safer approach
+      elementsProcessed += addClassSafely('.board-space', 'space-vertical-fixed');
+      elementsProcessed += addClassSafely('.board-row', 'row-align-start');
+      elementsProcessed += addClassSafely('.space-type-setup', 'setup-space-fixed');
+      elementsProcessed += addClassSafely('.player-tokens', 'player-tokens-fixed');
       
-      // Add class to board rows
-      document.querySelectorAll('.board-row').forEach(row => {
-        if (!row.classList.contains('row-align-start')) {
-          row.classList.add('row-align-start');
-        }
-      });
-      
-      // Add classes to setup spaces
-      document.querySelectorAll('.space-type-setup').forEach(space => {
-        if (!space.classList.contains('setup-space-fixed')) {
-          space.classList.add('setup-space-fixed');
-        }
-      });
-      
-      // Add classes to player tokens
-      document.querySelectorAll('.player-tokens').forEach(tokens => {
-        if (!tokens.classList.contains('player-tokens-fixed')) {
-          tokens.classList.add('player-tokens-fixed');
-        }
-      });
-      
-      console.log('SpaceExplorerLogger: Applied CSS classes to all elements');
+      // Only log if elements were actually processed
+      if (elementsProcessed > 0) {
+        console.log(`SpaceExplorerLogger: Applied CSS classes to ${elementsProcessed} elements`);
+      }
     } catch (error) {
       console.error('SpaceExplorerLogger: Error adding classes to elements:', error.message);
     }
@@ -175,10 +200,10 @@ window.SpaceExplorerLogger = {
       console.log('SpaceExplorerLogger: Explorer shown for space:', spaceName);
       console.log('SpaceExplorerLogger: Game board width reduced to make room for Explorer');
       
-      // Apply fixes after explorer is shown
-      setTimeout(() => {
-        this.applyAllFixes();
-      }, 200);
+      // Apply fixes after explorer is shown - only schedule if not already scheduled
+      if (!this.fixScheduled) {
+        this.scheduleFixApplication();
+      }
     } else {
       console.log('SpaceExplorerLogger: Explorer hidden');
       console.log('SpaceExplorerLogger: Game board expanded to full width');

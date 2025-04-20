@@ -5,25 +5,70 @@ console.log('SpaceSelectionManager.js file is beginning to be used');
  * SpaceSelectionManager class for handling space selection and available moves
  * Manages the logic for determining available moves, handling space clicks,
  * checking space visit status, and providing visual cues for available moves
+ * 
+ * Refactored to use GameStateManager event system
  */
 class SpaceSelectionManager {
   constructor(gameBoard) {
+    console.log('SpaceSelectionManager: Initializing with event system integration');
     this.gameBoard = gameBoard;
+    
     // Track DOM update timers to clear them when needed
     this.visualUpdateTimer = null;
+    
+    // Store event handler references for cleanup
+    this.eventHandlers = {
+      playerMoved: this.handlePlayerMovedEvent.bind(this),
+      turnChanged: this.handleTurnChangedEvent.bind(this),
+      gameStateChanged: this.handleGameStateChangedEvent.bind(this),
+      spaceSelected: this.handleSpaceSelectedEvent.bind(this)
+    };
+    
+    // Register event listeners with GameStateManager
+    this.registerEventListeners();
+    
+    console.log('SpaceSelectionManager: Successfully initialized with event system');
+  }
+  
+  /**
+   * Register event listeners with GameStateManager
+   */
+  registerEventListeners() {
+    console.log('SpaceSelectionManager: Registering event listeners');
+    
+    // Add event handlers for space selection events
+    window.GameStateManager.addEventListener('playerMoved', this.eventHandlers.playerMoved);
+    window.GameStateManager.addEventListener('turnChanged', this.eventHandlers.turnChanged);
+    window.GameStateManager.addEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+    
+    // Add custom event for space selection if not already in GameStateManager
+    if (!window.GameStateManager.eventHandlers['spaceSelected']) {
+      window.GameStateManager.eventHandlers['spaceSelected'] = [];
+    }
+    window.GameStateManager.addEventListener('spaceSelected', this.eventHandlers.spaceSelected);
+    
+    console.log('SpaceSelectionManager: Event listeners registered');
   }
   
   /**
    * Update the available moves for the current player
    */
   updateAvailableMoves = () => {
-    const result = window.GameState.getAvailableMoves();
+    const result = window.GameStateManager.getAvailableMoves();
     
     // Check if the result indicates that a dice roll is needed
     if (result && typeof result === 'object' && result.requiresDiceRoll) {
       console.log('SpaceSelectionManager: Dice roll required for this space');
       
-      // Store the space info and show dice roll component
+      // Dispatch event for dice roll requirement instead of directly updating state
+      window.GameStateManager.dispatchEvent('gameStateChanged', {
+        changeType: 'diceRollRequired',
+        spaceName: result.spaceName,
+        visitType: result.visitType,
+        availableMoves: []
+      });
+      
+      // Temporary compatibility: Still update GameBoard state until all components are refactored
       this.gameBoard.setState({ 
         showDiceRoll: true, 
         diceRollSpace: result.spaceName,
@@ -33,6 +78,13 @@ class SpaceSelectionManager {
       });
     } else {
       // Normal case - array of available moves
+      // Dispatch event for available moves update
+      window.GameStateManager.dispatchEvent('gameStateChanged', {
+        changeType: 'availableMovesUpdated',
+        availableMoves: result
+      });
+      
+      // Temporary compatibility: Still update GameBoard state until all components are refactored
       this.gameBoard.setState({ 
         availableMoves: result, 
         showDiceRoll: false,
@@ -42,6 +94,7 @@ class SpaceSelectionManager {
         // Apply visual cues for available moves after state update
         this.updateAvailableMoveVisuals();
       });
+      
       console.log('SpaceSelectionManager: Available moves updated:', result ? result.length : 0, 'moves available');
     }
   }
@@ -148,8 +201,15 @@ class SpaceSelectionManager {
     }
     
     if (isValidMove) {
-      // Don't move the player yet, just store the selected move
-      // Allow player to change their mind by selecting different spaces before ending turn
+      // Dispatch space selection event instead of directly updating state
+      window.GameStateManager.dispatchEvent('spaceSelected', {
+        spaceId: spaceId,
+        spaceData: clickedSpace,
+        isValidMove: true,
+        selectedForMove: true
+      });
+      
+      // Temporary compatibility: Still update GameBoard state until all components are refactored
       this.gameBoard.setState({
         // No longer change selectedSpace - keep it as the current player's position
         selectedMove: spaceId,   // Store the destination space
@@ -166,7 +226,15 @@ class SpaceSelectionManager {
       // Provide visual feedback for the selection
       this.provideSelectionFeedback(spaceId);
     } else {
-      // For non-move spaces, we update the space explorer panel but don't change the middle column
+      // For non-move spaces, dispatch space selection event for exploration
+      window.GameStateManager.dispatchEvent('spaceSelected', {
+        spaceId: spaceId,
+        spaceData: clickedSpace,
+        isValidMove: false,
+        selectedForExploration: true
+      });
+      
+      // Temporary compatibility: Still update GameBoard state until all components are refactored
       this.gameBoard.setState({
         exploredSpace: exploredSpaceData // Set the explored space for the space explorer panel
       });
@@ -221,13 +289,13 @@ class SpaceSelectionManager {
    * @returns {boolean} True if first visit, false otherwise
    */
   isVisitingFirstTime = () => {
-    const currentPlayer = this.gameBoard.turnManager.getCurrentPlayer();
+    const currentPlayer = window.GameStateManager.getCurrentPlayer();
     const selectedSpace = this.getSelectedSpace();
     
     if (!currentPlayer || !selectedSpace) return true;
     
-    // Use GameState's function to check if player has visited this space before
-    const hasVisited = window.GameState.hasPlayerVisitedSpace(currentPlayer, selectedSpace.name);
+    // Use GameStateManager's function to check if player has visited this space before
+    const hasVisited = window.GameStateManager.hasPlayerVisitedSpace(currentPlayer, selectedSpace.name);
     return !hasVisited;
   }
   
@@ -275,6 +343,16 @@ class SpaceSelectionManager {
         return instructionData;
       };
       
+      // Dispatch event for instructions data loaded
+      window.GameStateManager.dispatchEvent('gameStateChanged', {
+        changeType: 'instructionsDataLoaded',
+        instructionsData: {
+          first: processInstructionSpace(firstVisitInstructionsSpace),
+          subsequent: processInstructionSpace(subsequentVisitInstructionsSpace)
+        }
+      });
+      
+      // Temporary compatibility: Still update GameBoard state until all components are refactored
       this.gameBoard.setState({
         instructionsData: {
           first: processInstructionSpace(firstVisitInstructionsSpace),
@@ -288,9 +366,102 @@ class SpaceSelectionManager {
    * Toggle instructions panel visibility
    */
   toggleInstructions = () => {
+    // Dispatch event for instructions panel toggle
+    window.GameStateManager.dispatchEvent('gameStateChanged', {
+      changeType: 'instructionsToggled'
+    });
+    
+    // Temporary compatibility: Still update GameBoard state until all components are refactored
     this.gameBoard.setState(prevState => ({
       showInstructions: !prevState.showInstructions
     }));
+  }
+  
+  /**
+   * Event handler for playerMoved event
+   */
+  handlePlayerMovedEvent(event) {
+    console.log('SpaceSelectionManager: Player moved event received', event.data);
+    
+    // Update available moves when a player moves
+    this.updateAvailableMoves();
+    
+    // Reset any selected move
+    if (this.gameBoard) {
+      this.gameBoard.setState({
+        selectedMove: null,
+        hasSelectedMove: false
+      });
+    }
+  }
+  
+  /**
+   * Event handler for turnChanged event
+   */
+  handleTurnChangedEvent(event) {
+    console.log('SpaceSelectionManager: Turn changed event received', event.data);
+    
+    // Update available moves when the turn changes
+    this.updateAvailableMoves();
+    
+    // Reset any selected move
+    if (this.gameBoard) {
+      this.gameBoard.setState({
+        selectedMove: null,
+        hasSelectedMove: false
+      });
+    }
+  }
+  
+  /**
+   * Event handler for gameStateChanged event
+   */
+  handleGameStateChangedEvent(event) {
+    console.log('SpaceSelectionManager: Game state changed event received', event.data);
+    
+    // Only process relevant change types
+    if (event.data && event.data.changeType) {
+      switch (event.data.changeType) {
+        case 'newGame':
+          // Reset for new game
+          if (this.gameBoard) {
+            this.gameBoard.setState({
+              selectedMove: null,
+              hasSelectedMove: false,
+              availableMoves: []
+            });
+          }
+          break;
+          
+        case 'diceRollCompleted':
+          // Update available moves after dice roll
+          this.updateAvailableMoves();
+          break;
+          
+        case 'availableMovesUpdated':
+          // Update visual cues for available moves
+          this.updateAvailableMoveVisuals();
+          break;
+          
+        // Add other change types as needed
+      }
+    }
+  }
+  
+  /**
+   * Event handler for spaceSelected event
+   */
+  handleSpaceSelectedEvent(event) {
+    console.log('SpaceSelectionManager: Space selected event received', event.data);
+    
+    // Only process events from other components
+    // Skip events that we dispatched ourselves
+    if (!event.data) return;
+    
+    // Update visual cues if space was selected for move
+    if (event.data.selectedForMove) {
+      this.updateAvailableMoveVisuals();
+    }
   }
   
   /**
@@ -302,6 +473,12 @@ class SpaceSelectionManager {
       clearTimeout(this.visualUpdateTimer);
       this.visualUpdateTimer = null;
     }
+    
+    // Remove all event listeners to prevent memory leaks
+    window.GameStateManager.removeEventListener('playerMoved', this.eventHandlers.playerMoved);
+    window.GameStateManager.removeEventListener('turnChanged', this.eventHandlers.turnChanged);
+    window.GameStateManager.removeEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+    window.GameStateManager.removeEventListener('spaceSelected', this.eventHandlers.spaceSelected);
     
     console.log('SpaceSelectionManager: Cleaned up resources');
   }

@@ -114,15 +114,20 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
       return null;
     }
     
+    console.log('SpaceInfo: Rendering available moves:', availableMoves.map(m => m.name).join(', '));
+    
     return (
       <div className="space-available-moves">
         <div className="space-section-label">Available Moves:</div>
-        <div className="available-moves-list">
+        <div className="available-moves-list" data-testid="moves-list">
           {availableMoves.map(move => (
             <button 
               key={move.id}
-              className="move-button"
-              onClick={() => onMoveSelect(move.id)}
+              className="move-button primary-move-btn"
+              onClick={() => {
+                console.log('SpaceInfo: Move button clicked:', move.name, move.id);
+                onMoveSelect(move.id);
+              }}
             >
               {move.name}
             </button>
@@ -500,6 +505,7 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     const { space, visitType, diceOutcomes, diceRoll, availableMoves, onMoveSelect, onRollDice, hasRolledDice, hasDiceRollSpace } = this.props;
     
     console.log('SpaceInfo render - diceRoll:', diceRoll, 'diceOutcomes:', diceOutcomes);
+    console.log('SpaceInfo render - availableMoves:', availableMoves?.length || 0, 'onMoveSelect:', !!onMoveSelect);
     
     if (!space) {
       return <div className="space-info empty">No space selected</div>;
@@ -592,6 +598,31 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
         {/* Available moves section */}
         {this.renderAvailableMoves()}
         
+        {/* If there's an OWNER-FUND-INITIATION move showing in the blue button but not as a clickable button */}
+        {!this.props.availableMoves?.some(move => move.name.includes('OWNER-FUND-INITIATION')) && 
+         this.props.space?.name === 'OWNER-SCOPE-INITIATION' && 
+         this.props.onMoveSelect && (
+          <div className="space-available-moves">
+            <div className="space-section-label">Additional Move:</div>
+            <button 
+              className="move-button primary-move-btn"
+              onClick={() => {
+                console.log('SpaceInfo: OWNER-FUND-INITIATION button clicked');
+                // Find the OWNER-FUND-INITIATION space
+                const fundInitSpace = window.GameState.spaces.find(s => s.name === 'OWNER-FUND-INITIATION');
+                if (fundInitSpace) {
+                  console.log('SpaceInfo: Found OWNER-FUND-INITIATION space:', fundInitSpace.id);
+                  this.props.onMoveSelect(fundInitSpace.id);
+                } else {
+                  console.error('SpaceInfo: OWNER-FUND-INITIATION space not found');
+                }
+              }}
+            >
+              OWNER-FUND-INITIATION
+            </button>
+          </div>
+        )}
+        
         {/* Display dice outcomes if available - always use renderDiceOutcomes() */}
         {this.renderDiceOutcomes()}
         
@@ -642,7 +673,7 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
   }
 }
 
-console.log('SpaceInfo.js code execution is finished - modified to handle conditional card drawing');
+console.log('SpaceInfo.js code execution is finished - fixed available moves and added move button styling');
 
 // Add log statements to debugging methods
 function logSpaceNegotiateUsage(spaceName) {

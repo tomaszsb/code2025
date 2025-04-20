@@ -26,7 +26,9 @@ This document consolidates the project's future direction, priorities, and timel
 - ~~Implement caching for frequently accessed data~~ (COMPLETED with GameStateManager improvements!)
 - ~~Improve loading time for CSV data~~ (COMPLETED with GameStateManager caching!)
 - ~~Review and optimize localStorage usage~~ (COMPLETED with memory management enhancement and GameStateManager improvements!)
-- ONGOING: Continue event system integration with DiceManager and other components
+- ~~Refactor DiceManager to use event system~~ (COMPLETED with DiceManager refactoring!)
+- ~~Refactor SpaceSelectionManager to use event system~~ (COMPLETED with SpaceSelectionManager refactoring!)
+- ONGOING: Continue event system integration with NegotiationManager and other components
 
 ### 4. End Game Experience
 - Implement proper game completion UI
@@ -144,4 +146,4 @@ This roadmap will be reviewed and updated monthly to reflect:
 
 ---
 
-*Last Updated: April 19, 2025 (Updated with CardManager event system integration)*
+*Last Updated: April 20, 2025 (Updated with SpaceSelectionManager event system integration)*

@@ -2,25 +2,88 @@
 console.log('DiceManager.js file is beginning to be used');
 
 // DiceManager class for handling dice-related operations
+// Refactored to use GameStateManager event system
 class DiceManager {
   constructor(gameBoard) {
+    console.log('DiceManager: Initializing with event system integration');
     this.gameBoard = gameBoard;
+    
+    // Store event handler references for cleanup
+    this.eventHandlers = {
+      playerMoved: this.handlePlayerMovedEvent.bind(this),
+      turnChanged: this.handleTurnChangedEvent.bind(this),
+      gameStateChanged: this.handleGameStateChangedEvent.bind(this),
+      diceRolled: this.handleDiceRolledEvent.bind(this)
+    };
+    
+    // Register event listeners with GameStateManager
+    this.registerEventListeners();
+    
+    console.log('DiceManager: Successfully initialized with event system');
+  }
+  
+  // Register event listeners with GameStateManager
+  registerEventListeners() {
+    console.log('DiceManager: Registering event listeners');
+    
+    // Add event handlers for dice-related events
+    window.GameStateManager.addEventListener('playerMoved', this.eventHandlers.playerMoved);
+    window.GameStateManager.addEventListener('turnChanged', this.eventHandlers.turnChanged);
+    window.GameStateManager.addEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+    
+    // Add custom event for dice rolls if not already in GameStateManager
+    if (!window.GameStateManager.eventHandlers['diceRolled']) {
+      window.GameStateManager.eventHandlers['diceRolled'] = [];
+    }
+    window.GameStateManager.addEventListener('diceRolled', this.eventHandlers.diceRolled);
+    
+    console.log('DiceManager: Event listeners registered');
   }
   
   // Handle dice roll outcomes for display in space info
   handleDiceOutcomes = (result, outcomes) => {
     console.log('DiceManager: Received dice outcomes for space info:', outcomes);
-    this.gameBoard.setState({
-      diceOutcomes: outcomes,
-      lastDiceRoll: result
+    
+    // Dispatch diceRolled event instead of directly updating state
+    window.GameStateManager.dispatchEvent('diceRolled', {
+      result: result,
+      outcomes: outcomes,
+      forDisplay: true // Flag to indicate this is for display purposes only
     });
   }
-
+  
   // Handle dice roll completion
   handleDiceRollComplete = (result, outcomes) => {
     console.log('DiceManager: Dice roll completed with result:', result);
     console.log('DiceManager: Outcomes:', outcomes);
     console.log('DiceManager: Detailed outcomes:', JSON.stringify(outcomes));
+    
+    // Get current player - using GameStateManager instead of TurnManager
+    const currentPlayer = window.GameStateManager.getCurrentPlayer();
+    const currentPosition = currentPlayer ? currentPlayer.position : null;
+    
+    // Process W card discard/replacement requirements
+    this.processWCardRequirements(outcomes);
+    
+    // Dispatch diceRolled event with complete information instead of updating state directly
+    window.GameStateManager.dispatchEvent('diceRolled', {
+      result: result,
+      outcomes: outcomes,
+      currentPlayer: currentPlayer,
+      currentPosition: currentPosition,
+      forDisplay: false,  // This is a complete dice roll, not just for display
+      hasSelectedMove: false,  // Player hasn't selected a move yet
+      selectedMove: null
+    });
+    
+    // Temporary compatibility: Still update GameBoard state until all components are refactored
+    // This should be removed once all components are using the event system
+    this.updateGameBoardState(result, outcomes, currentPlayer, currentPosition);
+  }
+  
+  // Process W card requirements from dice outcomes
+  processWCardRequirements(outcomes) {
+    console.log('DiceManager: Processing W card requirements');
     
     // Check if the dice outcome includes discarding W cards
     if (outcomes && outcomes.discardWCards && parseInt(outcomes.discardWCards) > 0) {
@@ -36,7 +99,7 @@ class DiceManager {
     // Check for "W Cards: Remove X" format
     if (outcomes && outcomes["W Cards"] && outcomes["W Cards"].includes("Remove")) {
       // Extract the number from "Remove X" format
-      const matches = outcomes["W Cards"].match(/Remove\s+(\d+)/i);
+      const matches = outcomes["W Cards"].match(/Remove\\s+(\\d+)/i);
       if (matches && matches[1]) {
         const discardCount = parseInt(matches[1], 10);
         console.log(`DiceManager: Dice outcome requires removing ${discardCount} W cards`);
@@ -51,7 +114,7 @@ class DiceManager {
     // Check for "W Cards: Replace X" format
     if (outcomes && outcomes["W Cards"] && outcomes["W Cards"].includes("Replace")) {
       // Extract the number from "Replace X" format
-      const matches = outcomes["W Cards"].match(/Replace\s+(\d+)/i);
+      const matches = outcomes["W Cards"].match(/Replace\\s+(\\d+)/i);
       if (matches && matches[1]) {
         const replaceCount = parseInt(matches[1], 10);
         console.log(`DiceManager: Dice outcome requires replacing ${replaceCount} W cards`);
@@ -62,28 +125,49 @@ class DiceManager {
         }
       }
     }
+  }
+  
+  // Process card draws from dice outcomes
+  processCardDraws(outcomes, currentPlayer) {
+    console.log('DiceManager: Processing card draws from dice outcome');
     
-    // Get current player - using TurnManager
-    const currentPlayer = this.gameBoard.turnManager.getCurrentPlayer();
-    const currentPosition = currentPlayer ? currentPlayer.position : null;
+    if (!currentPlayer) return;
+    
+    // Check for card outcomes based on roll result
+    const cardTypes = ['W', 'B', 'I', 'L', 'E'];
+    
+    for (const cardType of cardTypes) {
+      const cardOutcome = outcomes[`${cardType}CardOutcome`];
+      
+      if (cardOutcome && cardOutcome !== 'n/a' && cardOutcome !== '0') {
+        // Parse the outcome to determine number of cards to draw
+        const cardCount = parseInt(cardOutcome) || 1;
+        
+        // Draw the specified number of cards using GameStateManager
+        // This will trigger cardDrawn events that will be handled by CardManager
+        for (let i = 0; i < cardCount; i++) {
+          window.GameStateManager.drawCard(currentPlayer.id, cardType);
+          // No need to manually process card effects or call animation method
+          // CardManager's event handlers will handle this
+        }
+      }
+    }
+  }
+  
+  // Temporary method for backward compatibility until all components use events
+  updateGameBoardState(result, outcomes, currentPlayer, currentPosition) {
+    console.log('DiceManager: Updating GameBoard state for backward compatibility');
     
     // Update the diceOutcomes and lastDiceRoll state for SpaceInfo component
     this.gameBoard.setState({
       diceOutcomes: outcomes,
       lastDiceRoll: result,
-      // Always maintain the current player's position for the middle column
-      selectedSpace: currentPosition
-    });
-    
-    console.log('DiceManager: Dice roll completed, middle column kept on current player position:', currentPosition);
-    
-    // Hide the dice roll component after completion
-    this.gameBoard.setState({ 
+      selectedSpace: currentPosition,
       showDiceRoll: false,
       hasRolledDice: true  // Mark that player has rolled dice
     });
     
-    // If outcomes include available moves, update state
+    // Handle available moves
     if (outcomes.moves && outcomes.moves.length > 0) {
       console.log('DiceManager: Available moves from dice roll:', outcomes.moves.map(m => m.name).join(', '));
       this.gameBoard.setState({ 
@@ -95,15 +179,10 @@ class DiceManager {
       });
     } else {
       // No valid moves from dice roll - but if we already have available moves, keep them
-      // This allows the player to still select from the available moves after rolling dice
-      // for spaces that only have card/fee/time outcomes from dice rolls
       if (this.gameBoard.state.availableMoves && this.gameBoard.state.availableMoves.length > 0) {
         console.log('DiceManager: No moves from dice roll, but keeping existing available moves:', 
                    this.gameBoard.state.availableMoves.map(m => m.name).join(', '));
         // Just keep existing available moves and don't reset hasSelectedMove
-        if (this.gameBoard.state.hasSelectedMove && this.gameBoard.state.selectedMove) {
-          console.log('DiceManager: Player already selected a move:', this.gameBoard.state.selectedMove);
-        }
       } else {
         console.log('DiceManager: No valid moves available from dice roll');
         this.gameBoard.setState({ 
@@ -114,47 +193,28 @@ class DiceManager {
       }
     }
     
-    // Check if dice roll should trigger card draw
-    // Get the current player - reuse the one we got earlier
-    if (currentPlayer) {
-      // Check for card outcomes based on roll result
-      const cardTypes = ['W', 'B', 'I', 'L', 'E'];
-      
-      for (const cardType of cardTypes) {
-        const cardOutcome = outcomes[`${cardType}CardOutcome`];
-        
-        if (cardOutcome && cardOutcome !== 'n/a' && cardOutcome !== '0') {
-          // Parse the outcome to determine number of cards to draw
-          const cardCount = parseInt(cardOutcome) || 1;
-          
-          // Draw the specified number of cards
-          for (let i = 0; i < cardCount; i++) {
-            const drawnCard = window.GameState.drawCard(currentPlayer.id, cardType);
-            
-            if (drawnCard) {
-              // Process card effects immediately with isBeingPlayed=false
-              // This ensures Expeditor cards don't apply their effects when drawn
-              this.gameBoard.cardManager.processCardEffects(drawnCard, currentPlayer, false);
-              
-              // Use the GameBoard's animation method
-              this.gameBoard.handleCardAnimation(cardType, drawnCard);
-            }
-          }
-        }
-      }
-    }
+    // Process card draws
+    this.processCardDraws(outcomes, currentPlayer);
   }
   
   // Handle move selection from dice roll outcomes
   handleDiceRollMoveSelect = (space) => {
     console.log('DiceManager: Move selected from dice roll outcomes:', space.name);
     
-    // Get current player position to maintain correct space card - using TurnManager
-    const currentPlayer = this.gameBoard.turnManager.getCurrentPlayer();
+    // Get current player position to maintain correct space card - using GameStateManager
+    const currentPlayer = window.GameStateManager.getCurrentPlayer();
     const currentPosition = currentPlayer ? currentPlayer.position : null;
     
-    // Don't move the player immediately, just store the selection
-    // Update state
+    // Dispatch event for move selection
+    window.GameStateManager.dispatchEvent('gameStateChanged', {
+      changeType: 'diceRollMoveSelected',
+      selectedSpace: currentPosition,
+      selectedMove: space.id,
+      hasSelectedMove: true,
+      player: currentPlayer
+    });
+    
+    // Temporary compatibility: Update GameBoard state until all components are refactored
     this.gameBoard.setState({
       selectedSpace: currentPosition, // Keep showing current player's space info
       selectedMove: space.id,        // Store the selected move to be executed on End Turn
@@ -167,7 +227,8 @@ class DiceManager {
   
   // Check if the current space requires a dice roll
   hasDiceRollSpace = () => {
-    const currentPlayer = this.gameBoard.turnManager.getCurrentPlayer();
+    // Use GameStateManager to get current player
+    const currentPlayer = window.GameStateManager.getCurrentPlayer();
     if (!currentPlayer) return false;
     
     // If we've already rolled dice this turn, we don't need to roll again
@@ -175,7 +236,7 @@ class DiceManager {
     
     // Check if the current space has a dice roll in the CSV data
     const currentSpaceId = currentPlayer.position;
-    const currentSpace = this.gameBoard.state.spaces.find(s => s.id === currentSpaceId);
+    const currentSpace = window.GameStateManager.findSpaceById(currentSpaceId);
     if (!currentSpace) return false;
     
     // Use the same logic as in the BoardDisplay component
@@ -184,7 +245,7 @@ class DiceManager {
   
   // Handle roll dice button click
   handleRollDiceClick = () => {
-    // First try to use the selected space
+    // Use SpaceSelectionManager to get selected space
     const selectedSpace = this.gameBoard.spaceSelectionManager.getSelectedSpace();
     let spaceName;
     let visitType;
@@ -197,10 +258,10 @@ class DiceManager {
       spaceId = selectedSpace.id;
     } else {
       // If no space is selected, use the current player's position
-      const currentPlayer = this.gameBoard.turnManager.getCurrentPlayer();
+      const currentPlayer = window.GameStateManager.getCurrentPlayer();
       if (currentPlayer) {
         spaceId = currentPlayer.position;
-        const currentSpace = this.gameBoard.state.spaces.find(s => s.id === spaceId);
+        const currentSpace = window.GameStateManager.findSpaceById(spaceId);
         if (currentSpace) {
           spaceName = currentSpace.name;
           visitType = currentSpace.visitType || 'first';
@@ -231,7 +292,15 @@ class DiceManager {
       }
     }
     
-    // Show the dice roll component
+    // Dispatch event for dice roll start
+    window.GameStateManager.dispatchEvent('gameStateChanged', {
+      changeType: 'diceRollStarted',
+      spaceName: spaceName,
+      visitType: visitType,
+      spaceId: spaceId
+    });
+    
+    // Temporary compatibility: Update GameBoard state until all components are refactored
     this.gameBoard.setState({
       showDiceRoll: true,
       diceRollSpace: spaceName,
@@ -248,6 +317,112 @@ class DiceManager {
     });
     
     console.log('DiceManager: Showing dice roll for', spaceName, visitType);
+  }
+  
+  // Event handler for playerMoved event
+  handlePlayerMovedEvent(event) {
+    console.log('DiceManager: Player moved event received', event.data);
+    
+    // Reset dice roll state when player moves
+    if (this.gameBoard) {
+      this.gameBoard.setState({
+        hasRolledDice: false,
+        diceOutcomes: null,
+        lastDiceRoll: null,
+        showDiceRoll: false
+      });
+    }
+  }
+  
+  // Event handler for turnChanged event
+  handleTurnChangedEvent(event) {
+    console.log('DiceManager: Turn changed event received', event.data);
+    
+    // Reset dice state for new player's turn
+    if (this.gameBoard) {
+      this.gameBoard.setState({
+        hasRolledDice: false,
+        diceOutcomes: null,
+        lastDiceRoll: null,
+        showDiceRoll: false
+      });
+    }
+  }
+  
+  // Event handler for gameStateChanged event
+  handleGameStateChangedEvent(event) {
+    console.log('DiceManager: Game state changed event received', event.data);
+    
+    // Only process relevant change types
+    if (event.data && event.data.changeType) {
+      switch (event.data.changeType) {
+        case 'newGame':
+          // Reset dice state for new game
+          if (this.gameBoard) {
+            this.gameBoard.setState({
+              hasRolledDice: false,
+              diceOutcomes: null,
+              lastDiceRoll: null,
+              showDiceRoll: false
+            });
+          }
+          break;
+          
+        // Add other change types as needed
+      }
+    }
+  }
+  
+  // Event handler for diceRolled event
+  handleDiceRolledEvent(event) {
+    console.log('DiceManager: Dice rolled event received', event.data);
+    
+    // Only handle events from other components
+    // Skip events that we dispatched ourselves
+    if (event.data.forDisplay === undefined) {
+      return;
+    }
+    
+    // Update GameBoard state based on the event
+    if (this.gameBoard && event.data) {
+      const { result, outcomes, currentPosition } = event.data;
+      
+      // Temporary compatibility: Update GameBoard state until all components are refactored
+      if (event.data.forDisplay) {
+        // This is just for display purposes
+        this.gameBoard.setState({
+          diceOutcomes: outcomes,
+          lastDiceRoll: result
+        });
+      } else {
+        // This is a complete dice roll event
+        this.gameBoard.setState({
+          diceOutcomes: outcomes,
+          lastDiceRoll: result,
+          selectedSpace: currentPosition,
+          showDiceRoll: false,
+          hasRolledDice: true
+        });
+        
+        // Process card draws if needed
+        if (event.data.currentPlayer) {
+          this.processCardDraws(outcomes, event.data.currentPlayer);
+        }
+      }
+    }
+  }
+  
+  // Clean up resources when no longer needed
+  cleanup() {
+    console.log('DiceManager: Cleaning up resources');
+    
+    // Remove all event listeners to prevent memory leaks
+    window.GameStateManager.removeEventListener('playerMoved', this.eventHandlers.playerMoved);
+    window.GameStateManager.removeEventListener('turnChanged', this.eventHandlers.turnChanged);
+    window.GameStateManager.removeEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+    window.GameStateManager.removeEventListener('diceRolled', this.eventHandlers.diceRolled);
+    
+    console.log('DiceManager: Cleanup completed');
   }
 }
 

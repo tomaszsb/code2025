@@ -10,7 +10,9 @@ The GameStateManager now features a robust event system that allows for standard
 
 - ✓ COMPLETED! GameStateManager has a fully implemented event system
 - ✓ COMPLETED! CardManager has been refactored to use the event system
-- ONGOING: Other manager components need to be refactored 
+- ✓ COMPLETED! DiceManager has been refactored to use the event system
+- ✓ COMPLETED! SpaceSelectionManager has been refactored to use the event system
+- ONGOING: Other manager components need to be refactored
 
 ## Implementation Guidelines
 
@@ -23,6 +25,8 @@ The following event types are standardized in GameStateManager:
 - `gameStateChanged`: Dispatched for general state changes (with `changeType` property)
 - `cardDrawn`: Dispatched when a card is drawn
 - `cardPlayed`: Dispatched when a card is played
+- `diceRolled`: Dispatched when dice are rolled
+- `spaceSelected`: Dispatched when a space is selected
 
 When adding new event types, follow the same naming convention and document them here.
 
@@ -116,12 +120,68 @@ cleanup() {
 }
 ```
 
+## SpaceSelectionManager Integration Example
+
+The SpaceSelectionManager provides another good example of event system integration:
+
+```javascript
+// In constructor
+this.eventHandlers = {
+  playerMoved: this.handlePlayerMovedEvent.bind(this),
+  turnChanged: this.handleTurnChangedEvent.bind(this),
+  gameStateChanged: this.handleGameStateChangedEvent.bind(this),
+  spaceSelected: this.handleSpaceSelectedEvent.bind(this)
+};
+
+// Register listeners
+this.registerEventListeners();
+
+// Event handler method for player movements
+handlePlayerMovedEvent(event) {
+  // Process the event
+  console.log('Player moved event received', event.data);
+  
+  // Update available moves when a player moves
+  this.updateAvailableMoves();
+  
+  // Reset any selected move
+  this.resetSelectedMove();
+}
+
+// Dispatch event for space selection
+handleSpaceClick(spaceId) {
+  // Find the clicked space
+  const clickedSpace = this.findSpaceById(spaceId);
+  
+  // Dispatch event
+  window.GameStateManager.dispatchEvent('spaceSelected', {
+    spaceId: spaceId,
+    spaceData: clickedSpace,
+    isValidMove: this.isValidMove(spaceId)
+  });
+}
+
+// Cleanup method
+cleanup() {
+  // Clear timers
+  if (this.visualUpdateTimer) {
+    clearTimeout(this.visualUpdateTimer);
+  }
+  
+  // Remove all event listeners
+  window.GameStateManager.removeEventListener('playerMoved', this.eventHandlers.playerMoved);
+  window.GameStateManager.removeEventListener('turnChanged', this.eventHandlers.turnChanged);
+  window.GameStateManager.removeEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+  window.GameStateManager.removeEventListener('spaceSelected', this.eventHandlers.spaceSelected);
+}
+```
+
 ## Next Components for Integration
 
 The following components should be prioritized for event system integration:
 
-1. **DiceManager**: Replace direct state updates with event-based updates
-2. **SpaceSelectionManager**: Use events for space selection and available moves
+1. ✓ **COMPLETED!** ~~DiceManager~~: Replace direct state updates with event-based updates
+2. ✓ **COMPLETED!** ~~SpaceSelectionManager~~: Use events for space selection and available moves
 3. **NegotiationManager**: Leverage events for negotiation state
 
 ## Testing Event System Integration
@@ -152,8 +212,10 @@ The event system integration provides several key benefits:
 
 ## Conclusion
 
-The event system integration is a critical upgrade that improves the architectural quality of the codebase. By following these guidelines and the example provided by CardManager, other components can be integrated with the event system in a consistent, maintainable way.
+The event system integration is a critical upgrade that improves the architectural quality of the codebase. By following these guidelines and the examples provided by CardManager, DiceManager, and SpaceSelectionManager, other components can be integrated with the event system in a consistent, maintainable way.
+
+The SpaceSelectionManager integration represents another significant milestone in the project's architectural improvement. With this component now refactored, the game's core movement and player interaction functionality now benefits from the improved decoupling, consistency, and performance provided by the event system. This also further validates the event system design and provides another example for future component integrations.
 
 ---
 
-*Last Updated: April 19, 2025*
+*Last Updated: April 20, 2025* (Updated with SpaceSelectionManager integration)

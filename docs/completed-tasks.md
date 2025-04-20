@@ -187,6 +187,11 @@ This document serves as a consolidated record of all completed tasks in the proj
 - ✓ COMPLETED! Reduced excessive DOM manipulations in SpaceExplorerLogger
 - ✓ COMPLETED! Improved check intervals in SpaceExplorerLogger to prevent maximum call stack errors
 - ✓ COMPLETED! Added proper DOM existence checks and error handling in SpaceExplorerLogger
+- ✓ COMPLETED! Refactored DiceManager.js to use GameStateManager event system
+- ✓ COMPLETED! Added event handlers for playerMoved, turnChanged, gameStateChanged, and diceRolled events
+- ✓ COMPLETED! Created custom diceRolled event type for standardized dice roll communication
+- ✓ COMPLETED! Extracted dice-related functionality into focused helper methods
+- ✓ COMPLETED! Implemented proper cleanup for all event listeners
 
 ## Logging and Documentation
 
@@ -220,4 +225,4 @@ This document serves as a consolidated record of all completed tasks in the proj
 
 ## Last Updated
 
-April 20, 2025 (Updated with SpaceExplorer improvements and CSS variable fixes)
+April 20, 2025 (Updated with DiceManager event system integration)

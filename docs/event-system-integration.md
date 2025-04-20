@@ -12,6 +12,7 @@ The GameStateManager now features a robust event system that allows for standard
 - ✓ COMPLETED! CardManager has been refactored to use the event system
 - ✓ COMPLETED! DiceManager has been refactored to use the event system
 - ✓ COMPLETED! SpaceSelectionManager has been refactored to use the event system
+- ✓ COMPLETED! NegotiationManager has been refactored to use the event system
 - ONGOING: Other manager components need to be refactored
 
 ## Implementation Guidelines
@@ -27,6 +28,8 @@ The following event types are standardized in GameStateManager:
 - `cardPlayed`: Dispatched when a card is played
 - `diceRolled`: Dispatched when dice are rolled
 - `spaceSelected`: Dispatched when a space is selected
+- `negotiationStarted`: Dispatched when a player starts negotiation
+- `negotiationCompleted`: Dispatched when negotiation is completed
 
 When adding new event types, follow the same naming convention and document them here.
 
@@ -176,13 +179,73 @@ cleanup() {
 }
 ```
 
+## NegotiationManager Integration Example
+
+The NegotiationManager integration demonstrates how to add custom event types and maintain backward compatibility:
+
+```javascript
+// In constructor
+this.eventHandlers = {
+  playerMoved: this.handlePlayerMovedEvent.bind(this),
+  turnChanged: this.handleTurnChangedEvent.bind(this),
+  gameStateChanged: this.handleGameStateChangedEvent.bind(this),
+  negotiationStarted: this.handleNegotiationStartedEvent.bind(this),
+  negotiationCompleted: this.handleNegotiationCompletedEvent.bind(this)
+};
+
+// Register custom events
+registerEventListeners() {
+  // Register standard events
+  window.GameStateManager.addEventListener('playerMoved', this.eventHandlers.playerMoved);
+  window.GameStateManager.addEventListener('turnChanged', this.eventHandlers.turnChanged);
+  window.GameStateManager.addEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+  
+  // Add custom events if not already defined
+  if (!window.GameStateManager.eventHandlers['negotiationStarted']) {
+    window.GameStateManager.eventHandlers['negotiationStarted'] = [];
+  }
+  window.GameStateManager.addEventListener('negotiationStarted', this.eventHandlers.negotiationStarted);
+  
+  if (!window.GameStateManager.eventHandlers['negotiationCompleted']) {
+    window.GameStateManager.eventHandlers['negotiationCompleted'] = [];
+  }
+  window.GameStateManager.addEventListener('negotiationCompleted', this.eventHandlers.negotiationCompleted);
+}
+
+// Dispatch custom events
+handleNegotiate() {
+  // Initial validation...
+  
+  // Dispatch negotiation started event
+  window.GameStateManager.dispatchEvent('negotiationStarted', {
+    player: currentPlayer,
+    space: currentSpace
+  });
+  
+  // Negotiation logic...
+  
+  // Dispatch negotiation completed event
+  window.GameStateManager.dispatchEvent('negotiationCompleted', {
+    previousPlayer: currentPlayer,
+    currentPlayer: newCurrentPlayer,
+    space: currentSpace,
+    newSpace: newSpace,
+    timeAdded: timeToAdd
+  });
+  
+  // For backward compatibility with non-refactored components
+  const resetEvent = new CustomEvent('resetSpaceInfoButtons');
+  window.dispatchEvent(resetEvent);
+}
+```
+
 ## Next Components for Integration
 
 The following components should be prioritized for event system integration:
 
 1. ✓ **COMPLETED!** ~~DiceManager~~: Replace direct state updates with event-based updates
 2. ✓ **COMPLETED!** ~~SpaceSelectionManager~~: Use events for space selection and available moves
-3. **NegotiationManager**: Leverage events for negotiation state
+3. ✓ **COMPLETED!** ~~NegotiationManager~~: Leverage events for negotiation state
 
 ## Testing Event System Integration
 
@@ -212,10 +275,10 @@ The event system integration provides several key benefits:
 
 ## Conclusion
 
-The event system integration is a critical upgrade that improves the architectural quality of the codebase. By following these guidelines and the examples provided by CardManager, DiceManager, and SpaceSelectionManager, other components can be integrated with the event system in a consistent, maintainable way.
+The event system integration is a critical upgrade that improves the architectural quality of the codebase. By following these guidelines and the examples provided by CardManager, DiceManager, SpaceSelectionManager, and NegotiationManager, other components can be integrated with the event system in a consistent, maintainable way.
 
-The SpaceSelectionManager integration represents another significant milestone in the project's architectural improvement. With this component now refactored, the game's core movement and player interaction functionality now benefits from the improved decoupling, consistency, and performance provided by the event system. This also further validates the event system design and provides another example for future component integrations.
+The NegotiationManager integration represents another significant milestone in the project's architectural improvement. With this component now refactored, the game's negotiation mechanics now benefit from the improved decoupling, consistency, and performance provided by the event system. The implementation also demonstrates how to properly add custom event types and maintain backward compatibility with components that have not yet been refactored. This further validates the event system design and provides a comprehensive example for future component integrations.
 
 ---
 
-*Last Updated: April 20, 2025* (Updated with SpaceSelectionManager integration)
+*Last Updated: April 20, 2025* (Updated with NegotiationManager integration)

@@ -192,6 +192,11 @@ This document serves as a consolidated record of all completed tasks in the proj
 - ✓ COMPLETED! Created custom diceRolled event type for standardized dice roll communication
 - ✓ COMPLETED! Extracted dice-related functionality into focused helper methods
 - ✓ COMPLETED! Implemented proper cleanup for all event listeners
+- ✓ COMPLETED! Refactored NegotiationManager.js to use GameStateManager event system
+- ✓ COMPLETED! Added event handlers for playerMoved, turnChanged, gameStateChanged events
+- ✓ COMPLETED! Created custom negotiationStarted and negotiationCompleted event types
+- ✓ COMPLETED! Restructured code with helper methods for better maintainability
+- ✓ COMPLETED! Maintained backward compatibility with DOM events where needed
 
 ## Logging and Documentation
 
@@ -225,4 +230,4 @@ This document serves as a consolidated record of all completed tasks in the proj
 
 ## Last Updated
 
-April 20, 2025 (Updated with DiceManager event system integration)
+April 20, 2025 (Updated with NegotiationManager event system integration)

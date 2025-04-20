@@ -153,8 +153,9 @@ After reviewing the codebase, I've identified several key aspects of the current
    - ✓ PARTIALLY COMPLETED! CardManager has been refactored to use GameStateManager event system
    - ✓ COMPLETED! DiceManager has been refactored to use GameStateManager event system
    - ✓ COMPLETED! SpaceSelectionManager has been refactored to use GameStateManager event system
+   - ✓ COMPLETED! NegotiationManager has been refactored to use GameStateManager event system
    - ✓ PARTIALLY COMPLETED! Space explorer logging has been improved with safer DOM handling
-   - Continue updating other manager components to use the standardized event system (focus on NegotiationManager next)
+   - Continue updating other manager components to use the standardized event system
    - Create a consistent pattern for event registration and cleanup
 
 7. **CSS Consistency**:
@@ -170,7 +171,8 @@ To improve the implementation and prepare for full feature rollout, the followin
    - ✓ PARTIALLY COMPLETED! CardManager has been refactored to use the GameStateManager event system
    - ✓ COMPLETED! DiceManager has been refactored to use the GameStateManager event system
    - ✓ COMPLETED! SpaceSelectionManager has been refactored to use the GameStateManager event system
-   - Continue integrating other manager components (next focus should be on NegotiationManager)
+   - ✓ COMPLETED! NegotiationManager has been refactored to use the GameStateManager event system
+   - Continue integrating other manager components
    - Replace direct DOM event dispatching with the standardized event system
    - Create a central event catalog to document all available events
 
@@ -221,4 +223,4 @@ Overall, the project has made excellent progress and is on track to deliver a hi
 
 ---
 
-*Last Updated: April 20, 2025* (Updated with SpaceSelectionManager event system integration)
+*Last Updated: April 20, 2025* (Updated with NegotiationManager event system integration)

@@ -13,6 +13,7 @@ The GameStateManager now features a robust event system that allows for standard
 - ✓ COMPLETED! DiceManager has been refactored to use the event system
 - ✓ COMPLETED! SpaceSelectionManager has been refactored to use the event system
 - ✓ COMPLETED! NegotiationManager has been refactored to use the event system
+- ✓ COMPLETED! TurnManager has been refactored to use the event system
 - ONGOING: Other manager components need to be refactored
 
 ## Implementation Guidelines
@@ -30,6 +31,7 @@ The following event types are standardized in GameStateManager:
 - `spaceSelected`: Dispatched when a space is selected
 - `negotiationStarted`: Dispatched when a player starts negotiation
 - `negotiationCompleted`: Dispatched when negotiation is completed
+- `activePlayerChanged`: Dispatched when the active player changes (added by TurnManager)
 
 When adding new event types, follow the same naming convention and document them here.
 
@@ -179,6 +181,66 @@ cleanup() {
 }
 ```
 
+## TurnManager Integration Example
+
+The TurnManager implementation shows how to refactor a component that previously had its own event system:
+
+```javascript
+// In constructor
+this.eventHandlers = {
+  playerMoved: this.handlePlayerMovedEvent.bind(this),
+  turnChanged: this.handleTurnChangedEvent.bind(this),
+  gameStateChanged: this.handleGameStateChangedEvent.bind(this)
+};
+
+// Register listeners with delayed initialization
+setTimeout(() => {
+  this.registerEventListeners();
+}, 0);
+
+// Event handler for player movements
+handlePlayerMovedEvent(event) {
+  // Update highlighting if this is the current player
+  if (event.data && event.data.player) {
+    const isCurrentPlayer = this.isActivePlayer(event.data.playerId);
+    
+    if (isCurrentPlayer) {
+      this.enhanceActivePlayerHighlight();
+    }
+  }
+}
+
+// Dispatch custom event through GameStateManager
+window.GameStateManager.dispatchEvent('activePlayerChanged', {
+  previousPlayer: previousPlayer ? { ...previousPlayer } : null,
+  currentPlayer: newCurrentPlayer ? { ...newCurrentPlayer } : null,
+  currentPlayerIndex: window.GameStateManager.currentPlayerIndex
+});
+
+// Backward compatibility methods
+addEventListener(eventName, callback) {
+  return window.GameStateManager.addEventListener(eventName, callback);
+}
+
+removeEventListener(eventName, callback) {
+  window.GameStateManager.removeEventListener(eventName, callback);
+}
+
+// Cleanup method
+cleanup() {
+  // Clear timers
+  if (this.activePlayerHighlightTimer) {
+    clearTimeout(this.activePlayerHighlightTimer);
+    this.activePlayerHighlightTimer = null;
+  }
+  
+  // Remove all event listeners
+  window.GameStateManager.removeEventListener('playerMoved', this.eventHandlers.playerMoved);
+  window.GameStateManager.removeEventListener('turnChanged', this.eventHandlers.turnChanged);
+  window.GameStateManager.removeEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+}
+```
+
 ## NegotiationManager Integration Example
 
 The NegotiationManager integration demonstrates how to add custom event types and maintain backward compatibility:
@@ -246,6 +308,8 @@ The following components should be prioritized for event system integration:
 1. ✓ **COMPLETED!** ~~DiceManager~~: Replace direct state updates with event-based updates
 2. ✓ **COMPLETED!** ~~SpaceSelectionManager~~: Use events for space selection and available moves
 3. ✓ **COMPLETED!** ~~NegotiationManager~~: Leverage events for negotiation state
+4. ✓ **COMPLETED!** ~~TurnManager~~: Use events for turn transition and player highlighting
+5. **SpaceExplorerManager**: Use events for space exploration display and update
 
 ## Testing Event System Integration
 
@@ -272,13 +336,16 @@ The event system integration provides several key benefits:
 3. Document all event types and their data structures
 4. Always clean up event listeners to prevent memory leaks
 5. Use the test harness to verify correct event handling
+6. When refactoring components with their own event systems, provide backward compatibility methods
+7. Use delayed initialization with setTimeout if you need to prevent recursive calls
+8. Add proper null checks for GameStateManager and other dependencies
 
 ## Conclusion
 
-The event system integration is a critical upgrade that improves the architectural quality of the codebase. By following these guidelines and the examples provided by CardManager, DiceManager, SpaceSelectionManager, and NegotiationManager, other components can be integrated with the event system in a consistent, maintainable way.
+The event system integration is a critical upgrade that improves the architectural quality of the codebase. By following these guidelines and the examples provided by CardManager, DiceManager, SpaceSelectionManager, NegotiationManager, and TurnManager, other components can be integrated with the event system in a consistent, maintainable way.
 
-The NegotiationManager integration represents another significant milestone in the project's architectural improvement. With this component now refactored, the game's negotiation mechanics now benefit from the improved decoupling, consistency, and performance provided by the event system. The implementation also demonstrates how to properly add custom event types and maintain backward compatibility with components that have not yet been refactored. This further validates the event system design and provides a comprehensive example for future component integrations.
+The TurnManager integration represents another significant milestone in the project's architectural improvement. The refactoring demonstrates how to transition a component from using its own event system to leveraging the centralized GameStateManager event system. This approach maintains backward compatibility while improving code organization and reducing duplication. The implementation of delayed event registration and robust error handling enhances the stability of the component, and the backward compatibility methods ensure seamless integration with existing code.
 
 ---
 
-*Last Updated: April 20, 2025* (Updated with NegotiationManager integration)
+*Last Updated: April 21, 2025* (Updated with TurnManager integration)

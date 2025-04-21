@@ -2,32 +2,104 @@
 console.log('TurnManager.js file is beginning to be used');
 
 /**
- * Event name constants for better consistency
- * These events allow components to respond to player turn changes
- */
-const TURN_EVENTS = {
-  TURN_CHANGED: 'turnChanged',
-  ACTIVE_PLAYER_CHANGED: 'activePlayerChanged',
-  PLAYER_POSITION_CHANGED: 'playerPositionChanged'
-};
-
-/**
  * TurnManager class for handling turn-related operations
  * Manages turn transitions, player state updates, and player snapshots
+ * Integrated with GameStateManager event system
  */
 class TurnManager {
   constructor(gameBoard) {
     console.log('TurnManager: Initializing');
     this.gameBoard = gameBoard;
     
-    // Create event target for publishing turn events
-    this.eventTarget = new EventTarget();
+    // Store event handlers for proper cleanup
+    this.eventHandlers = {
+      playerMoved: this.handlePlayerMovedEvent.bind(this),
+      turnChanged: this.handleTurnChangedEvent.bind(this),
+      gameStateChanged: this.handleGameStateChangedEvent.bind(this)
+    };
     
     // Reference to active player visual highlight timer
     this.activePlayerHighlightTimer = null;
     
+    // Register event listeners - but only after initialization is complete
+    // to prevent recursive calls
+    setTimeout(() => {
+      this.registerEventListeners();
+    }, 0);
+    
     console.log('TurnManager: Successfully initialized');
-  }  
+  }
+  
+  /**
+   * Register event listeners with GameStateManager
+   */
+  registerEventListeners = () => {
+    console.log('TurnManager: Registering event listeners with GameStateManager');
+    
+    if (!window.GameStateManager) {
+      console.error('TurnManager: GameStateManager not available, cannot register events');
+      return;
+    }
+    
+    // Register standard events
+    window.GameStateManager.addEventListener('playerMoved', this.eventHandlers.playerMoved);
+    window.GameStateManager.addEventListener('turnChanged', this.eventHandlers.turnChanged);
+    window.GameStateManager.addEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+    
+    // Add custom event types if they don't exist yet
+    if (!window.GameStateManager.eventHandlers['activePlayerChanged']) {
+      window.GameStateManager.eventHandlers['activePlayerChanged'] = [];
+    }
+    
+    console.log('TurnManager: Event listeners registered');
+  }
+  
+  /**
+   * Handle playerMoved events from GameStateManager
+   * @param {Object} event - The event object
+   */
+  handlePlayerMovedEvent = (event) => {
+    console.log('TurnManager: Handling playerMoved event', event.data);
+    
+    // Update active player highlighting if this is the current player
+    if (event.data && event.data.player) {
+      const isCurrentPlayer = this.isActivePlayer(event.data.playerId);
+      
+      if (isCurrentPlayer) {
+        // Update enhanced highlighting for the current player
+        this.enhanceActivePlayerHighlight();
+      }
+    }
+  }
+  
+  /**
+   * Handle turnChanged events from GameStateManager
+   * @param {Object} event - The event object
+   */
+  handleTurnChangedEvent = (event) => {
+    console.log('TurnManager: Handling turnChanged event', event.data);
+    
+    // Update enhanced highlighting for the new active player
+    this.enhanceActivePlayerHighlight();
+  }
+  
+  /**
+   * Handle gameStateChanged events from GameStateManager
+   * @param {Object} event - The event object
+   */
+  handleGameStateChangedEvent = (event) => {
+    console.log('TurnManager: Handling gameStateChanged event', event.data);
+    
+    // Handle relevant game state changes
+    if (event.data && event.data.changeType === 'newGame') {
+      // Reset any turn-specific state
+      if (this.activePlayerHighlightTimer) {
+        clearTimeout(this.activePlayerHighlightTimer);
+        this.activePlayerHighlightTimer = null;
+      }
+    }
+  }
+  
   /**
    * Handle ending the current turn and transitioning to the next player
    */
@@ -40,14 +112,8 @@ class TurnManager {
     if (selectedMove && currentPlayer) {
       console.log('TurnManager: Executing selected move:', selectedMove);
       
-      // Store the previous position for animation purposes
-      const previousPosition = currentPlayer.position;
-      
-      // Move the player
-      window.GameState.movePlayer(currentPlayer.id, selectedMove);
-      
-      // Dispatch event for player position change
-      this.dispatchPlayerPositionChangedEvent(currentPlayer, previousPosition);
+      // Move the player - this will trigger a playerMoved event via GameStateManager
+      window.GameStateManager.movePlayer(currentPlayer.id, selectedMove);
     } else {
       console.log('TurnManager: No move selected for execution');
     }
@@ -55,7 +121,7 @@ class TurnManager {
     // Move to next player's turn
     this.nextPlayerTurn();
     
-    console.log('TurnManager: Turn ended, next player:', window.GameState.currentPlayerIndex);
+    console.log('TurnManager: Turn ended, next player:', window.GameStateManager.currentPlayerIndex);
   }
   
   /**
@@ -66,16 +132,16 @@ class TurnManager {
     
     // Get current player before transition for event notification
     const previousPlayer = this.getCurrentPlayer();
-    const previousPlayerIndex = window.GameState.currentPlayerIndex;
+    const previousPlayerIndex = window.GameStateManager.currentPlayerIndex;
     
-    // Move to next player's turn
-    window.GameState.nextPlayerTurn();
+    // Move to next player's turn - this will trigger a turnChanged event via GameStateManager
+    window.GameStateManager.nextPlayerTurn();
     
     // Get the new current player
-    const newCurrentPlayer = window.GameState.getCurrentPlayer();
+    const newCurrentPlayer = window.GameStateManager.getCurrentPlayer();
     const newPlayerPosition = newCurrentPlayer ? newCurrentPlayer.position : null;
     
-    console.log(`TurnManager: Player change from ${previousPlayerIndex} to ${window.GameState.currentPlayerIndex}`);
+    console.log(`TurnManager: Player change from ${previousPlayerIndex} to ${window.GameStateManager.currentPlayerIndex}`);
     
     // Get the space the player landed on
     const newSpace = this.gameBoard.state.spaces.find(s => s.id === newPlayerPosition);
@@ -86,8 +152,8 @@ class TurnManager {
     
     // Update state
     this.gameBoard.setState({
-      players: [...window.GameState.players],
-      currentPlayerIndex: window.GameState.currentPlayerIndex,
+      players: [...window.GameStateManager.players],
+      currentPlayerIndex: window.GameStateManager.currentPlayerIndex,
       selectedSpace: newPlayerPosition, // Always set to new player's position
       selectedMove: null,               // Clear the selected move
       hasSelectedMove: false,           // Reset flag for the next player's turn
@@ -102,15 +168,23 @@ class TurnManager {
     });
     
     // Update available moves for new player
-    this.gameBoard.spaceSelectionManager.updateAvailableMoves();
+    if (this.gameBoard.spaceSelectionManager) {
+      this.gameBoard.spaceSelectionManager.updateAvailableMoves();
+    }
     
-    // Dispatch event for active player change
-    this.dispatchActivePlayerChangedEvent(previousPlayer, newCurrentPlayer);
+    // Dispatch custom active player changed event through GameStateManager
+    if (window.GameStateManager && typeof window.GameStateManager.dispatchEvent === 'function') {
+      window.GameStateManager.dispatchEvent('activePlayerChanged', {
+        previousPlayer: previousPlayer ? { ...previousPlayer } : null,
+        currentPlayer: newCurrentPlayer ? { ...newCurrentPlayer } : null,
+        currentPlayerIndex: window.GameStateManager.currentPlayerIndex
+      });
+    }
     
     // Enhanced active player highlight
     this.enhanceActivePlayerHighlight();
     
-    console.log(`TurnManager: Next player ${newCurrentPlayer.name} is now active on space ${newSpace?.name || 'unknown'}`);
+    console.log(`TurnManager: Next player ${newCurrentPlayer ? newCurrentPlayer.name : 'unknown'} is now active on space ${newSpace?.name || 'unknown'}`);
   }
   
   /**
@@ -118,12 +192,26 @@ class TurnManager {
    * @returns {Object} Current player object
    */
   getCurrentPlayer = () => {
-    console.log('TurnManager: Getting current player');
-    const { players, currentPlayerIndex } = this.gameBoard.state;
-    const currentPlayer = players[currentPlayerIndex];
+    // Use GameStateManager directly
+    if (!window.GameStateManager) {
+      console.warn('TurnManager: No GameStateManager available');
+      
+      // Fallback to using gameBoard state
+      const { players, currentPlayerIndex } = this.gameBoard.state;
+      const currentPlayer = players[currentPlayerIndex];
+      
+      if (!currentPlayer) {
+        console.warn('TurnManager: No current player found in gameBoard state');
+        return null;
+      }
+      
+      return currentPlayer;
+    }
+    
+    const currentPlayer = window.GameStateManager.getCurrentPlayer();
     
     if (!currentPlayer) {
-      console.warn('TurnManager: No current player found at index', currentPlayerIndex);
+      console.warn('TurnManager: No current player found in GameStateManager');
       return null;
     }
     
@@ -145,104 +233,11 @@ class TurnManager {
     
     return {
       ...player,
-      resources: { ...player.resources },
-      cards: [...(player.cards || [])],
+      resources: player.resources ? { ...player.resources } : {},
+      cards: player.cards ? [...player.cards] : [],
       // Force the color to be the player's color for consistent UI
       color: player.color
     };
-  }
-  
-  /**
-   * Dispatch an event when the active player changes
-   * @param {Object} previousPlayer - The player who was active before
-   * @param {Object} newPlayer - The player who is now active
-   */
-  dispatchActivePlayerChangedEvent = (previousPlayer, newPlayer) => {
-    console.log('TurnManager: Dispatching active player changed event');
-    
-    // Create a custom event with the player data
-    const event = new CustomEvent(TURN_EVENTS.ACTIVE_PLAYER_CHANGED, {
-      detail: {
-        previousPlayer: previousPlayer ? { ...previousPlayer } : null,
-        currentPlayer: newPlayer ? { ...newPlayer } : null,
-        currentPlayerIndex: window.GameState.currentPlayerIndex
-      },
-      bubbles: true
-    });
-    
-    // Dispatch the event from the game board element
-    this.eventTarget.dispatchEvent(event);
-    
-    // Also dispatch a global event for components that aren't direct children
-    window.dispatchEvent(new CustomEvent(TURN_EVENTS.ACTIVE_PLAYER_CHANGED, {
-      detail: {
-        previousPlayer: previousPlayer ? { ...previousPlayer } : null,
-        currentPlayer: newPlayer ? { ...newPlayer } : null,
-        currentPlayerIndex: window.GameState.currentPlayerIndex
-      }
-    }));
-    
-    console.log('TurnManager: Active player changed event dispatched');
-  }
-  
-  /**
-   * Dispatch an event when a player's position changes
-   * @param {Object} player - The player who moved
-   * @param {string} previousPosition - The player's previous position ID
-   */
-  dispatchPlayerPositionChangedEvent = (player, previousPosition) => {
-    console.log('TurnManager: Dispatching player position changed event');
-    
-    if (!player) {
-      console.warn('TurnManager: Cannot dispatch position change for null player');
-      return;
-    }
-    
-    // Create a custom event with the player data
-    const event = new CustomEvent(TURN_EVENTS.PLAYER_POSITION_CHANGED, {
-      detail: {
-        player: { ...player },
-        previousPosition: previousPosition,
-        currentPosition: player.position,
-        isCurrentPlayer: window.GameState.currentPlayerIndex === window.GameState.players.indexOf(player)
-      },
-      bubbles: true
-    });
-    
-    // Dispatch the event
-    this.eventTarget.dispatchEvent(event);
-    
-    // Also dispatch a global event
-    window.dispatchEvent(new CustomEvent(TURN_EVENTS.PLAYER_POSITION_CHANGED, {
-      detail: {
-        player: { ...player },
-        previousPosition: previousPosition,
-        currentPosition: player.position,
-        isCurrentPlayer: window.GameState.currentPlayerIndex === window.GameState.players.indexOf(player)
-      }
-    }));
-    
-    console.log(`TurnManager: Player ${player.name} position changed from ${previousPosition} to ${player.position}`);
-  }
-  
-  /**
-   * Add an event listener for turn events
-   * @param {string} eventName - The name of the event (use TURN_EVENTS constants)
-   * @param {Function} callback - The callback function to execute
-   */
-  addEventListener = (eventName, callback) => {
-    console.log(`TurnManager: Adding event listener for ${eventName}`);
-    this.eventTarget.addEventListener(eventName, callback);
-  }
-  
-  /**
-   * Remove an event listener for turn events
-   * @param {string} eventName - The name of the event (use TURN_EVENTS constants)
-   * @param {Function} callback - The callback function to remove
-   */
-  removeEventListener = (eventName, callback) => {
-    console.log(`TurnManager: Removing event listener for ${eventName}`);
-    this.eventTarget.removeEventListener(eventName, callback);
   }
   
   /**
@@ -313,6 +308,43 @@ class TurnManager {
   }
   
   /**
+   * Add an event listener for custom turn events
+   * For backward compatibility - forwards to GameStateManager
+   * @param {string} eventName - The name of the event
+   * @param {Function} callback - The callback function to execute
+   * @returns {Function} The event handler that was added
+   */
+  addEventListener = (eventName, callback) => {
+    console.log(`TurnManager: Adding event listener for ${eventName} via GameStateManager`);
+    
+    if (!window.GameStateManager) {
+      console.error('TurnManager: Cannot add event listener, GameStateManager not available');
+      return null;
+    }
+    
+    // Register with GameStateManager
+    return window.GameStateManager.addEventListener(eventName, callback);
+  }
+  
+  /**
+   * Remove an event listener for custom turn events
+   * For backward compatibility - forwards to GameStateManager
+   * @param {string} eventName - The name of the event
+   * @param {Function} callback - The callback function to remove
+   */
+  removeEventListener = (eventName, callback) => {
+    console.log(`TurnManager: Removing event listener for ${eventName} via GameStateManager`);
+    
+    if (!window.GameStateManager) {
+      console.error('TurnManager: Cannot remove event listener, GameStateManager not available');
+      return;
+    }
+    
+    // Unregister with GameStateManager
+    window.GameStateManager.removeEventListener(eventName, callback);
+  }
+  
+  /**
    * Clean up resources when the component is unmounted
    */
   cleanup = () => {
@@ -323,11 +355,26 @@ class TurnManager {
       clearTimeout(this.activePlayerHighlightTimer);
       this.activePlayerHighlightTimer = null;
     }
+    
+    // Remove all event listeners
+    if (window.GameStateManager) {
+      window.GameStateManager.removeEventListener('playerMoved', this.eventHandlers.playerMoved);
+      window.GameStateManager.removeEventListener('turnChanged', this.eventHandlers.turnChanged);
+      window.GameStateManager.removeEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+    }
+    
+    console.log('TurnManager: Cleanup completed');
   }
 }
 
-// Export TurnManager and events for use in other files
+// Export TurnManager for use in other files
 window.TurnManager = TurnManager;
-window.TURN_EVENTS = TURN_EVENTS;
+
+// Export event constants for backward compatibility
+window.TURN_EVENTS = {
+  TURN_CHANGED: 'turnChanged',
+  ACTIVE_PLAYER_CHANGED: 'activePlayerChanged',
+  PLAYER_POSITION_CHANGED: 'playerPositionChanged'
+};
 
 console.log('TurnManager.js code execution finished');

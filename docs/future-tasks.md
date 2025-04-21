@@ -7,11 +7,11 @@ This document consolidates the project's future direction, priorities, and timel
 ## Immediate Priorities (Next 2-4 Weeks)
 
 ### 1. Negotiation Mechanics Implementation
-- Complete the implementation of the negotiation system
-- Add UI components for negotiation decisions
-- Integrate with dice roll system for retry mechanics
-- Add appropriate visual feedback for negotiation states
-- Test with multiple players and scenarios
+- ~~Complete the implementation of the negotiation system~~ (COMPLETED!)
+- ~~Add UI components for negotiation decisions~~ (COMPLETED!)
+- ~~Integrate with dice roll system for retry mechanics~~ (COMPLETED!)
+- ~~Add appropriate visual feedback for negotiation states~~ (COMPLETED!)
+- ~~Test with multiple players and scenarios~~ (COMPLETED!)
 
 ### 2. Visual Feedback Enhancements
 - ~~Add animations for player movement between spaces~~ (COMPLETED!)
@@ -28,7 +28,9 @@ This document consolidates the project's future direction, priorities, and timel
 - ~~Review and optimize localStorage usage~~ (COMPLETED with memory management enhancement and GameStateManager improvements!)
 - ~~Refactor DiceManager to use event system~~ (COMPLETED with DiceManager refactoring!)
 - ~~Refactor SpaceSelectionManager to use event system~~ (COMPLETED with SpaceSelectionManager refactoring!)
-- ONGOING: Continue event system integration with NegotiationManager and other components
+- ~~Refactor NegotiationManager to use event system~~ (COMPLETED with NegotiationManager refactoring!)
+- ~~Refactor TurnManager to use event system~~ (COMPLETED with TurnManager refactoring!)
+- ONGOING: Continue event system integration with SpaceExplorerManager
 
 ### 4. End Game Experience
 - Implement proper game completion UI
@@ -125,6 +127,8 @@ When implementing these features, follow these guidelines:
 6. **Code Quality**: Maintain consistent coding patterns and avoid inline CSS
 7. **Event System**: Use the GameStateManager event system instead of direct state manipulation
 8. **Resource Cleanup**: Always add cleanup methods to properly remove event listeners
+9. **Error Handling**: Implement robust error checking and recovery mechanisms
+10. **Delayed Initialization**: Use setTimeout(0) for event registration if needed to prevent recursion
 
 ## Success Metrics
 
@@ -144,6 +148,19 @@ This roadmap will be reviewed and updated monthly to reflect:
 - New insights from user testing
 - Technical constraints discovered during implementation
 
+## Recently Completed Milestones
+
+1. ✓ **COMPLETED!** Refactored CardManager to use the GameStateManager event system
+2. ✓ **COMPLETED!** Refactored DiceManager to use the GameStateManager event system
+3. ✓ **COMPLETED!** Refactored SpaceSelectionManager to use the GameStateManager event system
+4. ✓ **COMPLETED!** Refactored NegotiationManager to use the GameStateManager event system
+5. ✓ **COMPLETED!** Refactored TurnManager to use the GameStateManager event system
+
+## Next Milestone
+
+- Refactor SpaceExplorerManager to use the GameStateManager event system
+- Begin implementing the End Game Experience features
+
 ---
 
-*Last Updated: April 20, 2025 (Updated with SpaceSelectionManager event system integration)*
+*Last Updated: April 21, 2025 (Updated with TurnManager event system integration)*

@@ -119,9 +119,12 @@ After reviewing the codebase, I've identified several key aspects of the current
     - Successfully refactored CardManager to use the GameStateManager event system
     - Refactored DiceManager to use the event system with proper event handlers
     - Refactored SpaceSelectionManager to use the event system with standardized event handling
-    - Created custom event types for space selection and available moves communication
+    - Refactored NegotiationManager to use the event system with standardized event handling
+    - Refactored TurnManager to use the event system instead of its own custom event dispatching
+    - Added backward compatibility methods in TurnManager for seamless integration
+    - Created custom event types for player movement, turn transitions, and active player changes
     - Implemented comprehensive cleanup methods for proper event listener management
-    - Added backward compatibility to maintain existing functionality during transition
+    - Added delayed initialization to prevent recursive calls during component setup
     - Reduced direct DOM manipulation in favor of event-based state updates
 
 ### Areas for Improvement
@@ -154,6 +157,7 @@ After reviewing the codebase, I've identified several key aspects of the current
    - ✓ COMPLETED! DiceManager has been refactored to use GameStateManager event system
    - ✓ COMPLETED! SpaceSelectionManager has been refactored to use GameStateManager event system
    - ✓ COMPLETED! NegotiationManager has been refactored to use GameStateManager event system
+   - ✓ COMPLETED! TurnManager has been refactored to use GameStateManager event system
    - ✓ PARTIALLY COMPLETED! Space explorer logging has been improved with safer DOM handling
    - Continue updating other manager components to use the standardized event system
    - Create a consistent pattern for event registration and cleanup
@@ -172,7 +176,8 @@ To improve the implementation and prepare for full feature rollout, the followin
    - ✓ COMPLETED! DiceManager has been refactored to use the GameStateManager event system
    - ✓ COMPLETED! SpaceSelectionManager has been refactored to use the GameStateManager event system
    - ✓ COMPLETED! NegotiationManager has been refactored to use the GameStateManager event system
-   - Continue integrating other manager components
+   - ✓ COMPLETED! TurnManager has been refactored to use the GameStateManager event system
+   - Continue integrating remaining manager components, particularly SpaceExplorerManager
    - Replace direct DOM event dispatching with the standardized event system
    - Create a central event catalog to document all available events
 
@@ -201,9 +206,9 @@ To improve the implementation and prepare for full feature rollout, the followin
 
 Based on the current state of the implementation, here are the recommended next steps in priority order:
 
-1. **Event System Integration**: Continue standardizing event handling across all manager components, with NegotiationManager as the next target.
-2. **Enhance Visual Feedback**: Improve the user experience with better visual cues for game state transitions.
-3. **End Game Experience**: Implement proper game completion UI and player statistics.
+1. **Event System Integration**: Continue standardizing event handling by refactoring SpaceExplorerManager to use the GameStateManager event system.
+2. **End Game Experience**: Implement proper game completion UI and player statistics.
+3. **Enhance Visual Feedback**: Improve the user experience with better visual cues for game state transitions.
 4. **Implement Testing Strategy**: Create comprehensive tests for game mechanics.
 5. **Educational Content Integration**: Begin adding project management concepts into the gameplay.
 
@@ -213,9 +218,9 @@ The current implementation has progressed significantly, with substantial comple
 
 The recent GameStateManager improvements represent a major milestone in the project's development. By converting to a class-based architecture, implementing high-performance caching, optimizing state persistence, and creating a robust event system, the game is now well-positioned for future enhancements.
 
-The focus should now be on completing the event system standardization across all components, further enhancing visual feedback, and beginning work on the educational aspects of the game. The project has a solid foundation with considerable technical debt already addressed through component refactoring and performance optimizations.
+The focus should now be on completing the event system standardization across all components, implementing the end game experience, further enhancing visual feedback, and beginning work on the educational aspects of the game. The project has a solid foundation with considerable technical debt already addressed through component refactoring and performance optimizations.
 
-The continued progress in event system integration, including the recent SpaceSelectionManager refactoring, has further improved code maintainability and reduced component coupling. This architectural improvement sets a clear pattern for remaining components to follow, making future development more efficient and predictable.
+The continued progress in event system integration, including the recent TurnManager refactoring, has further improved code maintainability and reduced component coupling. The transition of TurnManager to use the GameStateManager event system represents a significant step forward in architectural consistency. By replacing its custom event system with the standardized approach, we've eliminated duplication and improved cross-component communication. This refactoring also adds important patterns for robust error handling and delayed initialization that will be useful in future component refactorings.
 
 The documentation has been updated to reflect the current state of implementation, including detailed documentation for all major components. Ongoing documentation updates will be important as new features are added. Comprehensive testing will be crucial to ensure that all game mechanics work together smoothly and that the educational value of the game is maximized.
 
@@ -223,4 +228,4 @@ Overall, the project has made excellent progress and is on track to deliver a hi
 
 ---
 
-*Last Updated: April 20, 2025* (Updated with NegotiationManager event system integration)
+*Last Updated: April 21, 2025* (Updated with TurnManager event system integration)

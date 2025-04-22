@@ -6,6 +6,14 @@ The SpaceExplorer component displays detailed information about a selected game 
 ## Recent Changes
 The SpaceExplorer component has been updated with the following improvements:
 
+- **Memoized Data Processing**: Implemented data caching in component state to avoid redundant processing
+- **Performance Optimization**: Added componentDidUpdate lifecycle method to process dice data only when relevant props change
+- **Enhanced Error Handling**: Improved error boundary implementation with stack trace logging and better recovery
+- **Improved Logging**: Added timestamp-based logging with severity levels for better debugging
+- **Optimized Rendering**: Added null checks to prevent unnecessary rendering attempts
+- **Accessibility Improvements**: Added aria-label to close button
+- **Performance Tracking**: Added render count and timing to detect excessive re-renders
+- **Better CSS Integration**: Added alternate row styling to improve dice table readability
 - **Closable Functionality**: The component can now be fully closed using the close button, hiding the space explorer panel
 - **Reopening Mechanism**: A "Show Explorer" button appears when the explorer is closed, allowing users to reopen it
 - **CSS-Only Styling**: Removed all inline styles and direct DOM style manipulation, moving styles to space-explorer.css
@@ -20,11 +28,25 @@ The SpaceExplorer component has been updated with the following improvements:
 | diceRollData  | Array    | Dice roll outcome data for all spaces       | No       |
 | onClose       | Function | Callback function when close button clicked | No       |
 
+## Component State
+
+| State Property        | Type     | Description                                                   |
+|-----------------------|----------|---------------------------------------------------------------|
+| hasError              | Boolean  | Indicates if an error has occurred in the component           |
+| errorMessage          | String   | Error message to display when hasError is true                |
+| processedDiceData     | Object   | Cached processed dice data to avoid reprocessing on re-render |
+| diceDataProcessed     | Boolean  | Flag indicating if dice data has been processed               |
+
 ## Component Methods
+
+### Lifecycle Methods
+- `constructor(props)`: Initializes state and performance tracking metrics
+- `componentDidUpdate(prevProps)`: Processes dice data only when relevant props change
+- `componentDidCatch(error, info)`: Captures and logs errors, updates error state
 
 ### Primary Methods
 - `render()`: Main render method that orchestrates all sub-components
-- `renderDiceTable()`: Renders the dice roll outcomes table
+- `renderDiceTable()`: Renders the dice roll outcomes table using memoized data
 - `renderHeader()`: Renders the component header with title and close button
 - `renderSpaceMetadata()`: Renders space name and visit type information
 - `renderSpaceDetails()`: Renders description, action, and outcome sections
@@ -39,13 +61,19 @@ The SpaceExplorer component has been updated with the following improvements:
 - `createOutcomeElement(type, value, key)`: Creates React elements for dice outcomes
 
 ### Logging Methods
-- `logDebug(message, ...args)`: Logs debug-level information
-- `logInfo(message, ...args)`: Logs informational messages
-- `logWarn(message, ...args)`: Logs warning messages
-- `logError(message, ...args)`: Logs error messages
+- `logDebug(message, ...args)`: Logs debug-level information with timestamp
+- `logInfo(message, ...args)`: Logs informational messages with timestamp
+- `logWarn(message, ...args)`: Logs warning messages with timestamp
+- `logError(message, ...args)`: Logs error messages with timestamp
 
 ## Error Handling
-The component implements React's error boundary pattern with `componentDidCatch` to gracefully handle unexpected errors. It displays a user-friendly error message when problems occur and logs detailed error information for debugging.
+The component implements React's error boundary pattern with `componentDidCatch` to gracefully handle unexpected errors. It displays a user-friendly error message when problems occur and logs detailed error information for debugging, including component stack traces and error details.
+
+## Performance Tracking
+The component includes performance tracking metrics to identify potential performance issues:
+- `renderCount`: Tracks the number of times the component has been rendered
+- `lastRenderTime`: Stores the timestamp of the last render
+- These metrics are used to detect rapid re-rendering which could indicate performance problems
 
 ## Rendering Logic
 The component follows a structured approach to rendering:
@@ -81,6 +109,7 @@ The component uses numerous CSS classes for styling different sections:
 - `.explorer-resource-item`: Individual resource effect
 - `.explorer-dice-section`: Container for dice roll outcomes
 - `.explorer-dice-table`: Dice roll outcomes table
+- `.row-alternate`: Alternating row styling for dice table
 
 ## Example Usage
 ```jsx
@@ -97,6 +126,7 @@ The component uses numerous CSS classes for styling different sections:
 - `BoardSpaceRenderer`: Renders individual spaces on the game board
 - `DiceRoll`: Handles dice rolling mechanics
 - `CardManager`: Manages card drawing and interactions
+- `SpaceExplorerManager`: Manages the opening and closing of the SpaceExplorer component
 
 ## Maintenance Notes
 When updating this component, consider these guidelines:
@@ -106,11 +136,15 @@ When updating this component, consider these guidelines:
 - Extend the error handling for any new complex operations
 - Follow the data-driven approach when adding new types of content
 - Update the CSS class documentation when adding new styles
+- Be aware of potential performance impacts when adding new features
+- Ensure memoization is properly implemented for expensive operations
 
 ## Future Development
 
-For planned enhancements to the SpaceExplorer component, see the future-tasks.md file.
+The next step for this component is to refactor it to use the GameStateManager event system like other manager components in the codebase. This will further standardize event handling across the application and improve performance.
+
+For other planned enhancements to the SpaceExplorer component, see the future-tasks.md file.
 
 ---
 
-*Last Updated: April 18, 2025*
+*Last Updated: April 21, 2025*

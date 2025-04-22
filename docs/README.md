@@ -20,6 +20,22 @@ This is a board game simulation that teaches project management concepts through
 - **Added Space Info CSS:** Created dedicated styling for the SpaceInfo component to improve UI clarity.
 - **Improved Logging:** All components now include clear logging statements for better debugging.
 
+## Documentation
+
+### Key Documentation Files
+
+- **TECHNICAL_REFERENCE.md**: Comprehensive technical documentation about the game's architecture, components, and implementation details
+- **DEVELOPMENT_GUIDE.md**: Guide for developers covering environment setup, coding standards, project status, and roadmap
+- **PLAYER_GUIDE.md**: End-user documentation explaining how to play the game
+- **CHANGELOG.md**: Chronological record of changes and updates to the game
+
+### What's Where
+
+- **Technical Implementation Details**: Find detailed information about component architecture, data flow, and implementation specifics in TECHNICAL_REFERENCE.md
+- **Development Standards**: Coding standards, manager pattern, event system, and CSS guidelines are in DEVELOPMENT_GUIDE.md
+- **Project Status & Roadmap**: Current status, upcoming priorities, and development phases are documented in DEVELOPMENT_GUIDE.md
+- **Playing the Game**: Instructions for players can be found in PLAYER_GUIDE.md
+
 ## Files and Structure
 
 ### Core Components
@@ -72,5 +88,11 @@ When modifying code, please follow these guidelines:
 - Do not create separate patches or fixes; modify the original code directly
 - No inline CSS; use the dedicated CSS files
 - The game is a closed system; don't introduce external dependencies
+- Follow the manager pattern for new components as outlined in DEVELOPMENT_GUIDE.md
+- Use the event system for component communication
 
-console.log('README.md file has been updated.');
+For complete development standards and guidelines, refer to DEVELOPMENT_GUIDE.md.
+
+---
+
+*Last Updated: April 22, 2025*

@@ -1,5 +1,23 @@
 # Changelog
 
+## [2025.04.22] - SpaceExplorerManager Event System Integration
+
+### Added
+- **GameStateManager Integration**: Refactored SpaceExplorerManager to use the GameStateManager event system
+- **Event Handlers**: Added handlers for playerMoved, turnChanged, and gameStateChanged events
+- **Custom Event Type**: Created spaceExplorerToggled event type for tracking explorer visibility
+- **Cleanup Method**: Implemented proper resource cleanup to prevent memory leaks
+
+### Changed
+- **State Management**: Modified all state-changing methods to use event-based architecture
+- **Component Structure**: Reorganized code to follow the manager pattern
+- **Initialization Process**: Added delayed initialization to prevent recursive event calls
+
+### Fixed
+- **Explorer Updates**: Fixed issue where explorer wouldn't automatically update on player movement
+- **Reliability**: Improved reliability through standardized event system integration
+- **Documentation**: Updated all guiding documents to reflect the implementation
+
 ## [2025.04.21] - SpaceExplorer Performance Update
 
 ### Added

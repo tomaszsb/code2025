@@ -4,23 +4,128 @@ console.log('SpaceExplorerManager.js file is beginning to be used');
 /**
  * SpaceExplorerManager class for handling space explorer panel
  * Manages opening/closing the explorer panel and updating the explored space
+ * Integrated with GameStateManager event system
  */
 class SpaceExplorerManager {
   constructor(gameBoard) {
+    console.log('SpaceExplorerManager: Initializing');
     this.gameBoard = gameBoard;
+    
+    // Store event handlers for proper cleanup
+    this.eventHandlers = {
+      playerMoved: this.handlePlayerMovedEvent.bind(this),
+      turnChanged: this.handleTurnChangedEvent.bind(this),
+      gameStateChanged: this.handleGameStateChangedEvent.bind(this)
+    };
+    
+    // Register event listeners - but only after initialization is complete
+    // to prevent recursive calls
+    setTimeout(() => {
+      this.registerEventListeners();
+    }, 0);
+    
+    console.log('SpaceExplorerManager: Successfully initialized');
+  }
+  
+  /**
+   * Register event listeners with GameStateManager
+   */
+  registerEventListeners = () => {
+    console.log('SpaceExplorerManager: Registering event listeners with GameStateManager');
+    
+    if (!window.GameStateManager) {
+      console.error('SpaceExplorerManager: GameStateManager not available, cannot register events');
+      return;
+    }
+    
+    // Register standard events
+    window.GameStateManager.addEventListener('playerMoved', this.eventHandlers.playerMoved);
+    window.GameStateManager.addEventListener('turnChanged', this.eventHandlers.turnChanged);
+    window.GameStateManager.addEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+    
+    // Add custom event types if they don't exist yet
+    if (!window.GameStateManager.eventHandlers['spaceExplorerToggled']) {
+      window.GameStateManager.eventHandlers['spaceExplorerToggled'] = [];
+    }
+    
+    console.log('SpaceExplorerManager: Event listeners registered');
+  }
+  
+  /**
+   * Handle playerMoved events from GameStateManager
+   * @param {Object} event - The event object
+   */
+  handlePlayerMovedEvent = (event) => {
+    console.log('SpaceExplorerManager: Handling playerMoved event', event.data);
+    
+    if (event.data && event.data.toSpaceId) {
+      // Find the space by ID
+      const space = window.GameStateManager.findSpaceById(event.data.toSpaceId);
+      if (space) {
+        // Update the explored space when player moves
+        this.updateExploredSpace(space);
+        
+        // Open the space explorer to show the new space automatically
+        if (this.gameBoard.state.showSpaceExplorer === false) {
+          this.handleOpenExplorer();
+        }
+      }
+    }
+  }
+  
+  /**
+   * Handle turnChanged events from GameStateManager
+   * @param {Object} event - The event object
+   */
+  handleTurnChangedEvent = (event) => {
+    console.log('SpaceExplorerManager: Handling turnChanged event', event.data);
+    
+    // Update the explorer to show the current player's space when turn changes
+    const currentPlayer = window.GameStateManager.getCurrentPlayer();
+    if (currentPlayer && currentPlayer.position) {
+      const space = window.GameStateManager.findSpaceById(currentPlayer.position);
+      if (space) {
+        this.updateExploredSpace(space);
+      }
+    }
+  }
+  
+  /**
+   * Handle gameStateChanged events from GameStateManager
+   * @param {Object} event - The event object
+   */
+  handleGameStateChangedEvent = (event) => {
+    console.log('SpaceExplorerManager: Handling gameStateChanged event', event.data);
+    
+    // Handle relevant game state changes
+    if (event.data && event.data.changeType === 'newGame') {
+      // Reset any explorer-specific state
+      this.gameBoard.setState({
+        showSpaceExplorer: false,
+        exploredSpace: null
+      });
+    }
   }
   
   /**
    * Handle closing the space explorer panel
    */
   handleCloseExplorer = () => {
-    // Actually close the space explorer
+    // Update state through gameBoard's setState
     this.gameBoard.setState({
       showSpaceExplorer: false
     });
     console.log('SpaceExplorerManager: Space explorer closed');
     
-    // Log using SpaceExplorerLogger if available
+    // Dispatch event using GameStateManager
+    if (window.GameStateManager) {
+      window.GameStateManager.dispatchEvent('spaceExplorerToggled', {
+        visible: false,
+        spaceName: ''
+      });
+    }
+    
+    // Legacy compatibility with SpaceExplorerLogger
     if (window.logSpaceExplorerToggle && typeof window.logSpaceExplorerToggle === 'function') {
       window.logSpaceExplorerToggle(false, '');
     }
@@ -30,16 +135,27 @@ class SpaceExplorerManager {
    * Handle opening the space explorer panel
    */
   handleOpenExplorer = () => {
+    // Update state through gameBoard's setState
     this.gameBoard.setState({
       showSpaceExplorer: true
     });
     console.log('SpaceExplorerManager: Space explorer opened');
     
-    // Log using SpaceExplorerLogger if available
-    const currentPlayer = this.gameBoard.turnManager.getCurrentPlayer();
-    const currentSpace = currentPlayer ? this.gameBoard.state.spaces.find(s => s.id === currentPlayer.position) : null;
+    // Get current player and space information
+    const currentPlayer = window.GameStateManager.getCurrentPlayer();
+    const currentSpaceId = currentPlayer ? currentPlayer.position : null;
+    const currentSpace = currentSpaceId ? window.GameStateManager.findSpaceById(currentSpaceId) : null;
     const spaceName = currentSpace ? currentSpace.name : '';
     
+    // Dispatch event using GameStateManager
+    if (window.GameStateManager) {
+      window.GameStateManager.dispatchEvent('spaceExplorerToggled', {
+        visible: true,
+        spaceName: spaceName
+      });
+    }
+    
+    // Legacy compatibility with SpaceExplorerLogger
     if (window.logSpaceExplorerToggle && typeof window.logSpaceExplorerToggle === 'function') {
       window.logSpaceExplorerToggle(true, spaceName);
     }
@@ -50,15 +166,40 @@ class SpaceExplorerManager {
    * @param {Object} space - Space object to explore
    */
   updateExploredSpace = (space) => {
+    // Update state through gameBoard's setState
     this.gameBoard.setState({
       exploredSpace: space
     });
     console.log('SpaceExplorerManager: Updated explored space to:', space ? space.name : 'none');
     
-    // Log using SpaceExplorerLogger if available
-    if (window.logSpaceExplorerToggle && typeof window.logSpaceExplorerToggle === 'function') {
-      window.logSpaceExplorerToggle(true, space ? space.name : '');
+    // Dispatch event using GameStateManager if available
+    if (window.GameStateManager && space) {
+      window.GameStateManager.dispatchEvent('spaceExplorerToggled', {
+        visible: this.gameBoard.state.showSpaceExplorer,
+        spaceName: space.name
+      });
     }
+    
+    // Legacy compatibility with SpaceExplorerLogger
+    if (window.logSpaceExplorerToggle && typeof window.logSpaceExplorerToggle === 'function') {
+      window.logSpaceExplorerToggle(this.gameBoard.state.showSpaceExplorer, space ? space.name : '');
+    }
+  }
+  
+  /**
+   * Clean up resources when the component is unmounted
+   */
+  cleanup = () => {
+    console.log('SpaceExplorerManager: Cleaning up resources');
+    
+    // Remove all event listeners
+    if (window.GameStateManager) {
+      window.GameStateManager.removeEventListener('playerMoved', this.eventHandlers.playerMoved);
+      window.GameStateManager.removeEventListener('turnChanged', this.eventHandlers.turnChanged);
+      window.GameStateManager.removeEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+    }
+    
+    console.log('SpaceExplorerManager: Cleanup completed');
   }
 }
 

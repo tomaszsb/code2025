@@ -3,7 +3,31 @@
 ## Overview
 The SpaceExplorer component displays detailed information about a selected game board space. It provides a comprehensive view of space properties including descriptions, actions, outcomes, card requirements, resource effects, and dice roll outcomes.
 
+## Related Components
+The SpaceExplorer component works with the following related components:
+
+- **SpaceExplorerManager**: Manages the opening/closing of the explorer panel and handles event communication with the GameStateManager. It follows the manager pattern and integrates with the event system.
+
+- **SpaceExplorerLoggerManager**: Manages styling and CSS classes for the explorer panel through a proper manager class that integrates with the GameStateManager event system. It replaces the previous global `SpaceExplorerLogger` object while maintaining backward compatibility.
+
 ## Recent Changes
+
+### SpaceExplorerLoggerManager Implementation (April 22, 2025)
+The SpaceExplorerLogger component has been refactored to follow the manager pattern and integrate with the GameStateManager event system:
+
+- **Manager Pattern Implementation**: Converted the global SpaceExplorerLogger object to a SpaceExplorerLoggerManager class
+- **Event Integration**: Added handlers for spaceExplorerToggled and gameStateChanged events
+- **Cleanup Method**: Implemented proper resource cleanup to prevent memory leaks
+- **Backward Compatibility**: Maintained compatibility with existing code through facade pattern
+
+### SpaceExplorerManager Event System Integration (April 22, 2025)
+The SpaceExplorerManager has been integrated with the GameStateManager event system:
+
+- **Event Handlers**: Added handlers for playerMoved, turnChanged, and gameStateChanged events
+- **Event Dispatching**: Implemented spaceExplorerToggled event type for panel visibility tracking
+- **Resource Cleanup**: Added proper cleanup method to prevent memory leaks
+
+### SpaceExplorer Performance Update (April 21, 2025)
 The SpaceExplorer component has been updated with the following improvements:
 
 - **Memoized Data Processing**: Implemented data caching in component state to avoid redundant processing
@@ -75,6 +99,26 @@ The component includes performance tracking metrics to identify potential perfor
 - `lastRenderTime`: Stores the timestamp of the last render
 - These metrics are used to detect rapid re-rendering which could indicate performance problems
 
+## SpaceExplorerLoggerManager Features
+
+The SpaceExplorerLoggerManager has the following key features:
+
+1. **Event System Integration**: Registers for and handles events from the GameStateManager, including spaceExplorerToggled and gameStateChanged events
+2. **CSS Class Management**: Adds appropriate CSS classes to elements for styling
+3. **Error-Resistant DOM Manipulation**: Uses null checks and try/catch blocks to safely add classes
+4. **Cleanup Method**: Properly removes event listeners to prevent memory leaks
+5. **Backward Compatibility**: Maintains compatibility with older code through a facade pattern
+
+## SpaceExplorerManager Features
+
+The SpaceExplorerManager has these key features:
+
+1. **Event System Integration**: Registers for playerMoved, turnChanged, and gameStateChanged events
+2. **Event Dispatching**: Dispatches spaceExplorerToggled events when the panel visibility changes
+3. **Panel State Management**: Controls the opening and closing of the explorer panel
+4. **Space Updates**: Updates the explored space based on player movement and turn changes
+5. **Resource Cleanup**: Properly removes event listeners when the component is unmounted
+
 ## Rendering Logic
 The component follows a structured approach to rendering:
 
@@ -113,23 +157,32 @@ The component uses numerous CSS classes for styling different sections:
 
 ## Example Usage
 ```jsx
+// Using SpaceExplorer component
 <SpaceExplorer
   space={selectedSpace}
   visitType="first"
   diceRollData={gameState.diceRollData}
   onClose={() => setSelectedSpace(null)}
 />
+
+// Initializing SpaceExplorerManager in GameBoard
+constructor(props) {
+  super(props);
+  // Initialize other managers...
+  this.spaceExplorerManager = new SpaceExplorerManager(this);
+}
+
+// In GameBoard cleanup
+cleanup() {
+  // Clean up other managers...
+  if (this.spaceExplorerManager && this.spaceExplorerManager.cleanup) {
+    this.spaceExplorerManager.cleanup();
+  }
+}
 ```
 
-## Related Components
-- `SpaceInfo`: Displays abbreviated space information in the game sidebar
-- `BoardSpaceRenderer`: Renders individual spaces on the game board
-- `DiceRoll`: Handles dice rolling mechanics
-- `CardManager`: Manages card drawing and interactions
-- `SpaceExplorerManager`: Manages the opening and closing of the SpaceExplorer component
-
 ## Maintenance Notes
-When updating this component, consider these guidelines:
+When updating this component system, consider these guidelines:
 
 - Maintain the modular structure by adding new rendering logic in appropriate sub-methods
 - Use the structured logging methods for consistent debugging
@@ -138,13 +191,37 @@ When updating this component, consider these guidelines:
 - Update the CSS class documentation when adding new styles
 - Be aware of potential performance impacts when adding new features
 - Ensure memoization is properly implemented for expensive operations
+- Always implement proper cleanup methods to prevent memory leaks
+- Register event listeners with appropriate error handling
+- Maintain backward compatibility with legacy code
 
-## Future Development
+## Architecture Diagram
 
-The next step for this component is to refactor it to use the GameStateManager event system like other manager components in the codebase. This will further standardize event handling across the application and improve performance.
+```
+┌─────────────────────────┐      ┌─────────────────────────┐
+│                         │      │                         │
+│     GameStateManager    │◄─────┤   SpaceExplorerManager  │
+│                         │      │                         │
+└────────────┬────────────┘      └────────────┬────────────┘
+             │                                 │
+             │                                 │
+             ▼                                 ▼
+┌─────────────────────────┐      ┌─────────────────────────┐
+│                         │      │                         │
+│  SpaceExplorerLogger    │◄─────┤      SpaceExplorer      │
+│       Manager           │      │                         │
+│                         │      │                         │
+└─────────────────────────┘      └─────────────────────────┘
+```
 
-For other planned enhancements to the SpaceExplorer component, see the future-tasks.md file.
+The architecture follows a clean separation of concerns:
+- GameStateManager maintains the central state
+- SpaceExplorerManager handles panel visibility and event communication
+- SpaceExplorerLoggerManager handles CSS and styling concerns
+- SpaceExplorer component handles rendering the UI
+
+Each component communicates through the GameStateManager event system, maintaining loose coupling and better maintainability.
 
 ---
 
-*Last Updated: April 21, 2025*
+*Last Updated: April 22, 2025*

@@ -1,5 +1,45 @@
 # Changelog
 
+## [2025.04.25] - StaticPlayerStatus CSS Refactoring
+
+### Added
+- **External CSS File**: Created new dedicated static-player-status.css file for the StaticPlayerStatus component
+- **CSS Classes**: Added color-specific classes for player elements (borders, indicators, names)
+- **Card Type Classes**: Created standardized CSS classes for different card types
+- **Responsive Styling**: Improved responsiveness through CSS-based layout
+
+### Changed
+- **Removed Inline Styles**: Eliminated all inline styles from StaticPlayerStatus.js
+- **Color Handling**: Replaced direct style manipulation with class-based approach
+- **Index.html**: Updated to include the new static-player-status.css file
+- **Class-Based Implementation**: Converted all style application methods to use CSS classes
+
+### Fixed
+- **Styling Consistency**: Ensured consistent styling with other components
+- **Code Style Adherence**: Aligned with project guidelines for no inline CSS
+- **Maintainability**: Improved separation of concerns by moving styling to CSS
+- **Documentation**: Updated StaticPlayerStatus-Component.md to reflect changes
+
+## [2025.04.22] - SpaceExplorerLoggerManager Implementation
+
+### Added
+- **Manager Pattern Implementation**: Refactored space-explorer-logger.js to use the manager pattern with SpaceExplorerLoggerManager class
+- **GameStateManager Integration**: Integrated space-explorer-logger with the GameStateManager event system
+- **Event Handlers**: Added handlers for spaceExplorerToggled and gameStateChanged events
+- **Proper Resource Management**: Implemented comprehensive cleanup method to prevent memory leaks
+
+### Changed
+- **Component Structure**: Reorganized code to follow manager pattern while maintaining backward compatibility
+- **Event-Based Architecture**: Replaced direct DOM manipulation timing with event-driven architecture
+- **Initialization Process**: Added delayed initialization to prevent recursive event calls
+- **Logging Prefix**: Updated log messages to use the new component name for consistency
+
+### Fixed
+- **CSS Application Reliability**: Improved reliability of CSS class application
+- **Backward Compatibility**: Maintained backward compatibility with existing code through facade pattern
+- **Error Handling**: Enhanced error handling with better logging and more robust null checks
+- **Documentation**: Updated all guiding documents to reflect the implementation
+
 ## [2025.04.22] - SpaceExplorerManager Event System Integration
 
 ### Added

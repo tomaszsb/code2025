@@ -55,7 +55,7 @@ async function initializeGame() {
       console.warn('DiceRollLogic not found. Dice roll functionality will not be available.');
     }
     
-    // Process card CSV files and handle any that fail to load
+    // Process card CSV files with improved error handling and retries
     const cardResponses = {
       W: wCardsResponse,
       B: bCardsResponse,
@@ -64,25 +64,66 @@ async function initializeGame() {
       E: eCardsResponse
     };
     
-    // Load each card type data
+    // Track card loading results
+    const cardLoadingResults = {
+      success: [],
+      failed: []
+    };
+    
+    // Define critical card types that are essential for gameplay
+    const criticalCardTypes = ['W']; // Work cards are critical for game progression
+    
+    // Load each card type data with retry capability
     for (const [cardType, response] of Object.entries(cardResponses)) {
-      if (response.ok) {
-        try {
-          const cardCsvText = await response.text();
-          const cardData = parseCSV(cardCsvText, 'cards');
-          
-          if (cardData && cardData.length > 0) {
-            // Initialize card data in game state
-            window.GameState.loadCardData(cardType, cardData);
-            console.log(`Loaded ${cardData.length} ${cardType} cards`);
-          } else {
-            console.warn(`No valid data found in ${cardType}-cards.csv`);
-          }
-        } catch (cardError) {
-          console.warn(`Error parsing ${cardType}-cards.csv:`, cardError);
+      let cardData = [];
+      let loaded = false;
+      let retryCount = 0;
+      const maxRetries = 2; // Maximum number of retry attempts
+      
+      // Try to load the card type, with retries if needed
+      while (!loaded && retryCount <= maxRetries) {
+        if (retryCount > 0) {
+          console.log(`Retrying ${cardType} cards load (attempt ${retryCount} of ${maxRetries})...`);
         }
-      } else {
-        console.warn(`Failed to load ${cardType}-cards.csv: ${response.status} ${response.statusText}`);
+        
+        if (response.ok) {
+          try {
+            // Clone the response for retry attempts
+            const clonedResponse = retryCount === 0 ? response : 
+              await fetch(`data/${cardType}-cards.csv`);
+              
+            if (clonedResponse.ok) {
+              const cardCsvText = await clonedResponse.text();
+              cardData = parseCSV(cardCsvText, 'cards');
+              
+              if (cardData && cardData.length > 0) {
+                // Initialize card data in game state
+                window.GameState.loadCardData(cardType, cardData);
+                console.log(`Loaded ${cardData.length} ${cardType} cards`);
+                cardLoadingResults.success.push(cardType);
+                loaded = true;
+              } else {
+                console.warn(`No valid data found in ${cardType}-cards.csv`);
+                retryCount++;
+              }
+            } else {
+              console.warn(`Retry failed for ${cardType}-cards.csv: ${clonedResponse.status}`);
+              retryCount++;
+            }
+          } catch (cardError) {
+            console.warn(`Error parsing ${cardType}-cards.csv:`, cardError);
+            retryCount++;
+          }
+        } else {
+          console.warn(`Failed to load ${cardType}-cards.csv: ${response.status} ${response.statusText}`);
+          retryCount++;
+        }
+      }
+      
+      // If still not loaded after retries, record the failure
+      if (!loaded) {
+        cardLoadingResults.failed.push(cardType);
+        console.error(`Failed to load ${cardType} cards after ${maxRetries} retries`);
       }
     }
     
@@ -94,6 +135,86 @@ async function initializeGame() {
       L: window.GameState.cardCollections.L,
       E: window.GameState.cardCollections.E
     };
+    
+    // Check for critical card types and notify the user about any missing card types
+    const missingCriticalCards = criticalCardTypes.filter(type => cardLoadingResults.failed.includes(type));
+    
+    if (missingCriticalCards.length > 0) {
+      // Critical cards are missing - show error message
+      throw new Error(`Cannot start game: Critical card types (${missingCriticalCards.join(', ')}) failed to load. The game requires these card types to function properly.`);
+    } else if (cardLoadingResults.failed.length > 0) {
+      // Non-critical cards are missing - show warning but allow game to continue
+      console.warn(`Game starting with missing card types: ${cardLoadingResults.failed.join(', ')}`);
+      
+      // Display warning message to the user
+      const warningElement = document.createElement('div');
+      warningElement.className = 'card-warning';
+      warningElement.innerHTML = `
+        <div class="warning-message">
+          <h3>Warning: Some Card Types Not Loaded</h3>
+          <p>The following card types could not be loaded: ${cardLoadingResults.failed.join(', ')}</p>
+          <p>The game will continue, but some features may be limited.</p>
+          <button id="dismiss-warning">Continue Playing</button>
+        </div>
+      `;
+      
+      // Add styles for the warning message
+      const styleElement = document.createElement('style');
+      styleElement.textContent = `
+        .card-warning {
+          position: fixed;
+          top: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          background-color: #fff3cd;
+          border: 1px solid #ffeeba;
+          border-radius: 5px;
+          padding: 15px;
+          z-index: 1000;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+          max-width: 80%;
+        }
+        .warning-message h3 {
+          color: #856404;
+          margin-top: 0;
+        }
+        .warning-message p {
+          color: #856404;
+        }
+        #dismiss-warning {
+          background-color: #856404;
+          color: white;
+          border: none;
+          padding: 8px 15px;
+          border-radius: 3px;
+          cursor: pointer;
+        }
+        #dismiss-warning:hover {
+          background-color: #654e03;
+        }
+      `;
+      
+      // Add elements after the DOM is ready
+      const addWarningElements = () => {
+        document.head.appendChild(styleElement);
+        document.body.appendChild(warningElement);
+        
+        // Add click handler to dismiss the warning
+        document.getElementById('dismiss-warning').addEventListener('click', () => {
+          document.body.removeChild(warningElement);
+        });
+      };
+      
+      // If DOM is already loaded, add elements immediately
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(addWarningElements, 1000); // Slight delay to ensure App is rendered
+      } else {
+        // Otherwise wait for DOMContentLoaded event
+        document.addEventListener('DOMContentLoaded', () => {
+          setTimeout(addWarningElements, 1000);
+        });
+      }
+    }
     
     // Render the App component
     ReactDOM.render(

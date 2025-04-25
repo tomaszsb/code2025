@@ -14,6 +14,8 @@ The GameStateManager now features a robust event system that allows for standard
 - ✓ COMPLETED! SpaceSelectionManager has been refactored to use the event system
 - ✓ COMPLETED! NegotiationManager has been refactored to use the event system
 - ✓ COMPLETED! TurnManager has been refactored to use the event system
+- ✓ COMPLETED! SpaceExplorerManager has been refactored to use the event system
+- ✓ COMPLETED! SpaceExplorerLoggerManager has been refactored to use the event system
 - ONGOING: Other manager components need to be refactored
 
 ## Implementation Guidelines
@@ -32,6 +34,7 @@ The following event types are standardized in GameStateManager:
 - `negotiationStarted`: Dispatched when a player starts negotiation
 - `negotiationCompleted`: Dispatched when negotiation is completed
 - `activePlayerChanged`: Dispatched when the active player changes (added by TurnManager)
+- `spaceExplorerToggled`: Dispatched when the space explorer panel is opened or closed
 
 When adding new event types, follow the same naming convention and document them here.
 
@@ -241,6 +244,82 @@ cleanup() {
 }
 ```
 
+## SpaceExplorerLoggerManager Integration Example
+
+The SpaceExplorerLoggerManager implementation demonstrates how to convert a global utility object into a proper manager class with event system integration while maintaining backward compatibility:
+
+```javascript
+// SpaceExplorerLoggerManager class
+class SpaceExplorerLoggerManager {
+  constructor(gameState) {
+    // Setup event handlers
+    this.eventHandlers = {
+      spaceExplorerToggled: this.handleSpaceExplorerToggled.bind(this),
+      gameStateChanged: this.handleGameStateChanged.bind(this)
+    };
+    
+    // Register event listeners with a delay to avoid initialization issues
+    setTimeout(() => {
+      this.registerEventListeners();
+    }, 0);
+  }
+  
+  // Register event listeners
+  registerEventListeners() {
+    // Register standard events
+    window.GameStateManager.addEventListener('spaceExplorerToggled', this.eventHandlers.spaceExplorerToggled);
+    window.GameStateManager.addEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+  }
+  
+  // Handle explorer toggled events
+  handleSpaceExplorerToggled(event) {
+    if (!event || !event.data) return;
+    
+    const { visible, spaceName } = event.data;
+    this.logToggle(visible, spaceName);
+    
+    // Schedule class fixes when explorer becomes visible
+    if (visible && !this.fixScheduled) {
+      this.scheduleFixApplication();
+    }
+  }
+  
+  // Handle game state changes
+  handleGameStateChanged(event) {
+    // Handle relevant game state changes
+    if (event.data && event.data.changeType === 'newGame') {
+      // Reset any logger-specific state for new games
+      this.fixesApplied = false;
+    }
+  }
+  
+  // Cleanup method
+  cleanup() {
+    // Remove all event listeners
+    window.GameStateManager.removeEventListener('spaceExplorerToggled', this.eventHandlers.spaceExplorerToggled);
+    window.GameStateManager.removeEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+  }
+}
+
+// Backward compatibility layer
+window.SpaceExplorerLogger = {
+  _manager: null,
+  
+  init: function() {
+    if (!this._manager) {
+      this._manager = new SpaceExplorerLoggerManager(window.GameStateManager);
+    }
+  },
+  
+  logToggle: function(isVisible, spaceName) {
+    if (!this._manager) {
+      this._manager = new SpaceExplorerLoggerManager(window.GameStateManager);
+    }
+    this._manager.logToggle(isVisible, spaceName);
+  }
+};
+```
+
 ## NegotiationManager Integration Example
 
 The NegotiationManager integration demonstrates how to add custom event types and maintain backward compatibility:
@@ -309,7 +388,9 @@ The following components should be prioritized for event system integration:
 2. ✓ **COMPLETED!** ~~SpaceSelectionManager~~: Use events for space selection and available moves
 3. ✓ **COMPLETED!** ~~NegotiationManager~~: Leverage events for negotiation state
 4. ✓ **COMPLETED!** ~~TurnManager~~: Use events for turn transition and player highlighting
-5. **SpaceExplorerManager**: Use events for space exploration display and update
+5. ✓ **COMPLETED!** ~~SpaceExplorerManager~~: Use events for space exploration display and update
+6. ✓ **COMPLETED!** ~~SpaceExplorerLoggerManager~~: Use events for explorer panel CSS management
+7. **Next Priority**: Refactor remaining components to use the event system
 
 ## Testing Event System Integration
 
@@ -339,13 +420,14 @@ The event system integration provides several key benefits:
 6. When refactoring components with their own event systems, provide backward compatibility methods
 7. Use delayed initialization with setTimeout if you need to prevent recursive calls
 8. Add proper null checks for GameStateManager and other dependencies
+9. When converting global objects to manager classes, maintain backward compatibility through a facade
 
 ## Conclusion
 
-The event system integration is a critical upgrade that improves the architectural quality of the codebase. By following these guidelines and the examples provided by CardManager, DiceManager, SpaceSelectionManager, NegotiationManager, and TurnManager, other components can be integrated with the event system in a consistent, maintainable way.
+The event system integration is a critical upgrade that improves the architectural quality of the codebase. By following these guidelines and the examples provided by the refactored manager components, other components can be integrated with the event system in a consistent, maintainable way.
 
-The TurnManager integration represents another significant milestone in the project's architectural improvement. The refactoring demonstrates how to transition a component from using its own event system to leveraging the centralized GameStateManager event system. This approach maintains backward compatibility while improving code organization and reducing duplication. The implementation of delayed event registration and robust error handling enhances the stability of the component, and the backward compatibility methods ensure seamless integration with existing code.
+The SpaceExplorerLoggerManager integration represents another milestone in the project's architectural improvement. The refactoring demonstrates how to convert a global utility object into a proper manager class while maintaining backward compatibility through a facade pattern. This approach ensures that existing code continues to work without modifications while improving the overall architecture of the system.
 
 ---
 
-*Last Updated: April 21, 2025* (Updated with TurnManager integration)
+*Last Updated: April 22, 2025* (Updated with SpaceExplorerLoggerManager integration)

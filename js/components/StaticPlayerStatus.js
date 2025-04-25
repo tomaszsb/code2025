@@ -163,48 +163,32 @@ window.StaticPlayerStatus = class StaticPlayerStatus extends React.Component {
     };
   }
   
-  // Apply dynamic styles through JavaScript
-  applyBorderStyle() {
+  // Get class name for color-dependent elements based on player color
+  getColorClass(prefix, color) {
     const { playerStatus } = this.state;
     const { currentPlayerColor } = this.props;
-    if (!playerStatus) return {};
     
-    return {
-      border: `2px solid ${currentPlayerColor || playerStatus.color}`
-    };
-  }
-  
-  applyColorIndicatorStyle() {
-    const { playerStatus } = this.state;
-    const { currentPlayerColor } = this.props;
-    if (!playerStatus) return {};
+    // Use currentPlayerColor if provided, otherwise use player's original color
+    const playerColor = currentPlayerColor || (playerStatus ? playerStatus.color : '');
     
-    return {
-      backgroundColor: currentPlayerColor || playerStatus.color,
-      boxShadow: `0 0 5px ${currentPlayerColor || playerStatus.color}`
-    };
-  }
-  
-  applyNameStyle() {
-    const { playerStatus } = this.state;
-    const { currentPlayerColor } = this.props;
-    if (!playerStatus) return {};
+    // Convert color to lowercase for class names (CSS naming convention)
+    const normalizedColor = (playerColor || '').toLowerCase();
     
-    return {
-      backgroundColor: currentPlayerColor || playerStatus.color
-    };
-  }
-  
-  // Get card type color based on type
-  getCardTypeColor(type) {
-    switch (type) {
-      case 'W': return '#4285f4'; // Blue for Work Type
-      case 'B': return '#ea4335'; // Red for Bank
-      case 'I': return '#fbbc05'; // Yellow for Investor
-      case 'L': return '#34a853'; // Green for Life
-      case 'E': return '#8e44ad'; // Purple for Expeditor
-      default: return '#777777';  // Gray for unknown
+    // Return the appropriate class based on color
+    switch (normalizedColor) {
+      case 'blue': return `${prefix}-blue`;
+      case 'red': return `${prefix}-red`;
+      case 'green': return `${prefix}-green`;
+      case 'yellow': return `${prefix}-yellow`;
+      case 'purple': return `${prefix}-purple`;
+      case 'orange': return `${prefix}-orange`;
+      default: return `${prefix}-blue`; // Default to blue if color is not recognized
     }
+  }
+  
+  // Get card type class name
+  getCardTypeClass(type) {
+    return `card-type-${type.toLowerCase()}`;
   }
   
   // Get card type name
@@ -237,10 +221,7 @@ window.StaticPlayerStatus = class StaticPlayerStatus extends React.Component {
         <div className="card-counts-breakdown">
           {cardTypes.map(type => (
             <div key={type} className="card-type-count">
-              <span 
-                className="card-type-indicator" 
-                style={{ backgroundColor: this.getCardTypeColor(type) }}
-              >
+              <span className={`card-type-indicator ${this.getCardTypeClass(type)}`}>
                 {type}
               </span>
               <span className="card-type-name">{this.getCardTypeName(type)}:</span>
@@ -276,18 +257,17 @@ window.StaticPlayerStatus = class StaticPlayerStatus extends React.Component {
     }
     
     try {
+      // Get color-specific class names
+      const borderClass = this.getColorClass('static-player-status-border', playerStatus.color);
+      const colorIndicatorClass = this.getColorClass('static-player-status-color', playerStatus.color);
+      const nameClass = this.getColorClass('static-player-status-name', playerStatus.color);
+      
       return (
-        <div className="static-player-status" style={this.applyBorderStyle()}>
+        <div className={`static-player-status ${borderClass}`}>
           <div className="static-player-status-header">
-            <div 
-              className="static-player-status-color-indicator" 
-              style={this.applyColorIndicatorStyle()}
-            ></div>
+            <div className={`static-player-status-color-indicator ${colorIndicatorClass}`}></div>
             <div className="static-player-status-name-container">
-              <div 
-                className="static-player-status-name" 
-                style={this.applyNameStyle()}
-              >
+              <div className={`static-player-status-name ${nameClass}`}>
                 <span>{playerStatus.name}'s Status When Landing</span>
               </div>
               <div className="static-player-status-space">

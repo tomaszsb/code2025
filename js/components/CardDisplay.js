@@ -527,4 +527,4 @@ window.CardDisplay = class CardDisplay extends React.Component {
   }
 }
 
-console.log('CardDisplay.js code execution is finished');
+console.log('CardDisplay.js code execution finished');

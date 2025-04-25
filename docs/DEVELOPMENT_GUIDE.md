@@ -120,6 +120,28 @@ console.log('FeatureManager.js code execution finished');
    - Use kebab-case for class names (e.g., `.player-card`)
    - Use descriptive names that indicate purpose
    - Prefix component-specific classes with component name (e.g., `.dice-container`)
+   
+#### CSS Example - StaticPlayerStatus
+
+The StaticPlayerStatus component demonstrates good CSS practices:
+
+1. Dedicated CSS file: `static-player-status.css`
+2. No inline styles in the JavaScript component
+3. Dynamic styling through class application:
+   ```javascript
+   // Instead of inline styles like this:
+   // style={{ border: `2px solid ${playerColor}` }}
+   
+   // Use class-based approach:
+   const borderClass = getColorClass('static-player-status-border', playerColor);
+   <div className={`static-player-status ${borderClass}`}>
+   ```
+4. Consistent naming with component prefixes:
+   ```css
+   .static-player-status-color-indicator {}
+   .static-player-status-name {}
+   .static-player-status-section-title {}
+   ```
 
 ### Event System
 

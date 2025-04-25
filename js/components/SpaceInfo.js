@@ -673,7 +673,7 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
   }
 }
 
-console.log('SpaceInfo.js code execution is finished - fixed available moves and added move button styling');
+console.log('SpaceInfo.js code execution finished');
 
 // Add log statements to debugging methods
 function logSpaceNegotiateUsage(spaceName) {

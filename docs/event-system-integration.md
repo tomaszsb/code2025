@@ -11,7 +11,7 @@ This document outlines the process and benefits of integrating game components w
 | GameStateManager         | Completed   | April 20, 2025 | Core event system implementation                 |
 | SpaceExplorerManager     | Completed   | April 22, 2025 | Controls space explorer panel visibility         |
 | SpaceExplorerLoggerManager | Completed | April 22, 2025 | Handles CSS and styling for space explorer       |
-| SpaceExplorer            | Completed   | April 26, 2025 | Main space exploration display component         |
+| SpaceExplorer            | Enhanced    | April 27, 2025 | Main space exploration display component with hybrid architecture |
 | TurnManager              | Completed   | April 20, 2025 | Manages player turns                             |
 | DiceManager              | Completed   | April 18, 2025 | Handles dice rolling and outcome processing      |
 | CardManager              | Completed   | April 19, 2025 | Manages card drawing and playing                 |
@@ -132,27 +132,48 @@ Proper cleanup methods ensure that event listeners are removed when components a
 
 ## Case Study: SpaceExplorer Integration
 
-The SpaceExplorer component was successfully integrated with the manager pattern on April 26, 2025. This integration involved:
+The SpaceExplorer component was initially integrated with the manager pattern on April 26, 2025, and then enhanced with a hybrid architecture on April 27, 2025.
+
+### Initial Manager Pattern Integration (April 26, 2025)
 
 1. **Converting from State to Props**:
-   - Instead of maintaining its own state with event listeners, the component now receives space data and other properties via props from SpaceExplorerManager.
-   - This improves separation of concerns and better follows the manager pattern.
+   - Instead of maintaining its own state with event listeners, the component received space data and other properties via props from SpaceExplorerManager.
+   - This improved separation of concerns and better followed the manager pattern.
 
 2. **Removing Direct Event Handling**:
    - Removed direct event listeners with GameStateManager.
-   - The component now relies on SpaceExplorerManager to handle events and pass updates via props.
+   - The component relied on SpaceExplorerManager to handle events and pass updates via props.
 
 3. **Implementing Simplified Communication**:
-   - The component now calls props.onClose when the close button is clicked instead of dispatching events directly.
-   - This creates a cleaner boundary between the component and the event system.
+   - The component called props.onClose when the close button is clicked instead of dispatching events directly.
+   - This created a cleaner boundary between the component and the event system.
 
-4. **Maintaining Performance Optimizations**:
-   - Added a processDiceDataFromProps method to efficiently process data based on props.
-   - Only reprocesses data when relevant props have changed.
+### Hybrid Architecture Enhancement (April 27, 2025)
 
-5. **Improving Error Handling**:
-   - Enhanced error handling to better recover from rendering issues.
-   - Simplified error state management for better user experience.
+1. **Hybrid State Management**:
+   - Implemented a hybrid approach that works with both props-based (manager) and event-based architectures.
+   - Added direct GameStateManager event handling while maintaining props compatibility.
+   - Component can now function both as a standalone component or as part of the manager system.
+
+2. **Performance Monitoring**:
+   - Added render count and timing metrics for performance tracking.
+   - Implemented warning system for detecting rapid re-renders.
+   - Added performance tracking properties (renderCount, lastRenderTime).
+
+3. **Enhanced Error Handling**:
+   - Implemented comprehensive error boundary with detailed stack trace logging.
+   - Added component stack information to error reports.
+   - Improved error state recovery with better fallbacks.
+
+4. **Resource Management**:
+   - Enhanced componentWillUnmount for thorough resource cleanup.
+   - Added proper event listener management when used in standalone mode.
+   - Improved state transitions for better resource handling.
+
+5. **Consistent Logging**:
+   - Added uniform console.log statements at beginning and end of all methods.
+   - Standardized logging format for better debugging.
+   - Improved log context with more descriptive messages.
 
 ### Before-After Code Comparison
 
@@ -200,44 +221,144 @@ render() {
 }
 ```
 
-**Manager-based approach (After)**:
+**Hybrid approach (After April 27, 2025)**:
 ```javascript
 constructor(props) {
+  console.log('SpaceExplorer: Constructor initialized');
+  
   super(props);
+  // Initialize state with error information and UI-specific state
   this.state = {
-    processedDiceData: null,
-    diceDataProcessed: false,
     hasError: false,
-    errorMessage: ''
+    errorMessage: '',
+    // Cache for processed dice data to avoid reprocessing on every render
+    processedDiceData: null,
+    // Flag to track if data has been processed
+    diceDataProcessed: false
   };
+  
+  // Track performance metrics for debugging
+  this.renderCount = 0;
+  this.lastRenderTime = 0;
+  
+  // Bind methods to ensure proper this context
+  this.handleGameStateChange = this.handleGameStateChange.bind(this);
+  this.handleCloseExplorer = this.handleCloseExplorer.bind(this);
+  
+  console.log('SpaceExplorer: Constructor completed');
 }
 
 componentDidMount() {
+  console.log('SpaceExplorer: componentDidMount method is being used');
+  
+  // Process dice data if props are available
   this.processDiceDataFromProps();
+  
+  // Register event listeners with GameStateManager
+  if (window.GameStateManager) {
+    window.GameStateManager.addEventListener('gameStateChanged', this.handleGameStateChange);
+  } else {
+    console.warn('SpaceExplorer: GameStateManager not available, cannot register events');
+  }
+  
+  console.log('SpaceExplorer: componentDidMount method completed');
 }
 
-processDiceDataFromProps = () => {
+// Handler for gameStateChanged events
+handleGameStateChange(event) {
+  console.log('SpaceExplorer: handleGameStateChange method is being used');
+  
+  // Only process events that might affect explorer content
+  if (event.data && ['playerMoved', 'cardDrawn', 'cardPlayed', 'newGame'].includes(event.data.changeType)) {
+    // Reprocess dice data when relevant game state changes
+    this.processDiceDataFromProps();
+  }
+  
+  console.log('SpaceExplorer: handleGameStateChange method completed');
+}
+
+processDiceDataFromProps() {
+  console.log('SpaceExplorer: processDiceDataFromProps method is being used');
+  
   const { space, diceRollData, visitType } = this.props;
+  
   if (space && diceRollData) {
-    // Process data and update state
-    const processedData = this.processDiceData(space, diceRollData, visitType);
-    this.setState({ 
-      processedDiceData: processedData,
-      diceDataProcessed: true
-    });
+    try {
+      // Process dice data and update state
+      const processedData = this.processDiceData(space, diceRollData, visitType);
+      this.setState({ 
+        processedDiceData: processedData,
+        diceDataProcessed: true
+      });
+    } catch (error) {
+      console.error('SpaceExplorer: Error processing dice data:', error.message);
+      this.setState({ 
+        processedDiceData: null,
+        diceDataProcessed: true
+      });
+    }
   }
+  
+  console.log('SpaceExplorer: processDiceDataFromProps method completed');
 }
 
-handleCloseExplorer = () => {
-  // Use props callback instead of dispatching events
-  if (this.props.onClose) {
+handleCloseExplorer() {
+  console.log('SpaceExplorer: handleCloseExplorer method is being used');
+  
+  // Call props.onClose if available
+  if (this.props.onClose && typeof this.props.onClose === 'function') {
     this.props.onClose();
+    
+    // Dispatch event using GameStateManager
+    if (window.GameStateManager) {
+      window.GameStateManager.dispatchEvent('spaceExplorerToggled', {
+        visible: false,
+        spaceName: this.props.space ? this.props.space.name : ''
+      });
+    }
   }
+  
+  console.log('SpaceExplorer: handleCloseExplorer method completed');
+}
+
+componentWillUnmount() {
+  console.log('SpaceExplorer: componentWillUnmount method is being used');
+  
+  // Remove GameStateManager event listeners
+  if (window.GameStateManager) {
+    window.GameStateManager.removeEventListener('gameStateChanged', this.handleGameStateChange);
+  }
+  
+  // Clear any timers or resources if used
+  this.lastRenderTime = 0;
+  this.renderCount = 0;
+  
+  console.log('SpaceExplorer: componentWillUnmount method completed');
 }
 
 render() {
+  console.log('SpaceExplorer: render method is being used');
+  
+  // Performance tracking for debugging
+  this.renderCount++;
+  const currentTime = performance.now();
+  if (this.lastRenderTime > 0) {
+    const renderInterval = currentTime - this.lastRenderTime;
+    if (renderInterval < 100) {
+      console.warn('SpaceExplorer: Multiple renders occurring rapidly, interval:', 
+                  renderInterval.toFixed(2), 'ms');
+    }
+  }
+  this.lastRenderTime = currentTime;
+  
+  // Use props for rendering, with state for processed data
   const { space } = this.props;
-  // Render using props
+  const { processedDiceData } = this.state;
+  
+  // Render component with error handling
+  // ...
+  
+  console.log('SpaceExplorer: render method completed');
 }
 ```
 
@@ -265,4 +386,4 @@ Priority components for integration:
 
 ---
 
-*Last Updated: April 26, 2025*
+*Last Updated: April 27, 2025*

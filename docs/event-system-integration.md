@@ -132,53 +132,42 @@ Proper cleanup methods ensure that event listeners are removed when components a
 
 ## Case Study: SpaceExplorer Integration
 
-The SpaceExplorer component was successfully integrated with the GameStateManager event system on April 26, 2025. This integration involved:
+The SpaceExplorer component was successfully integrated with the manager pattern on April 26, 2025. This integration involved:
 
-1. **Converting from Props to State**:
-   - Instead of receiving space data and visit type via props, the component now listens for events and updates its state.
-   - This reduces direct dependencies on parent components.
+1. **Converting from State to Props**:
+   - Instead of maintaining its own state with event listeners, the component now receives space data and other properties via props from SpaceExplorerManager.
+   - This improves separation of concerns and better follows the manager pattern.
 
-2. **Adding Event Handlers**:
-   - Added handlers for playerMoved, turnChanged, gameStateChanged, and spaceExplorerToggled events.
-   - The component now updates itself based on these events.
+2. **Removing Direct Event Handling**:
+   - Removed direct event listeners with GameStateManager.
+   - The component now relies on SpaceExplorerManager to handle events and pass updates via props.
 
-3. **Implementing Bidirectional Communication**:
-   - The component now both listens for events and dispatches events.
-   - For example, it dispatches spaceExplorerToggled events when the close button is clicked.
+3. **Implementing Simplified Communication**:
+   - The component now calls props.onClose when the close button is clicked instead of dispatching events directly.
+   - This creates a cleaner boundary between the component and the event system.
 
-4. **Maintaining Backward Compatibility**:
-   - The component still works with props for backward compatibility.
-   - This allows for a gradual transition to the event system.
+4. **Maintaining Performance Optimizations**:
+   - Added a processDiceDataFromProps method to efficiently process data based on props.
+   - Only reprocesses data when relevant props have changed.
 
-5. **Adding Proper Cleanup**:
-   - The component now properly removes event listeners in its cleanup method.
-   - This prevents memory leaks and improves performance.
+5. **Improving Error Handling**:
+   - Enhanced error handling to better recover from rendering issues.
+   - Simplified error state management for better user experience.
 
 ### Before-After Code Comparison
 
-**Before**:
-```javascript
-componentDidUpdate(prevProps) {
-  const { space, diceRollData, visitType } = this.props;
-  
-  // Only update when props change
-  if (space !== prevProps.space || diceRollData !== prevProps.diceRollData) {
-    // Process data
-  }
-}
-
-render() {
-  const { space } = this.props;
-  // Render using props
-}
-```
-
-**After**:
+**Event-based approach (Before)**:
 ```javascript
 constructor(props) {
   this.eventHandlers = {
     playerMoved: this.handlePlayerMoved.bind(this),
     // Other event handlers
+  };
+  
+  this.state = {
+    space: null,
+    visitType: 'first',
+    diceRollData: []
   };
 }
 
@@ -208,6 +197,47 @@ cleanup() {
 render() {
   const { space } = this.state;
   // Render using state
+}
+```
+
+**Manager-based approach (After)**:
+```javascript
+constructor(props) {
+  super(props);
+  this.state = {
+    processedDiceData: null,
+    diceDataProcessed: false,
+    hasError: false,
+    errorMessage: ''
+  };
+}
+
+componentDidMount() {
+  this.processDiceDataFromProps();
+}
+
+processDiceDataFromProps = () => {
+  const { space, diceRollData, visitType } = this.props;
+  if (space && diceRollData) {
+    // Process data and update state
+    const processedData = this.processDiceData(space, diceRollData, visitType);
+    this.setState({ 
+      processedDiceData: processedData,
+      diceDataProcessed: true
+    });
+  }
+}
+
+handleCloseExplorer = () => {
+  // Use props callback instead of dispatching events
+  if (this.props.onClose) {
+    this.props.onClose();
+  }
+}
+
+render() {
+  const { space } = this.props;
+  // Render using props
 }
 ```
 

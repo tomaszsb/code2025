@@ -12,13 +12,17 @@ console.log('SpaceExplorer.js file is beginning to be used');
  * - Resources required/provided
  * 
  * Features:
+ * - Integrated with GameStateManager event system
  * - Memoized processing of dice data for improved performance
  * - Enhanced error boundary implementation with detailed logging
  * - Comprehensive logging system for debugging
  * - Responsive layout that adjusts to content
+ * - Proper cleanup method for event listeners
  */
 class SpaceExplorer extends React.Component {
   constructor(props) {
+    console.log('SpaceExplorer: constructor method is being used');
+    
     super(props);
     // Initialize state with error information and processed data cache
     this.state = {
@@ -27,28 +31,228 @@ class SpaceExplorer extends React.Component {
       // Cache for processed dice data to avoid reprocessing on every render
       processedDiceData: null,
       // Flag to track if data has been processed
-      diceDataProcessed: false
+      diceDataProcessed: false,
+      // Space information now stored in state instead of props
+      space: null,
+      visitType: 'first',
+      diceRollData: []
     };
     
     // Track performance metrics for debugging
     this.renderCount = 0;
     this.lastRenderTime = 0;
     
-    this.logDebug('Component instance created');
+    // Store event handlers for proper cleanup
+    this.eventHandlers = {
+      spaceExplorerToggled: this.handleSpaceExplorerToggled.bind(this),
+      playerMoved: this.handlePlayerMoved.bind(this),
+      turnChanged: this.handleTurnChanged.bind(this),
+      gameStateChanged: this.handleGameStateChanged.bind(this)
+    };
+    
+    console.log('SpaceExplorer: constructor method completed');
+  }
+  
+  // Component lifecycle method - called when component mounts
+  componentDidMount() {
+    console.log('SpaceExplorer: componentDidMount method is being used');
+    
+    // Register event listeners
+    this.registerEventListeners();
+    
+    // If props contain initial space, process it
+    if (this.props.space) {
+      this.setState({ 
+        space: this.props.space,
+        visitType: this.props.visitType || 'first'
+      });
+    }
+    
+    // If props contain initial dice roll data, store it
+    if (this.props.diceRollData) {
+      this.setState({ diceRollData: this.props.diceRollData });
+    } else {
+      // Try to get dice roll data from window
+      if (window.diceRollData) {
+        this.setState({ diceRollData: window.diceRollData });
+      }
+    }
+    
+    console.log('SpaceExplorer: componentDidMount method completed');
+  }
+  
+  // Register event listeners
+  registerEventListeners() {
+    console.log('SpaceExplorer: registerEventListeners method is being used');
+    
+    if (!window.GameStateManager) {
+      console.error('SpaceExplorer: GameStateManager not available, cannot register events');
+      return;
+    }
+    
+    // Register event listeners with GameStateManager
+    window.GameStateManager.addEventListener('spaceExplorerToggled', this.eventHandlers.spaceExplorerToggled);
+    window.GameStateManager.addEventListener('playerMoved', this.eventHandlers.playerMoved);
+    window.GameStateManager.addEventListener('turnChanged', this.eventHandlers.turnChanged);
+    window.GameStateManager.addEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+    
+    console.log('SpaceExplorer: Event listeners registered with GameStateManager');
+    console.log('SpaceExplorer: registerEventListeners method completed');
+  }
+  
+  // Handle spaceExplorerToggled events from GameStateManager
+  handleSpaceExplorerToggled(event) {
+    console.log('SpaceExplorer: handleSpaceExplorerToggled method is being used');
+    
+    if (!event || !event.data) {
+      console.warn('SpaceExplorer: Received invalid spaceExplorerToggled event');
+      return;
+    }
+    
+    const { visible, spaceName } = event.data;
+    
+    // If a space name is provided, find the space and update state
+    if (spaceName) {
+      // Get space by name
+      const space = window.GameStateManager.findSpaceByName(spaceName);
+      if (space) {
+        // Get current player to determine visit type
+        const currentPlayer = window.GameStateManager.getCurrentPlayer();
+        const visitType = currentPlayer && 
+                         window.GameStateManager.hasPlayerVisitedSpace(currentPlayer, space.name) ? 
+                         'subsequent' : 'first';
+        
+        this.setState({ 
+          space: space,
+          visitType: visitType,
+          // Reset dice data processed flag to trigger reprocessing
+          diceDataProcessed: false
+        });
+      }
+    }
+    
+    console.log('SpaceExplorer: handleSpaceExplorerToggled method completed');
+  }
+  
+  // Handle playerMoved events from GameStateManager
+  handlePlayerMoved(event) {
+    console.log('SpaceExplorer: handlePlayerMoved method is being used');
+    
+    if (!event || !event.data) {
+      console.warn('SpaceExplorer: Received invalid playerMoved event');
+      return;
+    }
+    
+    const { toSpaceId } = event.data;
+    
+    // Find the space by ID
+    if (toSpaceId) {
+      const space = window.GameStateManager.findSpaceById(toSpaceId);
+      
+      if (space) {
+        // Get current player
+        const currentPlayer = window.GameStateManager.getCurrentPlayer();
+        
+        // Determine visit type
+        const visitType = currentPlayer && 
+                         window.GameStateManager.hasPlayerVisitedSpace(currentPlayer, space.name) ? 
+                         'subsequent' : 'first';
+        
+        // Update state
+        this.setState({ 
+          space: space,
+          visitType: visitType,
+          // Reset dice data processed flag to trigger reprocessing
+          diceDataProcessed: false
+        });
+      }
+    }
+    
+    console.log('SpaceExplorer: handlePlayerMoved method completed');
+  }
+// Handle turnChanged events from GameStateManager
+  handleTurnChanged(event) {
+    console.log('SpaceExplorer: handleTurnChanged method is being used');
+    
+    // Get current player
+    const currentPlayer = window.GameStateManager.getCurrentPlayer();
+    
+    if (currentPlayer && currentPlayer.position) {
+      // Find current space
+      const space = window.GameStateManager.findSpaceById(currentPlayer.position);
+      
+      if (space) {
+        // Determine visit type
+        const visitType = window.GameStateManager.hasPlayerVisitedSpace(currentPlayer, space.name) ? 
+                         'subsequent' : 'first';
+        
+        // Update state
+        this.setState({ 
+          space: space,
+          visitType: visitType,
+          // Reset dice data processed flag to trigger reprocessing
+          diceDataProcessed: false
+        });
+      }
+    }
+    
+    console.log('SpaceExplorer: handleTurnChanged method completed');
+  }
+  
+  // Handle gameStateChanged events from GameStateManager
+  handleGameStateChanged(event) {
+    console.log('SpaceExplorer: handleGameStateChanged method is being used');
+    
+    if (!event || !event.data) {
+      console.warn('SpaceExplorer: Received invalid gameStateChanged event');
+      return;
+    }
+    
+    // Handle new game events
+    if (event.data.changeType === 'newGame') {
+      // Reset state for new game
+      this.setState({
+        space: null,
+        visitType: 'first',
+        processedDiceData: null,
+        diceDataProcessed: false
+      });
+    }
+    
+    console.log('SpaceExplorer: handleGameStateChanged method completed');
   }
 
-  // Component lifecycle method - called when props change
-  componentDidUpdate(prevProps) {
-    const { space, diceRollData, visitType } = this.props;
+  // Component lifecycle method - called when props or state change
+  componentDidUpdate(prevProps, prevState) {
+    console.log('SpaceExplorer: componentDidUpdate method is being used');
     
-    // Only reprocess dice data if relevant props have changed
+    const { space, visitType, diceRollData, diceDataProcessed } = this.state;
+    
+    // Check if we received diceRollData via props
+    if (this.props.diceRollData && this.props.diceRollData !== prevProps.diceRollData) {
+      this.setState({ 
+        diceRollData: this.props.diceRollData,
+        diceDataProcessed: false // Force reprocessing with new data
+      });
+    }
+    
+    // Check if we received space via props
+    if (this.props.space && this.props.space !== prevProps.space) {
+      this.setState({ 
+        space: this.props.space,
+        visitType: this.props.visitType || 'first',
+        diceDataProcessed: false // Force reprocessing with new space
+      });
+    }
+    
+    // Only reprocess dice data if relevant state has changed
     if (
-      space !== prevProps.space || 
-      diceRollData !== prevProps.diceRollData ||
-      visitType !== prevProps.visitType ||
-      !this.state.diceDataProcessed
+      space !== prevState.space || 
+      diceRollData !== prevState.diceRollData ||
+      visitType !== prevState.visitType ||
+      !diceDataProcessed
     ) {
-      this.logDebug('Relevant props changed, reprocessing dice data');
+      console.log('SpaceExplorer: Relevant state changed, reprocessing dice data');
       
       if (space && diceRollData) {
         try {
@@ -59,7 +263,7 @@ class SpaceExplorer extends React.Component {
             diceDataProcessed: true
           });
         } catch (error) {
-          this.logError('Error processing dice data on update:', error.message);
+          console.error('SpaceExplorer: Error processing dice data on update:', error.message);
           this.setState({ 
             processedDiceData: null,
             diceDataProcessed: true
@@ -80,15 +284,42 @@ class SpaceExplorer extends React.Component {
     if (this.lastRenderTime > 0) {
       const renderInterval = currentTime - this.lastRenderTime;
       if (renderInterval < 100) {
-        this.logWarn('Multiple renders occurring rapidly, interval:', renderInterval.toFixed(2), 'ms');
+        console.warn('SpaceExplorer: Multiple renders occurring rapidly, interval:', renderInterval.toFixed(2), 'ms');
       }
     }
     this.lastRenderTime = currentTime;
+    
+    console.log('SpaceExplorer: componentDidUpdate method completed');
+  }
+  
+  // Clean up resources when component unmounts
+  componentWillUnmount() {
+    console.log('SpaceExplorer: componentWillUnmount method is being used');
+    
+    // Clean up event listeners
+    this.cleanup();
+    
+    console.log('SpaceExplorer: componentWillUnmount method completed');
+  }
+  
+  // Cleanup method to remove event listeners
+  cleanup() {
+    console.log('SpaceExplorer: cleanup method is being used');
+    
+    if (window.GameStateManager) {
+      // Remove all event listeners
+      window.GameStateManager.removeEventListener('spaceExplorerToggled', this.eventHandlers.spaceExplorerToggled);
+      window.GameStateManager.removeEventListener('playerMoved', this.eventHandlers.playerMoved);
+      window.GameStateManager.removeEventListener('turnChanged', this.eventHandlers.turnChanged);
+      window.GameStateManager.removeEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
+    }
+    
+    console.log('SpaceExplorer: cleanup method completed');
   }
 
   // Enhanced error boundary implementation
   componentDidCatch(error, info) {
-    this.logError('Error caught in SpaceExplorer:', error.message, info);
+    console.error('SpaceExplorer: Error caught in SpaceExplorer:', error.message, info);
     
     // Capture stack trace if available
     const errorDetails = error.stack || error.message || 'Unknown error';
@@ -103,52 +334,43 @@ class SpaceExplorer extends React.Component {
     console.error('Component stack:', info.componentStack);
   }
 
-  // Structured logging methods with timestamp for better debugging
-  logDebug(message, ...args) {
-    const timestamp = new Date().toISOString().substring(11, 23);
-    console.log(`[${timestamp}] SpaceExplorer [DEBUG]: ${message}`, ...args);
-  }
-  
-  logInfo(message, ...args) {
-    const timestamp = new Date().toISOString().substring(11, 23);
-    console.log(`[${timestamp}] SpaceExplorer [INFO]: ${message}`, ...args);
-  }
-  
-  logWarn(message, ...args) {
-    const timestamp = new Date().toISOString().substring(11, 23);
-    console.warn(`[${timestamp}] SpaceExplorer [WARN]: ${message}`, ...args);
-  }
-  
-  logError(message, ...args) {
-    const timestamp = new Date().toISOString().substring(11, 23);
-    console.error(`[${timestamp}] SpaceExplorer [ERROR]: ${message}`, ...args);
-  }
-
   // Helper function to check if a value exists and is not 'n/a'
   hasValidValue(value) {
-    return value && value !== 'n/a' && value.trim() !== '';
+    console.log('SpaceExplorer: hasValidValue method is being used');
+    const result = value && value !== 'n/a' && value.trim() !== '';
+    console.log('SpaceExplorer: hasValidValue method completed');
+    return result;
   }
 
   // Helper to clarify card draw text
   clarifyCardText(text) {
-    if (!text) return '';
+    console.log('SpaceExplorer: clarifyCardText method is being used');
+    
+    if (!text) {
+      console.log('SpaceExplorer: clarifyCardText method completed - empty text');
+      return '';
+    }
     
     // Handle "Draw X" pattern to clarify card type
     if (text.match(/^Draw\s+\d+$/i)) {
       const match = text.match(/^Draw\s+(\d+)$/i);
       if (match && match[1]) {
         const count = match[1];
+        console.log('SpaceExplorer: clarifyCardText method completed - Draw X pattern');
         return `Draw ${count} Work Cards`;
       }
     }
     
+    console.log('SpaceExplorer: clarifyCardText method completed');
     return text;
   }
-  
-  // Process dice data for the current space - optimized with better error handling
+// Process dice data for the current space - optimized with better error handling
   processDiceData(space, diceRollData) {
+    console.log('SpaceExplorer: processDiceData method is being used');
+    
     if (!space || !diceRollData) {
-      this.logInfo('No space or dice roll data provided for processing');
+      console.log('SpaceExplorer: No space or dice roll data provided for processing');
+      console.log('SpaceExplorer: processDiceData method completed - no data');
       return null;
     }
     
@@ -157,11 +379,12 @@ class SpaceExplorer extends React.Component {
       const visitType = space.visitType && space.visitType.toLowerCase();
       
       if (!visitType) {
-        this.logWarn('Visit type not defined for space:', space.name);
+        console.warn('SpaceExplorer: Visit type not defined for space:', space.name);
+        console.log('SpaceExplorer: processDiceData method completed - no visit type');
         return null;
       }
       
-      this.logDebug('Processing dice data for space:', space.name, 'visit type:', visitType);
+      console.log('SpaceExplorer: Processing dice data for space:', space.name, 'visit type:', visitType);
       
       // Only show outcomes that match both space name AND visit type (strict matching)
       const spaceDiceData = diceRollData.filter(data => 
@@ -170,11 +393,12 @@ class SpaceExplorer extends React.Component {
       );
       
       if (spaceDiceData.length === 0) {
-        this.logInfo('No dice data found for', space.name, 'with visit type', visitType);
+        console.log('SpaceExplorer: No dice data found for', space.name, 'with visit type', visitType);
+        console.log('SpaceExplorer: processDiceData method completed - no matching dice data');
         return null;
       }
       
-      this.logInfo('Found', spaceDiceData.length, 'dice data entries for space:', space.name);
+      console.log('SpaceExplorer: Found', spaceDiceData.length, 'dice data entries for space:', space.name);
       
       // Create a map of roll values to outcomes by outcome type
       const rollOutcomes = {};
@@ -195,16 +419,20 @@ class SpaceExplorer extends React.Component {
         });
       }
       
-      this.logDebug('Processed roll outcomes successfully');
+      console.log('SpaceExplorer: Processed roll outcomes successfully');
+      console.log('SpaceExplorer: processDiceData method completed');
       return rollOutcomes;
     } catch (error) {
-      this.logError('Error processing dice data:', error.message, error.stack);
+      console.error('SpaceExplorer: Error processing dice data:', error.message, error.stack);
+      console.log('SpaceExplorer: processDiceData method completed - error occurred');
       return null;
     }
   }
 
   // Create outcome element for dice roll result - safer than using HTML strings
   createOutcomeElement(type, value, key) {
+    console.log('SpaceExplorer: createOutcomeElement method is being used');
+    
     // Determine appropriate CSS class based on outcome type
     let className = 'outcome-other';
     
@@ -215,7 +443,8 @@ class SpaceExplorer extends React.Component {
     } else if (type.includes('Time') || type.includes('Fee')) {
       className = 'outcome-resource';
     }
-                      
+    
+    console.log('SpaceExplorer: createOutcomeElement method completed');
     return (
       <div key={key} className={className}>
         {type}: {value}
@@ -225,16 +454,19 @@ class SpaceExplorer extends React.Component {
 
   // Render dice roll table with outcomes - using memoized data
   renderDiceTable() {
+    console.log('SpaceExplorer: renderDiceTable method is being used');
+    
     const { processedDiceData } = this.state;
     
     if (!processedDiceData) {
-      this.logDebug('No processed dice data available for rendering');
+      console.log('SpaceExplorer: No processed dice data available for rendering');
+      console.log('SpaceExplorer: renderDiceTable method completed - no data');
       return null;
     }
     
-    this.logDebug('Rendering dice table with processed data');
+    console.log('SpaceExplorer: Rendering dice table with processed data');
     
-    return (
+    const diceTable = (
       <div className="explorer-dice-section">
         <h4>Dice Roll Outcomes:</h4>
         <div className="explorer-dice-table-container">
@@ -316,35 +548,63 @@ class SpaceExplorer extends React.Component {
         </div>
       </div>
     );
-  }
-
-  // Render the header section with title and close button
-  renderHeader() {
-    const { onClose } = this.props;
     
-    return (
+    console.log('SpaceExplorer: renderDiceTable method completed');
+    return diceTable;
+  }
+// Render the header section with title and close button
+  renderHeader() {
+    console.log('SpaceExplorer: renderHeader method is being used');
+    
+    const header = (
       <div className="explorer-header">
         <h3 className="explorer-title">Space Explorer</h3>
-        {onClose && (
-          <button 
-            className="explorer-close-btn" 
-            onClick={onClose}
-            aria-label="Close space explorer"
-          >
-            ×
-          </button>
-        )}
+        <button 
+          className="explorer-close-btn" 
+          onClick={this.handleCloseExplorer}
+          aria-label="Close space explorer"
+        >
+          ×
+        </button>
       </div>
     );
+    
+    console.log('SpaceExplorer: renderHeader method completed');
+    return header;
+  }
+  
+  // Handle close explorer button click - uses event system
+  handleCloseExplorer = () => {
+    console.log('SpaceExplorer: handleCloseExplorer method is being used');
+    
+    // Call props.onClose if available (backward compatibility)
+    if (this.props.onClose && typeof this.props.onClose === 'function') {
+      this.props.onClose();
+    }
+    
+    // Dispatch event using GameStateManager
+    if (window.GameStateManager) {
+      window.GameStateManager.dispatchEvent('spaceExplorerToggled', {
+        visible: false,
+        spaceName: ''
+      });
+    }
+    
+    console.log('SpaceExplorer: handleCloseExplorer method completed');
   }
 
   // Render space metadata (name and visit type)
   renderSpaceMetadata() {
-    const { space, visitType } = this.props;
+    console.log('SpaceExplorer: renderSpaceMetadata method is being used');
     
-    if (!space) return null;
+    const { space, visitType } = this.state;
     
-    return (
+    if (!space) {
+      console.log('SpaceExplorer: renderSpaceMetadata method completed - no space');
+      return null;
+    }
+    
+    const metadata = (
       <>
         <div className="explorer-space-name">{space.name}</div>
         <div className="explorer-visit-type">
@@ -352,30 +612,46 @@ class SpaceExplorer extends React.Component {
         </div>
       </>
     );
+    
+    console.log('SpaceExplorer: renderSpaceMetadata method completed');
+    return metadata;
   }
 
   // Render dice roll indicator if applicable
   renderDiceRollIndicator() {
+    console.log('SpaceExplorer: renderDiceRollIndicator method is being used');
+    
     const { processedDiceData } = this.state;
     
     // If no processed dice data, don't show indicator
-    if (!processedDiceData) return null;
+    if (!processedDiceData) {
+      console.log('SpaceExplorer: renderDiceRollIndicator method completed - no indicator');
+      return null;
+    }
     
-    return (
+    const indicator = (
       <div className="explorer-dice-indicator">
         <span className="dice-icon"></span>
         <span className="dice-text">This space requires a dice roll</span>
       </div>
     );
+    
+    console.log('SpaceExplorer: renderDiceRollIndicator method completed');
+    return indicator;
   }
 
   // Render space description, action, and outcome sections
   renderSpaceDetails() {
-    const { space } = this.props;
+    console.log('SpaceExplorer: renderSpaceDetails method is being used');
     
-    if (!space) return null;
+    const { space } = this.state;
     
-    return (
+    if (!space) {
+      console.log('SpaceExplorer: renderSpaceDetails method completed - no space');
+      return null;
+    }
+    
+    const details = (
       <>
         {space.description && (
           <div className="explorer-section">
@@ -399,13 +675,21 @@ class SpaceExplorer extends React.Component {
         )}
       </>
     );
+    
+    console.log('SpaceExplorer: renderSpaceDetails method completed');
+    return details;
   }
 
   // Render card sections using a data-driven approach
   renderCardSection() {
-    const { space } = this.props;
+    console.log('SpaceExplorer: renderCardSection method is being used');
     
-    if (!space) return null;
+    const { space } = this.state;
+    
+    if (!space) {
+      console.log('SpaceExplorer: renderCardSection method completed - no space');
+      return null;
+    }
     
     // Define card types and their styles
     const cardTypes = [
@@ -421,9 +705,12 @@ class SpaceExplorer extends React.Component {
       this.hasValidValue(space[card.key])
     );
     
-    if (cardsToRender.length === 0) return null;
+    if (cardsToRender.length === 0) {
+      console.log('SpaceExplorer: renderCardSection method completed - no cards');
+      return null;
+    }
     
-    return (
+    const cardSection = (
       <div className="explorer-cards-section">
         {cardsToRender.map(card => (
           <div key={card.key} className="explorer-card-item">
@@ -433,13 +720,21 @@ class SpaceExplorer extends React.Component {
         ))}
       </div>
     );
+    
+    console.log('SpaceExplorer: renderCardSection method completed');
+    return cardSection;
   }
 
   // Render resource section (Time and Fee)
   renderResourceSection() {
-    const { space } = this.props;
+    console.log('SpaceExplorer: renderResourceSection method is being used');
     
-    if (!space) return null;
+    const { space } = this.state;
+    
+    if (!space) {
+      console.log('SpaceExplorer: renderResourceSection method completed - no space');
+      return null;
+    }
     
     // Define resources to display
     const resources = [
@@ -452,9 +747,12 @@ class SpaceExplorer extends React.Component {
       this.hasValidValue(space[resource.key])
     );
     
-    if (resourcesToRender.length === 0) return null;
+    if (resourcesToRender.length === 0) {
+      console.log('SpaceExplorer: renderResourceSection method completed - no resources');
+      return null;
+    }
     
-    return (
+    const resourceSection = (
       <div className="explorer-resources-section">
         {resourcesToRender.map(resource => (
           <div key={resource.key} className="explorer-resource-item">
@@ -464,41 +762,54 @@ class SpaceExplorer extends React.Component {
         ))}
       </div>
     );
+    
+    console.log('SpaceExplorer: renderResourceSection method completed');
+    return resourceSection;
   }
   
   render() {
-    const { space } = this.props;
+    console.log('SpaceExplorer: render method is being used');
+    
+    const { space } = this.state;
     const { hasError, errorMessage } = this.state;
     
     // Show error state if something went wrong
     if (hasError) {
-      this.logError('Rendering error screen due to caught error');
-      return (
+      console.error('SpaceExplorer: Rendering error screen due to caught error');
+      
+      const errorUi = (
         <div className="space-explorer error">
           <h3>Something went wrong</h3>
           <p>Error: {errorMessage}</p>
           <p>Please try again or select a different space.</p>
         </div>
       );
+      
+      console.log('SpaceExplorer: render method completed - error screen');
+      return errorUi;
     }
     
     // Show placeholder if no space is selected
     if (!space) {
-      this.logInfo('Rendering empty state - no space selected');
-      return (
+      console.log('SpaceExplorer: Rendering empty state - no space selected');
+      
+      const emptyState = (
         <div className="space-explorer empty">
           <div className="explorer-placeholder">
             <p>Click on any space on the board to explore details</p>
           </div>
         </div>
       );
+      
+      console.log('SpaceExplorer: render method completed - empty state');
+      return emptyState;
     }
 
     // Log space being rendered
-    this.logInfo('Rendering space:', space.name, 'type:', space.type || 'unknown');
+    console.log('SpaceExplorer: Rendering space:', space.name, 'type:', space.type || 'unknown');
     
     try {
-      return (
+      const explorer = (
         <div className="space-explorer" data-type={space.type ? space.type.toUpperCase() : ''}>
           {this.renderHeader()}
           {this.renderSpaceMetadata()}
@@ -509,8 +820,11 @@ class SpaceExplorer extends React.Component {
           {this.renderDiceTable()}
         </div>
       );
+      
+      console.log('SpaceExplorer: render method completed - normal render');
+      return explorer;
     } catch (error) {
-      this.logError('Error in render method:', error.message, error.stack);
+      console.error('SpaceExplorer: Error in render method:', error.message, error.stack);
       
       // Update state and show the error UI
       this.setState({
@@ -519,12 +833,15 @@ class SpaceExplorer extends React.Component {
       });
       
       // Return a simple error UI for now (next render will show the full error UI)
-      return (
+      const simpleErrorUi = (
         <div className="space-explorer error">
           <h3>Rendering Error</h3>
           <p>Please try again.</p>
         </div>
       );
+      
+      console.log('SpaceExplorer: render method completed - simple error UI');
+      return simpleErrorUi;
     }
   }
 }

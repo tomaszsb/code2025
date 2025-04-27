@@ -12,6 +12,17 @@ The SpaceExplorer component works with the following related components:
 
 ## Recent Changes
 
+### SpaceExplorer Event System Integration (April 26, 2025)
+The SpaceExplorer component has been refactored to fully integrate with the GameStateManager event system:
+
+- **Event System Integration**: Now responds to GameStateManager events directly instead of via props
+- **Standard Logging**: Implemented standard console.log statements in all methods as required by development guide
+- **Cleanup Method**: Added proper cleanup method to remove event listeners and prevent memory leaks
+- **State-Based Architecture**: Converted from props-based to state-based architecture with event listeners
+- **Improved Event Handling**: Added handlers for playerMoved, turnChanged, gameStateChanged, and spaceExplorerToggled events
+- **Backward Compatibility**: Maintained compatibility with existing code that uses props
+- **Direct Event Dispatching**: Now directly dispatches spaceExplorerToggled events when the close button is clicked
+
 ### SpaceExplorerLoggerManager Implementation (April 22, 2025)
 The SpaceExplorerLogger component has been refactored to follow the manager pattern and integrate with the GameStateManager event system:
 
@@ -33,24 +44,11 @@ The SpaceExplorer component has been updated with the following improvements:
 - **Memoized Data Processing**: Implemented data caching in component state to avoid redundant processing
 - **Performance Optimization**: Added componentDidUpdate lifecycle method to process dice data only when relevant props change
 - **Enhanced Error Handling**: Improved error boundary implementation with stack trace logging and better recovery
-- **Improved Logging**: Added timestamp-based logging with severity levels for better debugging
 - **Optimized Rendering**: Added null checks to prevent unnecessary rendering attempts
 - **Accessibility Improvements**: Added aria-label to close button
 - **Performance Tracking**: Added render count and timing to detect excessive re-renders
 - **Better CSS Integration**: Added alternate row styling to improve dice table readability
-- **Closable Functionality**: The component can now be fully closed using the close button, hiding the space explorer panel
-- **Reopening Mechanism**: A "Show Explorer" button appears when the explorer is closed, allowing users to reopen it
 - **CSS-Only Styling**: Removed all inline styles and direct DOM style manipulation, moving styles to space-explorer.css
-- **Improved Documentation**: Added JSDoc comments and improved code documentation
-
-## Component Props
-
-| Prop Name     | Type     | Description                                 | Required |
-|---------------|----------|---------------------------------------------|----------|
-| space         | Object   | The space data to display                   | Yes      |
-| visitType     | String   | Type of visit ('first' or 'subsequent')     | Yes      |
-| diceRollData  | Array    | Dice roll outcome data for all spaces       | No       |
-| onClose       | Function | Callback function when close button clicked | No       |
 
 ## Component State
 
@@ -60,15 +58,43 @@ The SpaceExplorer component has been updated with the following improvements:
 | errorMessage          | String   | Error message to display when hasError is true                |
 | processedDiceData     | Object   | Cached processed dice data to avoid reprocessing on re-render |
 | diceDataProcessed     | Boolean  | Flag indicating if dice data has been processed               |
+| space                 | Object   | Current space being displayed                                 |
+| visitType             | String   | Visit type ('first' or 'subsequent')                          |
+| diceRollData          | Array    | Dice roll outcome data for all spaces                         |
+
+## Component Props (Backward Compatibility)
+
+| Prop Name     | Type     | Description                                 | Required |
+|---------------|----------|---------------------------------------------|----------|
+| space         | Object   | The space data to display                   | No       |
+| visitType     | String   | Type of visit ('first' or 'subsequent')     | No       |
+| diceRollData  | Array    | Dice roll outcome data for all spaces       | No       |
+| onClose       | Function | Callback function when close button clicked | No       |
+
+## Event Handlers
+
+| Event Handler          | Event Type              | Description                                                |
+|------------------------|-------------------------|------------------------------------------------------------|
+| handleSpaceExplorerToggled | spaceExplorerToggled | Updates displayed space when explorer visibility changes |
+| handlePlayerMoved      | playerMoved            | Updates display when a player moves to a different space   |
+| handleTurnChanged      | turnChanged            | Updates display when the active player changes             |
+| handleGameStateChanged | gameStateChanged       | Handles game state changes like new game                   |
+| handleCloseExplorer    | UI Event               | Handles closing the explorer and dispatches event          |
 
 ## Component Methods
 
 ### Lifecycle Methods
-- `constructor(props)`: Initializes state and performance tracking metrics
-- `componentDidUpdate(prevProps)`: Processes dice data only when relevant props change
+- `constructor(props)`: Initializes state, event handlers, and performance tracking metrics
+- `componentDidMount()`: Registers event listeners and initializes from props if provided
+- `componentDidUpdate(prevProps, prevState)`: Processes dice data only when relevant state/props change
+- `componentWillUnmount()`: Cleans up event listeners by calling cleanup method
 - `componentDidCatch(error, info)`: Captures and logs errors, updates error state
 
-### Primary Methods
+### Event System Methods
+- `registerEventListeners()`: Registers all event listeners with GameStateManager
+- `cleanup()`: Removes all event listeners to prevent memory leaks
+
+### Primary Rendering Methods
 - `render()`: Main render method that orchestrates all sub-components
 - `renderDiceTable()`: Renders the dice roll outcomes table using memoized data
 - `renderHeader()`: Renders the component header with title and close button
@@ -84,12 +110,6 @@ The SpaceExplorer component has been updated with the following improvements:
 - `processDiceData(space, diceRollData)`: Processes dice roll data for the space
 - `createOutcomeElement(type, value, key)`: Creates React elements for dice outcomes
 
-### Logging Methods
-- `logDebug(message, ...args)`: Logs debug-level information with timestamp
-- `logInfo(message, ...args)`: Logs informational messages with timestamp
-- `logWarn(message, ...args)`: Logs warning messages with timestamp
-- `logError(message, ...args)`: Logs error messages with timestamp
-
 ## Error Handling
 The component implements React's error boundary pattern with `componentDidCatch` to gracefully handle unexpected errors. It displays a user-friendly error message when problems occur and logs detailed error information for debugging, including component stack traces and error details.
 
@@ -99,38 +119,41 @@ The component includes performance tracking metrics to identify potential perfor
 - `lastRenderTime`: Stores the timestamp of the last render
 - These metrics are used to detect rapid re-rendering which could indicate performance problems
 
-## SpaceExplorerLoggerManager Features
+## Component Lifecycle Flow
 
-The SpaceExplorerLoggerManager has the following key features:
+1. **Initialization**:
+   - Component instance created
+   - State initialized
+   - Event handlers bound
 
-1. **Event System Integration**: Registers for and handles events from the GameStateManager, including spaceExplorerToggled and gameStateChanged events
-2. **CSS Class Management**: Adds appropriate CSS classes to elements for styling
-3. **Error-Resistant DOM Manipulation**: Uses null checks and try/catch blocks to safely add classes
-4. **Cleanup Method**: Properly removes event listeners to prevent memory leaks
-5. **Backward Compatibility**: Maintains compatibility with older code through a facade pattern
+2. **Mounting**:
+   - Event listeners registered with GameStateManager
+   - Initial state set from props (if provided) or try to get from GameStateManager
 
-## SpaceExplorerManager Features
+3. **Updates**:
+   - Component responds to GameStateManager events
+   - Updates state based on event data
+   - Processes dice data when space or dice data changes
+   - Re-renders only when necessary
 
-The SpaceExplorerManager has these key features:
+4. **Unmounting**:
+   - Cleanup method called
+   - Event listeners removed from GameStateManager
 
-1. **Event System Integration**: Registers for playerMoved, turnChanged, and gameStateChanged events
-2. **Event Dispatching**: Dispatches spaceExplorerToggled events when the panel visibility changes
-3. **Panel State Management**: Controls the opening and closing of the explorer panel
-4. **Space Updates**: Updates the explored space based on player movement and turn changes
-5. **Resource Cleanup**: Properly removes event listeners when the component is unmounted
+## Event Flow
 
-## Rendering Logic
-The component follows a structured approach to rendering:
-
-1. Check for errors and display error UI if needed
-2. Check for missing space data and show placeholder if needed
-3. Render the header section
-4. Render space metadata (name, visit type)
-5. Render dice roll indicator if applicable
-6. Render space details (description, action, outcome)
-7. Render card section with card requirements
-8. Render resource section with time and fee information
-9. Render dice roll outcome table if applicable
+```
+┌─────────────────────┐    playerMoved     ┌─────────────────────┐
+│                     │-------------------->│                     │
+│  GameStateManager   │    turnChanged     │   SpaceExplorer     │
+│                     │-------------------->│                     │
+│                     │  gameStateChanged  │                     │
+│                     │-------------------->│                     │
+│                     │                     │                     │
+│                     │  spaceExplorerToggled                     │
+│                     │<--------------------|                     │
+└─────────────────────┘                    └─────────────────────┘
+```
 
 ## CSS Classes
 The component uses numerous CSS classes for styling different sections:
@@ -157,7 +180,10 @@ The component uses numerous CSS classes for styling different sections:
 
 ## Example Usage
 ```jsx
-// Using SpaceExplorer component
+// The component will now work with events, so just add it to the DOM
+<SpaceExplorer />
+
+// It still supports backward compatibility mode with props
 <SpaceExplorer
   space={selectedSpace}
   visitType="first"
@@ -165,16 +191,16 @@ The component uses numerous CSS classes for styling different sections:
   onClose={() => setSelectedSpace(null)}
 />
 
-// Initializing SpaceExplorerManager in GameBoard
+// GameBoard initialization doesn't change
 constructor(props) {
   super(props);
-  // Initialize other managers...
+  // Initialize manager
   this.spaceExplorerManager = new SpaceExplorerManager(this);
 }
 
 // In GameBoard cleanup
 cleanup() {
-  // Clean up other managers...
+  // Clean up manager
   if (this.spaceExplorerManager && this.spaceExplorerManager.cleanup) {
     this.spaceExplorerManager.cleanup();
   }
@@ -185,43 +211,36 @@ cleanup() {
 When updating this component system, consider these guidelines:
 
 - Maintain the modular structure by adding new rendering logic in appropriate sub-methods
-- Use the structured logging methods for consistent debugging
-- Extend the error handling for any new complex operations
-- Follow the data-driven approach when adding new types of content
+- Use standard console.log statements for all methods as required by the development guide
+- Always add proper cleanup methods to remove event listeners
+- When adding new events, register them in both registerEventListeners and cleanup methods
+- Use state-based architecture instead of props where possible
 - Update the CSS class documentation when adding new styles
+- Ensure all new methods have standard log statements at beginning and end
 - Be aware of potential performance impacts when adding new features
-- Ensure memoization is properly implemented for expensive operations
-- Always implement proper cleanup methods to prevent memory leaks
-- Register event listeners with appropriate error handling
-- Maintain backward compatibility with legacy code
+- Maintain backward compatibility with props-based usage
 
-## Architecture Diagram
+## Complete Event System Architecture
 
 ```
 ┌─────────────────────────┐      ┌─────────────────────────┐
+│                         │◄────►│                         │
+│     GameStateManager    │      │   SpaceExplorerManager  │
 │                         │      │                         │
-│     GameStateManager    │◄─────┤   SpaceExplorerManager  │
-│                         │      │                         │
-└────────────┬────────────┘      └────────────┬────────────┘
-             │                                 │
-             │                                 │
-             ▼                                 ▼
+└───────────┬─────────────┘      └───────────┬─────────────┘
+           ▲│                               ▲│
+           ││                               ││
+           │▼                               │▼
 ┌─────────────────────────┐      ┌─────────────────────────┐
-│                         │      │                         │
-│  SpaceExplorerLogger    │◄─────┤      SpaceExplorer      │
+│                         │◄────►│                         │
+│  SpaceExplorerLogger    │      │      SpaceExplorer      │
 │       Manager           │      │                         │
 │                         │      │                         │
 └─────────────────────────┘      └─────────────────────────┘
 ```
 
-The architecture follows a clean separation of concerns:
-- GameStateManager maintains the central state
-- SpaceExplorerManager handles panel visibility and event communication
-- SpaceExplorerLoggerManager handles CSS and styling concerns
-- SpaceExplorer component handles rendering the UI
-
-Each component communicates through the GameStateManager event system, maintaining loose coupling and better maintainability.
+The architecture now has bidirectional communication between all components through the GameStateManager event system, maintaining loose coupling and better maintainability.
 
 ---
 
-*Last Updated: April 22, 2025*
+*Last Updated: April 26, 2025*

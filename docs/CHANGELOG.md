@@ -1,24 +1,31 @@
 # Changelog
 
-## [2025.04.25] - StaticPlayerStatus CSS Refactoring
+All notable changes to this project will be documented in this file.
+
+## [Unreleased]
+
+## [2025.04.26] - SpaceExplorer Event System Integration
 
 ### Added
-- **External CSS File**: Created new dedicated static-player-status.css file for the StaticPlayerStatus component
-- **CSS Classes**: Added color-specific classes for player elements (borders, indicators, names)
-- **Card Type Classes**: Created standardized CSS classes for different card types
-- **Responsive Styling**: Improved responsiveness through CSS-based layout
+- **Full Event System Integration**: Refactored SpaceExplorer component to directly use the GameStateManager event system
+- **Event Handlers**: Added handlers for playerMoved, turnChanged, gameStateChanged, and spaceExplorerToggled events
+- **State-Based Architecture**: Converted from props-based to state-based architecture with event listeners
+- **Standard Logging**: Implemented console.log statements at the beginning and end of all methods as required by development guide
+- **Proper Cleanup**: Added dedicated cleanup method to remove event listeners and prevent memory leaks
+- **Event Dispatching**: Component now directly dispatches spaceExplorerToggled events when the close button is clicked
+- **Documentation**: Created event-system-integration.md to document the event system architecture and integration process
 
 ### Changed
-- **Removed Inline Styles**: Eliminated all inline styles from StaticPlayerStatus.js
-- **Color Handling**: Replaced direct style manipulation with class-based approach
-- **Index.html**: Updated to include the new static-player-status.css file
-- **Class-Based Implementation**: Converted all style application methods to use CSS classes
+- **Component Architecture**: Updated SpaceExplorer to maintain its own state based on events instead of props
+- **Rendering Logic**: Modified rendering to use state instead of props
+- **Error Handling**: Enhanced error handling with better context in log messages
+- **Documentation**: Updated SpaceExplorer-Component.md to reflect new event-based architecture
+- **Logging System**: Replaced custom logging methods (logDebug, logInfo, etc.) with standard console.log statements
 
 ### Fixed
-- **Styling Consistency**: Ensured consistent styling with other components
-- **Code Style Adherence**: Aligned with project guidelines for no inline CSS
-- **Maintainability**: Improved separation of concerns by moving styling to CSS
-- **Documentation**: Updated StaticPlayerStatus-Component.md to reflect changes
+- **Memory Leaks**: Addressed potential memory leaks by properly removing event listeners in cleanup method
+- **Redundant Rendering**: Reduced unnecessary renders by using event-based updates instead of prop changes
+- **Component Consistency**: Made SpaceExplorer consistent with other manager components in the codebase
 
 ## [2025.04.22] - SpaceExplorerLoggerManager Implementation
 
@@ -43,87 +50,114 @@
 ## [2025.04.22] - SpaceExplorerManager Event System Integration
 
 ### Added
-- **GameStateManager Integration**: Refactored SpaceExplorerManager to use the GameStateManager event system
+- **Event System Integration**: Refactored SpaceExplorerManager to use the GameStateManager event system
 - **Event Handlers**: Added handlers for playerMoved, turnChanged, and gameStateChanged events
-- **Custom Event Type**: Created spaceExplorerToggled event type for tracking explorer visibility
-- **Cleanup Method**: Implemented proper resource cleanup to prevent memory leaks
+- **Event Type Definition**: Defined spaceExplorerToggled event type for panel visibility tracking
+- **Proper Resource Management**: Added cleanup method to prevent memory leaks
 
 ### Changed
-- **State Management**: Modified all state-changing methods to use event-based architecture
-- **Component Structure**: Reorganized code to follow the manager pattern
-- **Initialization Process**: Added delayed initialization to prevent recursive event calls
+- **Component Architecture**: Updated to follow the manager pattern
+- **State Management**: Replaced direct state manipulation with event-based state updates
+- **Initialization Process**: Improved initialization sequence to prevent timing issues
+- **Error Handling**: Added better error checks for GameStateManager availability
 
 ### Fixed
-- **Explorer Updates**: Fixed issue where explorer wouldn't automatically update on player movement
-- **Reliability**: Improved reliability through standardized event system integration
-- **Documentation**: Updated all guiding documents to reflect the implementation
+- **Explorer Toggling**: Fixed issues with explorer visibility toggling
+- **Position Updates**: Improved handling of player position updates
+- **Documentation**: Updated to reflect new event-based architecture
 
 ## [2025.04.21] - SpaceExplorer Performance Update
 
 ### Added
-- **Memoized Data Processing**: Implemented data caching to improve SpaceExplorer performance
+- **Memoized Data Processing**: Implemented data caching in component state to avoid redundant processing
 - **Performance Tracking**: Added render count and timing metrics to detect excessive re-renders
-- **Enhanced Logging**: Added timestamp-based logging with severity levels for better debugging
-- **Improved Error Handling**: Added stack trace capture and component stack logging
+- **Accessibility Features**: Added aria-label to close button
+- **Enhanced Error Boundary**: Added detailed error logging with component stack traces
 
 ### Changed
-- **Optimized Rendering**: Modified SpaceExplorer to only process dice data when relevant props change
-- **Added componentDidUpdate**: Implemented proper lifecycle method for data processing
-- **Improved null checking**: Added comprehensive null checks throughout the component
-- **Row styling**: Added alternating row styling for dice roll outcome tables
+- **Rendering Logic**: Updated componentDidUpdate to process dice data only when relevant props change
+- **UI Components**: Improved dice table rendering with better organization
+- **CSS Integration**: Enhanced styling with better CSS class usage
+- **Error Recovery**: Improved error recovery with better state management
 
 ### Fixed
-- **Accessibility**: Added aria-label to close button for better screen reader support
-- **Error recovery**: Improved error display with more comprehensive information
-- **Documentation**: Updated all relevant documentation to reflect the changes
+- **Performance Issues**: Addressed performance bottlenecks in dice data processing
+- **Rendering Bugs**: Fixed issues with missing data handling
+- **Error Display**: Improved error UI and recovery
+- **Dice Outcome Display**: Fixed inconsistencies in dice outcome rendering
 
-## [2025.04.20] - Movement Mechanics Update
-
-### Fixed
-- **Space Movement Selection**: Fixed issue where available moves in the SpaceInfo panel were not properly clickable, particularly affecting the OWNER-FUND-INITIATION move
-- **Event Handling**: Added proper onClick event handlers to move buttons to ensure they trigger the correct selection functions
-- **Special Case Handling**: Added specific handling for the OWNER-FUND-INITIATION space to ensure proper movement options
+## [2025.04.20] - TurnManager Implementation
 
 ### Added
-- **space-info.css**: Created new dedicated CSS file for the SpaceInfo component
-- **Enhanced Logging**: Added improved logging statements for better debugging of move selection
-- **Button Styling**: Added new "primary-move-btn" class for more prominent move buttons
-- **Documentation**: Updated all guiding documents to reflect the changes
+- **TurnManager Component**: Created new component for managing player turns
+- **Event System Integration**: Integrated with GameStateManager event system
+- **Turn Advancement Logic**: Implemented logic for advancing turns automatically
+- **Player Selection**: Added current player highlighting and turn indicators
 
 ### Changed
-- **SpaceInfo.js**: Modified to ensure all available moves are properly displayed as clickable buttons
-- **Index.html**: Updated to include the new space-info.css file
-- **Button Design**: Improved visibility and usability of move buttons with enhanced styling
-
-## [2025.03.15] - Card System Improvements
-
-### Added
-- Enhanced card draw animation for better visual feedback
-- Improved card management interface
-- New card type indicators
+- **Turn Flow**: Updated turn flow to use event-based architecture
+- **Player Indicators**: Enhanced player status indicators during turns
+- **Animation Timing**: Improved timing of turn transition animations
 
 ### Fixed
-- Issue with card discarding not properly removing cards from player's hand
-- Card effect processing for Expeditor cards
+- **Turn Synchronization**: Fixed issues with turn state getting out of sync
+- **Player Order**: Corrected player ordering in multi-player games
+- **Visual Indicators**: Fixed inconsistencies in turn indicator display
 
-## [2025.02.28] - Dice Rolling Update
+## [2025.04.19] - Card System Enhancement
 
 ### Added
-- New 3D dice rolling animation
-- Enhanced visual feedback for dice outcomes
+- **CardManager Component**: Implemented manager for card drawing and playing
+- **NegotiationManager**: Added manager for negotiation mechanics
+- **Card Event Types**: Defined cardDrawn and cardPlayed event types
+- **Card Effects**: Implemented various card effect handlers
+
+### Changed
+- **Card UI**: Enhanced card display with improved styling
+- **Card Interaction**: Updated card interaction to use event-based approach
+- **Resource Updates**: Improved resource updates from card effects
 
 ### Fixed
-- Dice outcome processing for certain spaces
-- Edge case handling for special dice roll spaces
+- **Card Drawing**: Fixed issues with card drawing and hand management
+- **Card Effect Application**: Corrected inconsistencies in applying card effects
+- **UI Updates**: Fixed card UI not updating after playing cards
 
-## [2025.01.20] - Initial Release
+## [2025.04.18] - Dice System Refactoring
 
-### Features
-- Turn-based gameplay with multiple players
-- Interactive game board with different space types
-- Card system with 5 card types (W, B, I, L, E)
-- Dice rolling mechanics
-- Resource management (Money and Time)
-- Phase-based project progression
+### Added
+- **DiceManager Component**: Created manager component for dice rolling
+- **Event Integration**: Integrated dice system with GameStateManager events
+- **Roll History**: Added tracking for roll history
+- **Outcome Categories**: Implemented categorization of dice outcomes
 
-console.log('CHANGELOG.md file has been updated.');
+### Changed
+- **Dice Animation**: Enhanced dice rolling animation
+- **Outcome Display**: Improved outcome display organization
+- **CSS Organization**: Extracted dice CSS to dedicated file
+
+### Fixed
+- **Roll Logic**: Fixed inconsistencies in roll outcome processing
+- **Visual Glitches**: Corrected animation glitches during rolls
+- **State Persistence**: Fixed dice state not persisting correctly
+
+## [2025.04.17] - Initial Event System Implementation
+
+### Added
+- **GameStateManager Events**: Implemented core event system in GameStateManager
+- **Event Registration Methods**: Added addEventListener and removeEventListener methods
+- **Event Dispatching**: Added dispatchEvent method for firing events
+- **Standard Event Types**: Defined standard event types for game state changes
+
+### Changed
+- **State Management**: Modified state management to use events for updates
+- **Component Communication**: Updated component communication to use events instead of direct calls
+- **Initialization Sequence**: Improved component initialization sequence
+
+### Fixed
+- **State Synchronization**: Fixed issues with state getting out of sync between components
+- **Memory Management**: Addressed memory leaks from improper event listener management
+- **Error Propagation**: Improved error handling and propagation through the event system
+
+---
+
+*Last Updated: April 26, 2025*

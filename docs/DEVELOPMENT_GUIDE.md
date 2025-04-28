@@ -687,6 +687,35 @@ Documentation should include:
 - Important implementation notes
 - Examples of usage
 
----
+### CardTypeUtilsManager Documentation
 
-*Last Updated: April 27, 2025*
+When documenting the CardTypeUtilsManager, include:
+
+1. **Purpose**: 
+   - Describe the manager's role in handling card type detection, formatting, and styling
+   - Explain how it integrates with the card system
+
+2. **Interfaces**:
+   - Document public methods that can be used by other components
+   - Explain required parameters and return values
+
+3. **Events**:
+   - List all events the manager listens to and what actions it takes
+   - Explain any events it dispatches
+
+4. **Configuration**:
+   - Document how to configure the manager (e.g., enabling/disabling caching)
+   - Explain default settings and customization options
+
+5. **Examples**:
+   ```javascript
+   // Example: Using CardTypeUtilsManager to get a card's CSS class
+   const cardClass = window.CardTypeUtilsManager.getCardClass(card.type);
+   
+   // Example: Using CardTypeUtilsManager to detect a card's type
+   const detectedType = window.CardTypeUtilsManager.detectCardType(card);
+   
+   // Example: Using CardTypeUtilsManager to format currency values
+   const formattedAmount = window.CardTypeUtilsManager.formatCurrency(card.Amount);
+
+*Last Updated: April 28, 2025 12:12 am*

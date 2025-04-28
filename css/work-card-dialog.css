@@ -1,0 +1,193 @@
+/* work-card-dialog.css - Styles for Work Card Dialog components */
+
+/* Dialog overlay */
+.work-card-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Dialog container */
+.work-card-dialog-container {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 90%;
+  width: 600px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Dialog title */
+.work-card-dialog-title {
+  margin: 0;
+  color: #d32f2f;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+/* Dialog instructions */
+.work-card-dialog-instructions {
+  font-size: 1.1em;
+  margin-bottom: 10px;
+}
+
+/* Progress tracker container */
+.work-card-progress-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+/* Progress bar container */
+.work-card-progress-bar {
+  flex: 1;
+  height: 12px;
+  background-color: #eee;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Progress bar fill */
+.work-card-progress-fill {
+  height: 100%;
+  background-color: #4285f4;
+  transition: width 0.3s ease;
+}
+
+/* Cards list container */
+.work-card-list-container {
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+/* Cards list title */
+.work-card-list-title {
+  margin: 0 0 10px 0;
+}
+
+/* Card item */
+.work-card-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  border: 1px solid #4285f4;
+}
+
+/* Selected card item */
+.work-card-item-selected {
+  background-color: #e3f2fd;
+  border: 2px solid #2196f3;
+}
+
+/* Card item content */
+.work-card-item-content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Card item title */
+.work-card-item-title {
+  font-weight: bold;
+}
+
+/* Card item description */
+.work-card-item-description {
+  font-size: 0.9em;
+}
+
+/* Card item cost */
+.work-card-item-cost {
+  color: #666;
+}
+
+/* Select button */
+.work-card-select-button {
+  background-color: #f5f5f5;
+  color: #333;
+  border: 1px solid #2196f3;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+/* Selected button */
+.work-card-select-button-selected {
+  background-color: #2196f3;
+  color: white;
+  border: none;
+}
+
+/* Discard button */
+.work-card-discard-button {
+  background-color: #d32f2f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+/* Status message */
+.work-card-status {
+  margin-top: 10px;
+}
+
+/* Warning status */
+.work-card-status-warning {
+  color: #d32f2f;
+}
+
+/* Instructions */
+.work-card-instructions {
+  font-size: 0.9em;
+  color: #555;
+  font-style: italic;
+  margin-top: 5px;
+}
+
+/* No cards warning */
+.work-card-no-cards {
+  text-align: center;
+  padding: 20px;
+  color: #d32f2f;
+}
+
+/* Confirm button */
+.work-card-confirm-button {
+  background-color: #ddd;
+  color: #999;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 15px;
+  margin-top: 10px;
+  cursor: not-allowed;
+  font-weight: bold;
+}
+
+/* Enabled confirm button */
+.work-card-confirm-button-enabled {
+  background-color: #4caf50;
+  color: white;
+  cursor: pointer;
+}

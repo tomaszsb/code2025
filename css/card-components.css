@@ -1,8 +1,8 @@
 /* card-components.css - Styles for card-related components */
-console.log('card-components.css file is beginning to be used');
 
 /* Card display container */
 .card-display-container {
+  border-left: 4px solid #ccc; /* Default border that will be overridden by player color classes */
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -10,6 +10,90 @@ console.log('card-components.css file is beginning to be used');
   margin-bottom: 16px;
   max-height: 80vh;
   overflow-y: auto;
+}
+
+/* Player border colors */
+.player-border-red { border-left-color: #ff5722; }
+.player-border-green { border-left-color: #4caf50; }
+.player-border-blue { border-left-color: #2196f3; }
+.player-border-yellow { border-left-color: #ffeb3b; }
+.player-border-purple { border-left-color: #9c27b0; }
+.player-border-orange { border-left-color: #ff9800; }
+.player-border-pink { border-left-color: #e91e63; }
+.player-border-teal { border-left-color: #009688; }
+
+/* Card type filters */
+.card-filter-btn-w { background-color: #f0f0f0; color: #333333; }
+.card-filter-btn-w.active { background-color: #4285f4; color: #ffffff; }
+
+.card-filter-btn-b { background-color: #f0f0f0; color: #333333; }
+.card-filter-btn-b.active { background-color: #ea4335; color: #ffffff; }
+
+.card-filter-btn-i { background-color: #f0f0f0; color: #333333; }
+.card-filter-btn-i.active { background-color: #fbbc05; color: #ffffff; }
+
+.card-filter-btn-l { background-color: #f0f0f0; color: #333333; }
+.card-filter-btn-l.active { background-color: #34a853; color: #ffffff; }
+
+.card-filter-btn-e { background-color: #f0f0f0; color: #333333; }
+.card-filter-btn-e.active { background-color: #8e44ad; color: #ffffff; }
+
+/* Card limit indicator */
+.card-limit-indicator {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.card-type-count {
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+  margin-bottom: 8px;
+}
+
+.card-type-count-indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+/* Card color indicators */
+.card-color-w {
+  background-color: #4285f4; /* Work Type - Blue */
+}
+
+.card-color-b {
+  background-color: #ea4335; /* Bank - Red */
+}
+
+.card-color-i {
+  background-color: #fbbc05; /* Investor - Yellow */
+}
+
+.card-color-l {
+  background-color: #34a853; /* Life - Green */
+}
+
+.card-color-e {
+  background-color: #8e44ad; /* Expeditor - Purple */
+}
+
+.card-type-count-text {
+  font-size: 14px;
+  color: #555;
+}
+
+.card-type-count-warning {
+  font-weight: bold;
+  color: #ea4335;
+}
+
+.card-exceed-limit {
+  border: 2px dashed #ea4335;
+  animation: pulse 1s infinite;
 }
 
 /* Card filter buttons */
@@ -450,4 +534,51 @@ console.log('card-components.css file is beginning to be used');
   transition: transform 0.2s ease;
 }
 
-console.log('card-components.css code execution finished');
+/* Card limit dialog styles */
+.card-limit-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.card-limit-dialog-content {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  width: 700px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.card-limit-dialog-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.card-limit-dialog-subtitle {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.card-limit-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+

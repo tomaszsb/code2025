@@ -1,6 +1,9 @@
 // CardDisplay.js - Core component for displaying and managing player cards
 console.log('CardDisplay.js file is beginning to be used');
 
+// Constants for card limits and management
+const CARD_TYPE_LIMIT = 6; // Maximum number of cards per type
+
 // Main CardDisplay component
 window.CardDisplay = class CardDisplay extends React.Component {
   constructor(props) {
@@ -28,7 +31,11 @@ window.CardDisplay = class CardDisplay extends React.Component {
       isReplacingWCards: false,
       requiredWReplacements: 0,
       replacementCount: 0,
-      selectedForReplacement: []  // Array to store indices of selected cards for replacement
+      selectedForReplacement: [],  // Array to store indices of selected cards for replacement
+      // Add state for card limit enforcement
+      showCardLimitDialog: false,
+      cardTypeCounts: {},
+      cardsOverLimit: []
     };
   }
 
@@ -176,6 +183,127 @@ window.CardDisplay = class CardDisplay extends React.Component {
     }, 500);
   }
 
+  // Count cards by type
+  countCardsByType = (cards) => {
+    const counts = {};
+    
+    // Initialize counts for all card types
+    ['W', 'B', 'I', 'L', 'E'].forEach(type => {
+      counts[type] = 0;
+    });
+    
+    // Count cards by type
+    cards.forEach(card => {
+      const cardType = card.type || window.CardTypeUtils.detectCardType(card);
+      if (cardType) {
+        counts[cardType] = (counts[cardType] || 0) + 1;
+      }
+    });
+    
+    return counts;
+  }
+  
+  // Check if any card type exceeds the limit
+  checkCardLimits = (cards) => {
+    const typeCounts = this.countCardsByType(cards);
+    const overLimitTypes = [];
+    
+    Object.keys(typeCounts).forEach(type => {
+      if (typeCounts[type] > CARD_TYPE_LIMIT) {
+        overLimitTypes.push(type);
+      }
+    });
+    
+    return {
+      typeCounts,
+      overLimitTypes
+    };
+  }
+  
+  // Get cards that are over the limit
+  getCardsOverLimit = (cards, overLimitTypes) => {
+    const cardsOverLimit = [];
+    const typeIndices = {};
+    
+    // Initialize type indices
+    overLimitTypes.forEach(type => {
+      typeIndices[type] = [];
+    });
+    
+    // Find all cards of over-limit types
+    cards.forEach((card, index) => {
+      const cardType = card.type || window.CardTypeUtils.detectCardType(card);
+      if (overLimitTypes.includes(cardType)) {
+        typeIndices[cardType].push(index);
+      }
+    });
+    
+    // Add extra cards (beyond the limit) to the list
+    Object.keys(typeIndices).forEach(type => {
+      const indices = typeIndices[type];
+      if (indices.length > CARD_TYPE_LIMIT) {
+        // Add indices beyond the limit to the cardsOverLimit array
+        cardsOverLimit.push(...indices.slice(CARD_TYPE_LIMIT));
+      }
+    });
+    
+    return cardsOverLimit;
+  }
+  
+  // Handle showing card limit dialog
+  handleShowCardLimitDialog = () => {
+    const { cards } = this.state;
+    const { overLimitTypes } = this.checkCardLimits(cards);
+    
+    if (overLimitTypes.length > 0) {
+      const cardsOverLimit = this.getCardsOverLimit(cards, overLimitTypes);
+      
+      this.setState({
+        showCardLimitDialog: true,
+        cardsOverLimit
+      });
+      
+      return true;
+    }
+    
+    return false;
+  }
+  
+  // Handle discarding cards over the limit
+  handleDiscardCardsOverLimit = (indices) => {
+    const { cards } = this.state;
+    const { playerId } = this.props;
+    
+    // Sort indices in descending order to avoid index shifting issues
+    const sortedIndices = [...indices].sort((a, b) => b - a);
+    
+    // Create a copy of cards
+    const updatedCards = [...cards];
+    
+    // Remove cards starting from the highest index
+    sortedIndices.forEach(index => {
+      if (index >= 0 && index < updatedCards.length) {
+        const cardToDiscard = updatedCards[index];
+        console.log(`CardDisplay - Discarding card over limit: ${cardToDiscard.type} - ${cardToDiscard.id}`);
+        updatedCards.splice(index, 1);
+      }
+    });
+    
+    // Update player cards in game state
+    const player = window.GameState.players.find(p => p.id === playerId);
+    if (player) {
+      player.cards = updatedCards;
+      window.GameState.saveState();
+    }
+    
+    // Update state
+    this.setState({
+      cards: updatedCards,
+      showCardLimitDialog: false,
+      cardsOverLimit: []
+    });
+  }
+
   // Load cards from the player's state
   loadPlayerCards = () => {
     const { playerId } = this.props;
@@ -198,10 +326,28 @@ window.CardDisplay = class CardDisplay extends React.Component {
         });
       }
       
-      this.setState({ cards: [...player.cards] });
+      // Check if any card types exceed the limit
+      const { typeCounts, overLimitTypes } = this.checkCardLimits(player.cards);
+      
+      this.setState({ 
+        cards: [...player.cards],
+        cardTypeCounts: typeCounts
+      });
+      
+      // Show card limit dialog if any card type exceeds the limit
+      if (overLimitTypes.length > 0) {
+        const cardsOverLimit = this.getCardsOverLimit(player.cards, overLimitTypes);
+        this.setState({
+          showCardLimitDialog: true,
+          cardsOverLimit
+        });
+      }
     } else {
       // Initialize with empty array if player has no cards yet
-      this.setState({ cards: [] });
+      this.setState({ 
+        cards: [],
+        cardTypeCounts: this.countCardsByType([])
+      });
     }
   }
 
@@ -244,7 +390,13 @@ window.CardDisplay = class CardDisplay extends React.Component {
     );
     
     if (result) {
-      this.setState(result);
+      // Update card counts after playing a card
+      const updatedCounts = this.countCardsByType(result.cards);
+      
+      this.setState({
+        ...result,
+        cardTypeCounts: updatedCounts
+      });
     }
   }
 
@@ -266,7 +418,13 @@ window.CardDisplay = class CardDisplay extends React.Component {
     );
     
     if (result) {
-      this.setState(result);
+      // Update card counts after discarding a card
+      const updatedCounts = this.countCardsByType(result.cards);
+      
+      this.setState({
+        ...result,
+        cardTypeCounts: updatedCounts
+      });
     }
   }
 
@@ -288,7 +446,13 @@ window.CardDisplay = class CardDisplay extends React.Component {
     );
     
     if (result) {
-      this.setState(result);
+      // Update card counts after discarding a card
+      const updatedCounts = this.countCardsByType(result.cards);
+      
+      this.setState({
+        ...result,
+        cardTypeCounts: updatedCounts
+      });
     }
   }
 
@@ -309,13 +473,31 @@ window.CardDisplay = class CardDisplay extends React.Component {
     setTimeout(() => {
       const updatedCards = window.CardActions.drawCard(playerId, cardType, cardData);
       
+      // Check card limits
+      let showLimitDialog = false;
+      let cardsOverLimit = [];
+      let typeCounts = {};
+      
+      if (updatedCards) {
+        const { typeCounts: newCounts, overLimitTypes } = this.checkCardLimits(updatedCards);
+        typeCounts = newCounts;
+        
+        if (overLimitTypes.length > 0) {
+          showLimitDialog = true;
+          cardsOverLimit = this.getCardsOverLimit(updatedCards, overLimitTypes);
+        }
+      }
+      
       // Update state
       if (updatedCards) {
         this.setState({
           cards: updatedCards,
           animateCardDraw: false,
           newCardType: null,
-          newCardData: null
+          newCardData: null,
+          cardTypeCounts: typeCounts,
+          showCardLimitDialog: showLimitDialog,
+          cardsOverLimit: cardsOverLimit
         });
       } else {
         // Just hide animation if card couldn't be drawn
@@ -346,26 +528,137 @@ window.CardDisplay = class CardDisplay extends React.Component {
       selectedCardId: null
     });
   }
+  
+  // Get a CSS class name for the player color
+  getPlayerColorClass = (playerId) => {
+    if (!playerId || !window.GameState?.players) {
+      return 'player-border-purple'; // Default color
+    }
+    
+    const player = window.GameState.players.find(p => p.id === playerId);
+    if (!player || !player.color) {
+      return 'player-border-purple';
+    }
+    
+    // Map player color to a CSS class
+    const colorMap = {
+      '#ff5722': 'player-border-red',
+      '#4caf50': 'player-border-green',
+      '#2196f3': 'player-border-blue',
+      '#ffeb3b': 'player-border-yellow',
+      '#9c27b0': 'player-border-purple',
+      '#ff9800': 'player-border-orange',
+      '#e91e63': 'player-border-pink',
+      '#009688': 'player-border-teal'
+    };
+    
+    return colorMap[player.color] || 'player-border-purple';
+  }
+  
+  // Render the card limit dialog
+  renderCardLimitDialog = () => {
+    const { cards, cardsOverLimit } = this.state;
+    
+    if (!cards || cards.length === 0 || !cardsOverLimit || cardsOverLimit.length === 0) {
+      return null;
+    }
+    
+    // Get cards that exceed the limit
+    const excessCards = cardsOverLimit.map(index => ({
+      card: cards[index],
+      index
+    })).filter(item => item.card);
+    
+    return (
+      <div className="card-limit-dialog">
+        <div className="card-limit-dialog-content">
+          <h3 className="card-limit-dialog-title">Card Limit Exceeded</h3>
+          <p className="card-limit-dialog-subtitle">
+            You have exceeded the limit of {CARD_TYPE_LIMIT} cards per type. 
+            Please discard the excess cards.
+          </p>
+          
+          <div className="card-limit-cards-grid">
+            {excessCards.map(item => (
+              <div 
+                key={item.card.id || item.index}
+                className={`dialog-card`}
+                onClick={() => this.handleDialogDiscard(item.index)}
+              >
+                <div 
+                  className={`card-header card-header-${item.card.type.toLowerCase()}`}
+                >
+                  {window.CardTypeUtils.getCardTypeName(item.card.type)}
+                </div>
+                
+                <div className="card-content">
+                  {window.CardTypeUtils.getCardPrimaryField(item.card) && (
+                    <div className="card-field">{window.CardTypeUtils.getCardPrimaryField(item.card)}</div>
+                  )}
+                  
+                  {window.CardTypeUtils.getCardSecondaryField(item.card) && (
+                    <div className="card-description">
+                      {window.CardTypeUtils.getCardSecondaryField(item.card).length > 60 
+                        ? `${window.CardTypeUtils.getCardSecondaryField(item.card).substring(0, 60)}...` 
+                        : window.CardTypeUtils.getCardSecondaryField(item.card)
+                      }
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="dialog-buttons">
+            <button 
+              className="dialog-confirm-btn" 
+              onClick={() => this.handleDiscardCardsOverLimit(cardsOverLimit)}
+            >
+              Discard All Excess Cards
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Render the card type count indicators
+  renderCardTypeCounts = () => {
+    const { cardTypeCounts } = this.state;
+    
+    if (!cardTypeCounts) {
+      return null;
+    }
+    
+    return (
+      <div className="card-limit-indicator">
+        {Object.keys(cardTypeCounts).map(type => (
+          <div key={type} className="card-type-count">
+            <div 
+            className={`card-type-count-indicator card-color-${type.toLowerCase()}`}
+            ></div>
+            <div className={`card-type-count-text ${cardTypeCounts[type] > CARD_TYPE_LIMIT ? 'card-type-count-warning' : ''}`}>
+              {window.CardTypeUtils.getCardTypeName(type)}: {cardTypeCounts[type]}/{CARD_TYPE_LIMIT}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   render() {
     const { 
       cards, selectedCardIndex, selectedCardId, showCardDetail, 
-      animateCardDraw, cardTypeFilters, showDiscardDialog,
+      animateCardDraw, cardTypeFilters, showDiscardDialog, showCardLimitDialog,
       newCardType, newCardData,
       isReplacingWCards, requiredWDiscards, requiredWReplacements,
-      selectedForReplacement, discardedCount 
+      selectedForReplacement, discardedCount, cardTypeCounts
     } = this.state;
     
     const { visible, playerId } = this.props;
     
     // Get player color for styling
-    let playerColor = '#9c27b0'; // Default color
-    if (playerId && window.GameState?.players) {
-      const player = window.GameState.players.find(p => p.id === playerId);
-      if (player && player.color) {
-        playerColor = player.color;
-      }
-    }
+    const playerColorClass = this.getPlayerColorClass(playerId);
     
     // Don't render if component is not visible
     if (!visible) {
@@ -387,19 +680,18 @@ window.CardDisplay = class CardDisplay extends React.Component {
     const filteredCards = cards.filter(card => cardTypeFilters[card.type]);
     
     return (
-      <div className="card-display-container" style={{ borderLeft: `4px solid ${playerColor}` }}>
+      <div className={`card-display-container ${playerColorClass}`}>
         <h3>Cards ({filteredCards.length})</h3>
+        
+        {/* Card type count indicators */}
+        {this.renderCardTypeCounts()}
         
         {/* Card type filters */}
         <div className="card-filters">
           {Object.keys(cardTypeFilters).map(cardType => (
             <button
               key={cardType}
-              className={`card-filter-btn ${cardTypeFilters[cardType] ? 'active' : ''}`}
-              style={{ 
-                backgroundColor: cardTypeFilters[cardType] ? window.CardTypeUtils.getCardColor(cardType) : '#f0f0f0',
-                color: cardTypeFilters[cardType] ? '#ffffff' : '#333333'
-              }}
+              className={`card-filter-btn card-filter-btn-${cardType.toLowerCase()} ${cardTypeFilters[cardType] ? 'active' : ''}`}
               onClick={() => this.toggleCardTypeFilter(cardType)}
             >
               {window.CardTypeUtils.getCardTypeName(cardType)}
@@ -430,21 +722,19 @@ window.CardDisplay = class CardDisplay extends React.Component {
               
               // Highlight W cards if we're in discard mode
               const isDiscardMode = showDiscardDialog && card.type === 'W';
+              // Add warning class if card type exceeds limit
+              const isOverLimit = cardTypeCounts[card.type] > CARD_TYPE_LIMIT;
               
               return (
                 <div 
                   key={card.id || index}
-                  className={`card card-type-${card.type.toLowerCase()} ${selectedCardIndex === actualIndex ? 'selected' : ''} ${isDiscardMode ? 'discard-highlight' : ''}`}
-                  style={{ 
-                    borderColor: window.CardTypeUtils.getCardColor(card.type),
-                    // Add pulsing effect for W cards during discard mode
-                    animation: isDiscardMode ? 'pulse 1.5s infinite' : 'none'
-                  }}
+                  className={`card card-type-${card.type.toLowerCase()} 
+                    ${selectedCardIndex === actualIndex ? 'selected' : ''} 
+                    ${isDiscardMode ? 'discard-highlight' : ''} 
+                    ${isOverLimit ? 'card-exceed-limit' : ''}`}
                   onClick={() => this.handleCardClick(actualIndex)}
                 >
-                  <div 
-                    className={`card-header card-header-${card.type.toLowerCase()}`}
-                  >
+                  <div className={`card-header card-header-${card.type.toLowerCase()}`}>
                     {window.CardTypeUtils.getCardTypeName(card.type)}
                   </div>
                   
@@ -506,21 +796,8 @@ window.CardDisplay = class CardDisplay extends React.Component {
           />
         )}
         
-        {/* Add CSS for discard mode animation */}
-        <style>
-          {`
-          @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(66, 133, 244, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0); }
-          }
-          
-          .discard-highlight {
-            transform: scale(1.02);
-            transition: transform 0.2s ease;
-          }
-          `}
-        </style>
+        {/* Card limit dialog */}
+        {showCardLimitDialog && this.renderCardLimitDialog()}
       </div>
     );
   }

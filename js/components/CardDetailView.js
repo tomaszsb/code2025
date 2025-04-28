@@ -43,7 +43,7 @@ window.CardDetailView = class CardDetailView extends React.Component {
     
     return (
       <div className="card-detail-overlay">
-        <div className={`card-detail-container card-detail-type-${cardCopy.type.toLowerCase()}`} style={{ borderColor: cardColor }}>
+        <div className={`card-detail-container card-detail-type-${cardCopy.type.toLowerCase()}`}>
           <div className={`card-detail-header card-detail-header-${cardCopy.type.toLowerCase()}`}>
             <h3>{cardTypeName} Card</h3>
             <button 

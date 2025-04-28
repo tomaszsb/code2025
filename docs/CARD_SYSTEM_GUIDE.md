@@ -91,5 +91,22 @@ The card system has recently been enhanced with the following improvements:
 3. Dedicated CSS file for all card styling
 4. Improved field formatting for monetary values
 5. Enhanced error handling and logging
+6. Removed all inline CSS in favor of class-based styling
+7. Added card type color classes for consistent color application
+8. Implemented card limits with visual indicators
 
 These changes ensure that cards display correctly and card information is processed consistently throughout the game.
+
+## Card Limits
+
+The card system now implements a maximum limit of 6 cards per type. This feature includes:
+
+1. **Visual Indicators** - Card count indicators showing current quantity vs. maximum
+2. **Warnings** - Visual warnings (color highlighting) when limits are exceeded
+3. **Automatic Dialog** - A dialog that appears when card limits are exceeded, prompting the user to discard excess cards
+4. **Forced Discards** - System-enforced discarding of cards over the limit
+
+Implementation notes:
+- Card limits are checked when loading cards and after drawing new cards
+- The `CARD_TYPE_LIMIT` constant in CardDisplay.js defines the maximum number of cards per type
+- All card styling uses class-based CSS, with no inline styles

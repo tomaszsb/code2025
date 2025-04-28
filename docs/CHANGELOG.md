@@ -4,6 +4,45 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2025.04.27] - CSS Standards Compliance
+
+### Added
+- **Card Color Classes**: Added dedicated CSS classes for card type colors (card-color-w, card-color-b, etc.)
+- **Documentation Updates**: Enhanced CARD_SYSTEM_GUIDE.md with card limit details and CSS standards
+
+### Changed
+- **CSS Standard Compliance**: Removed console.log statements from card-components.css file
+- **CardDisplay Component**: Removed remaining inline styles in favor of class-based styling
+- **Card Type Indicators**: Changed from inline backgroundColor to CSS class-based styling
+
+### Fixed
+- **CSS Standards**: Fixed violation of CSS standards by removing JS code from CSS files
+- **Component Documentation**: Improved documentation for card system components
+
+## [2025.04.27] - Card Limit Feature & CSS Refactoring
+
+### Added
+- **Card Limit Feature**: Implemented maximum limit of 6 cards per type
+- **Card Count Indicators**: Added visual indicators showing current card counts by type
+- **Card Limit Dialog**: Created dialog for handling excess cards when limits are exceeded
+- **Card Type Warnings**: Added visual warnings when card counts exceed limits
+- **Automatic Limit Detection**: Added detection of excess cards when drawing new cards
+- **CSS Classes for Player Colors**: Created dedicated CSS classes for player colors
+
+### Changed
+- **CardDisplay Component**: Refactored to remove all inline CSS
+- **CSS Architecture**: Moved all styles from CardDisplay.js to card-components.css
+- **Card Filter Styling**: Updated to use CSS classes instead of inline styles
+- **Card Selection Display**: Enhanced with cleaner class-based styling
+- **State Management**: Improved state tracking for card counts by type
+
+### Fixed
+- **Inline CSS**: Removed all inline CSS from CardDisplay.js to comply with development standards
+- **Card Type Detection**: Improved fallback mechanisms for cards with missing types
+- **Style Consistency**: Fixed inconsistencies in card styling between different card types
+- **Card Filtering**: Improved reliability of card type filtering
+- **Documentation**: Updated development guide and created new card limit feature documentation
+
 ## [2025.04.27] - SpaceExplorer Component Enhancement
 
 ### Added

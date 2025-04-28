@@ -10,6 +10,47 @@ console.log('space-info.css file is beginning to be used');
   position: relative;
 }
 
+/* Space phase styling classes - replaces inline styles */
+.space-phase-default {
+  background-color: #f8f9fa;
+  border: 2px solid #ddd;
+}
+
+.space-phase-setup {
+  background-color: #e3f2fd;
+  border: 2px solid #3498db;
+}
+
+.space-phase-owner {
+  background-color: #fce4ec;
+  border: 2px solid #9b59b6;
+}
+
+.space-phase-funding {
+  background-color: #fff8e1;
+  border: 2px solid #f1c40f;
+}
+
+.space-phase-design {
+  background-color: #e8f5e9;
+  border: 2px solid #2ecc71;
+}
+
+.space-phase-regulatory {
+  background-color: #f3e5f5;
+  border: 2px solid #e74c3c;
+}
+
+.space-phase-construction {
+  background-color: #f1f8e9;
+  border: 2px solid #e67e22;
+}
+
+.space-phase-end {
+  background-color: #e8eaf6;
+  border: 2px solid #1abc9c;
+}
+
 .space-info h3 {
   margin-top: 0;
   margin-bottom: 0.5rem;

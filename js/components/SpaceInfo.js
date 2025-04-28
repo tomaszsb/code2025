@@ -68,42 +68,16 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     this.setState({ usedButtons: [] });
   }
   
-  // Determine background color based on space type/phase
-  getPhaseColor(type) {
-    if (!type) return '#f8f9fa';
+  // Get CSS class for space phase using SpaceInfoManager
+  getPhaseClass(type) {
+    // Use the SpaceInfoManager to get the phase class
+    if (window.SpaceInfoManager) {
+      return window.SpaceInfoManager.getPhaseClass(type);
+    }
     
-    // Define colors for different phases
-    const phaseColors = {
-      'SETUP': '#e3f2fd',     // Light blue
-      'OWNER': '#fce4ec',     // Light pink
-      'FUNDING': '#fff8e1',   // Light yellow
-      'DESIGN': '#e8f5e9',    // Light green
-      'REGULATORY': '#f3e5f5', // Light purple
-      'CONSTRUCTION': '#f1f8e9', // Light greenish
-      'END': '#e8eaf6'        // Light indigo
-    };
-    
-    // Return the color for the phase or default if not found
-    return phaseColors[type.toUpperCase()] || '#f8f9fa';
-  }
-  
-  // Get border color based on space type
-  getBorderColor(type) {
-    if (!type) return '#ddd';
-    
-    // Define colors for different phases
-    const borderColors = {
-      'SETUP': '#3498db',     // Blue
-      'OWNER': '#9b59b6',     // Purple
-      'FUNDING': '#f1c40f',   // Yellow
-      'DESIGN': '#2ecc71',    // Green
-      'REGULATORY': '#e74c3c', // Red
-      'CONSTRUCTION': '#e67e22', // Orange
-      'END': '#1abc9c'        // Teal
-    };
-    
-    // Return the color for the phase or default if not found
-    return borderColors[type.toUpperCase()] || '#ddd';
+    // Fallback if manager is not available
+    console.warn('SpaceInfo: SpaceInfoManager not available for getPhaseClass');
+    return 'space-phase-default';
   }
   
   // Render available moves
@@ -200,14 +174,22 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     return true;
   }
 
-  // Render a button to draw cards
+  // Render a button to draw cards - updated to use SpaceInfoManager
   renderDrawCardsButton(cardType, amount) {
-    // Check if button has been used
-    const buttonId = `draw-${cardType}-${amount}`;
-    const isButtonUsed = this.state && this.state.usedButtons && this.state.usedButtons.includes(buttonId);
+    const currentPlayer = window.GameStateManager?.getCurrentPlayer?.();
+    const playerId = currentPlayer?.id || '';
+    const spaceId = this.props.space?.id || '';
+    
+    // Create a unique button ID that includes player and space ID
+    const buttonId = `draw-${cardType}-${amount}-${spaceId}`;
+    
+    // Use SpaceInfoManager to check if button has been used
+    const isButtonUsed = window.SpaceInfoManager ? 
+      window.SpaceInfoManager.isButtonUsed(playerId, buttonId) : 
+      false;
     
     // Log the button state for debugging
-    console.log(`SpaceInfo: Button ${buttonId} used status:`, isButtonUsed, ', usedButtons:', this.state.usedButtons);
+    console.log(`SpaceInfo: Button ${buttonId} used status:`, isButtonUsed);
     
     // Only render for valid card types
     const validCardTypes = {
@@ -271,28 +253,32 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     
     console.log('SpaceInfo: Rendering draw button for', cardCode, 'cards, amount:', cardAmount);
     
-    // Use either the provided callback or the utility function
+    // Use either the provided callback or the SpaceInfoManager
     const handleClick = () => {
       console.log('SpaceInfo: Draw card button clicked for', cardType, 'amount:', cardAmount);
       
-      // Add the button to the used buttons list
-      this.setState(prevState => {
-        const newUsedButtons = [...(prevState.usedButtons || []), buttonId];
-        console.log('SpaceInfo: Marking button as used:', buttonId, 'New usedButtons state:', newUsedButtons);
-        return { usedButtons: newUsedButtons };
-      });
+      // Mark button as used via SpaceInfoManager
+      if (window.SpaceInfoManager) {
+        window.SpaceInfoManager.markButtonUsed(playerId, buttonId);
+      }
+      
+      // Force UI update
+      this.forceUpdate();
       
       if (this.props.onDrawCards) {
         // Use the callback if provided
         console.log('SpaceInfo: Drawing cards using onDrawCards callback');
         this.props.onDrawCards(cardCode, cardAmount);
-      } else if (window.CardDrawUtil) {
-        // Otherwise use the utility function directly
-        console.log('SpaceInfo: Drawing cards using CardDrawUtil');
-        const currentPlayer = window.GameState.getCurrentPlayer();
-        if (currentPlayer) {
-          const drawnCards = window.CardDrawUtil.drawCards(currentPlayer.id, cardCode, cardAmount);
-          console.log(`Drew ${drawnCards.length} ${cardType}(s)`);
+      } else if (window.SpaceInfoManager) {
+        // Use SpaceInfoManager to draw cards
+        console.log('SpaceInfo: Drawing cards using SpaceInfoManager');
+        const drawnCards = window.SpaceInfoManager.drawCards(playerId, cardCode, cardAmount);
+        console.log(`Drew ${drawnCards.length} ${cardType}(s)`);
+      } else if (window.GameStateManager) {
+        // Fallback to GameStateManager directly
+        console.log('SpaceInfo: Drawing cards using GameStateManager directly');
+        for (let i = 0; i < cardAmount; i++) {
+          window.GameStateManager.drawCard(playerId, cardCode);
         }
       }
     };
@@ -533,18 +519,11 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     const highPriorityFields = fieldMappings.filter(field => field.priority === 'high');
     const normalPriorityFields = fieldMappings.filter(field => field.priority === 'normal');
     
-    // Get background color based on space phase/type
-    const phaseColor = this.getPhaseColor(space.type);
-    
-    // Create style for the space info card with the phase color and border
-    const spaceInfoStyle = {
-      backgroundColor: phaseColor,
-      border: `2px solid ${this.getBorderColor(space.type)}`,
-      position: 'relative' // To allow absolute positioning of time
-    };
+    // Get CSS class for space type/phase
+    const phaseClass = this.getPhaseClass(space.type);
     
     return (
-      <div className="space-info" style={spaceInfoStyle}>
+      <div className={`space-info ${phaseClass}`}>
         {/* Time display in top right corner */}
         {space['Time'] && space['Time'] !== 'n/a' && (
           <div className="space-time-display">

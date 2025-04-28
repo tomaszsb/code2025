@@ -367,10 +367,13 @@ Use the GameStateManager event system for all communication:
 ### Card System Issues
 
 **Problem**: Cards not drawing or displaying correctly.  
-**Solution**: Check CardManager.js and verify that card data is loading correctly from CSV files.
+**Solution**: Check card type detection in CardTypeUtils.js and verify that card data is loading correctly from the improved CSV files. Ensure CSS classes are being properly applied. See CARD_SYSTEM_GUIDE.md for detailed troubleshooting steps.
+
+**Problem**: Card information not processing correctly.  
+**Solution**: Ensure CSV files include the Type field and verify the CardManager.js is handling monetary values consistently. Check the formatCurrency utility in CardTypeUtils.js.
 
 **Problem**: Card filtering not working.  
-**Solution**: Examine CardDisplay.js for filter functionality.
+**Solution**: Examine CardDisplay.js for filter functionality and verify correct card type detection.
 
 ## Project Status and Roadmap
 
@@ -385,7 +388,7 @@ The Project Management Game has made significant progress with numerous features
 4. **Advanced Movement System**: Complex movement between spaces is implemented with support for first and subsequent visits.
 5. **State Management**: The GameStateManager provides optimized state management with efficient caching and persistence.
 6. **Dice Roll System**: A fully functional dice roll system is implemented with 3D visuals and outcome categorization.
-7. **Card System**: Card data structure, drawing logic, and UI implementation are complete.
+7. **Card System**: Card data structure, drawing logic, and UI implementation are complete with improved CSV structure, robust type detection, and dedicated CSS styling.
 8. **Manager Architecture**: Core components follow the manager pattern for better organization.
 
 #### Recent Achievements
@@ -431,6 +434,14 @@ The Project Management Game has made significant progress with numerous features
    - Successfully refactored multiple managers to use the GameStateManager event system
    - Created custom event types for player movement, turn transitions, and active player changes
    - Implemented comprehensive cleanup methods for proper event listener management
+
+8. **Card System Enhancement**:
+   - Implemented dedicated CSS file for all card styling
+   - Improved card type detection with robust fallback mechanisms
+   - Enhanced CSV data structure with explicit Type field
+   - Added proper formatting for monetary values
+   - Implemented better error handling and debugging for card processing
+   - Improved card display with type-specific CSS classes
 
 #### Areas for Improvement
 
@@ -622,6 +633,7 @@ The success of this roadmap will be measured by:
   - ✓ Improved layout consistency across different screen sizes
   - ✓ Added performance metrics tracking for key components
   - ✓ Implemented throttling for DOM updates to improve performance
+- ✓ Improved card display and processing with enhanced type detection and dedicated CSS
   - ✓ Added BackwardCompatibilityManager for legacy code support
 
 - **Upcoming Tasks**:

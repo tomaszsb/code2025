@@ -10,9 +10,9 @@ async function initializeGame() {
     const [spacesResponse, diceRollResponse, wCardsResponse, bCardsResponse, iCardsResponse, lCardsResponse, eCardsResponse] = await Promise.all([
       fetch('data/Spaces.csv'),
       fetch('data/DiceRoll Info.csv'),
-      fetch('data/W-cards.csv'),
-      fetch('data/B-cards.csv'),
-      fetch('data/I-cards.csv'),
+      fetch('data/W-cards-improved.csv'),
+      fetch('data/B-cards-improved.csv'),
+      fetch('data/I-cards-improved.csv'),
       fetch('data/L-cards.csv'),
       fetch('data/E-cards.csv')
     ]);

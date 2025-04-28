@@ -434,7 +434,7 @@ window.CardDisplay = class CardDisplay extends React.Component {
               return (
                 <div 
                   key={card.id || index}
-                  className={`card ${selectedCardIndex === actualIndex ? 'selected' : ''} ${isDiscardMode ? 'discard-highlight' : ''}`}
+                  className={`card card-type-${card.type.toLowerCase()} ${selectedCardIndex === actualIndex ? 'selected' : ''} ${isDiscardMode ? 'discard-highlight' : ''}`}
                   style={{ 
                     borderColor: window.CardTypeUtils.getCardColor(card.type),
                     // Add pulsing effect for W cards during discard mode
@@ -443,8 +443,7 @@ window.CardDisplay = class CardDisplay extends React.Component {
                   onClick={() => this.handleCardClick(actualIndex)}
                 >
                   <div 
-                    className="card-header"
-                    style={{ backgroundColor: window.CardTypeUtils.getCardColor(card.type) }}
+                    className={`card-header card-header-${card.type.toLowerCase()}`}
                   >
                     {window.CardTypeUtils.getCardTypeName(card.type)}
                   </div>

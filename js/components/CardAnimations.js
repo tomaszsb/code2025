@@ -18,19 +18,19 @@ window.CardDrawAnimation = class CardDrawAnimation extends React.Component {
     const tempCard = { ...cardData, type: cardType };
     
     return (
-      <div className="card-draw-animation">
-        <div className="new-card" style={{ borderColor: cardColor }}>
-          <div className="card-header" style={{ backgroundColor: cardColor }}>
+      <div className="card-animation-container">
+        <div className={`animated-card animated-card-type-${cardType.toLowerCase()}`} style={{ borderColor: cardColor }}>
+          <div className={`animated-card-header animated-card-header-${cardType.toLowerCase()}`}>
             {cardTypeName} Card
           </div>
           
-          <div className="card-content">
+          <div className="animated-card-content">
             {window.CardTypeUtils.getCardPrimaryField(tempCard) && (
-              <div className="card-field">{window.CardTypeUtils.getCardPrimaryField(tempCard)}</div>
+              <div className="animated-card-title">{window.CardTypeUtils.getCardPrimaryField(tempCard)}</div>
             )}
             
             {window.CardTypeUtils.getCardSecondaryField(tempCard) && (
-              <div className="card-description">{window.CardTypeUtils.getCardSecondaryField(tempCard)}</div>
+              <div className="animated-card-description">{window.CardTypeUtils.getCardSecondaryField(tempCard)}</div>
             )}
           </div>
         </div>

@@ -43,11 +43,11 @@ window.CardDetailView = class CardDetailView extends React.Component {
     
     return (
       <div className="card-detail-overlay">
-        <div className="card-detail-container" style={{ borderColor: cardColor }}>
-          <div className="card-detail-header" style={{ backgroundColor: cardColor }}>
-            <h3>{cardTypeName} Card - {cardCopy.type}</h3>
+        <div className={`card-detail-container card-detail-type-${cardCopy.type.toLowerCase()}`} style={{ borderColor: cardColor }}>
+          <div className={`card-detail-header card-detail-header-${cardCopy.type.toLowerCase()}`}>
+            <h3>{cardTypeName} Card</h3>
             <button 
-              className="close-card-detail"
+              className="card-close-btn"
               onClick={() => {
                 console.log('CardDetailView - Closing card detail');
                 if (onClose) onClose();
@@ -68,14 +68,14 @@ window.CardDetailView = class CardDetailView extends React.Component {
             
             <div className="card-detail-actions">
               <button 
-                className="play-card-btn"
+                className="card-action-btn card-play-btn"
                 onClick={onPlayCard}
               >
                 Play Card
               </button>
               
               <button 
-                className="discard-card-btn"
+                className="card-action-btn card-discard-btn"
                 onClick={onDiscardCard}
               >
                 Discard

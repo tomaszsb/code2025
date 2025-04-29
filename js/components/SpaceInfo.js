@@ -105,32 +105,38 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
   
   // Render available moves
   renderAvailableMoves() {
-    const { availableMoves, onMoveSelect } = this.props;
+    const { availableMoves, onMoveSelect, selectedMoveId } = this.props;
     
     if (!availableMoves || availableMoves.length === 0) {
       return null;
     }
     
     console.log('SpaceInfo: Rendering available moves:', availableMoves.map(m => m.name).join(', '));
+    console.log('SpaceInfo: Selected move ID:', selectedMoveId);
     
     return (
       <div className="space-available-moves">
         <div className="space-section-label">Available Moves:</div>
         <div className="available-moves-list" data-testid="moves-list">
-          {availableMoves.map(move => (
-            <button 
-              key={move.id}
-              className="move-button primary-move-btn"
-              onClick={() => {
-                console.log('SpaceInfo: Move button clicked:', move.name, move.id);
-                if (onMoveSelect) {
-                  onMoveSelect(move.id);
-                }
-              }}
-            >
-              {move.name}
-            </button>
-          ))}
+          {availableMoves.map(move => {
+            // Determine if this move is selected
+            const isSelected = selectedMoveId && selectedMoveId === move.id;
+            
+            return (
+              <button 
+                key={move.id}
+                className={`move-button primary-move-btn ${isSelected ? 'selected' : ''}`}
+                onClick={() => {
+                  console.log('SpaceInfo: Move button clicked:', move.name, move.id);
+                  if (onMoveSelect) {
+                    onMoveSelect(move.id);
+                  }
+                }}
+              >
+                {move.name}
+              </button>
+            );
+          })}
         </div>
       </div>
     );

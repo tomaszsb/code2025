@@ -129,6 +129,30 @@ console.log('space-info.css file is beginning to be used');
   background-color: #3367d6;
 }
 
+/* Selected move button - highly visible */
+.move-button.selected {
+  background-color: #e74c3c;
+  color: white;
+  transform: scale(1.03);
+  box-shadow: 0 0 0 3px #333, 0 4px 8px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 5;
+}
+
+.move-button.selected:after {
+  content: '✓ SELECTED';
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background-color: #333;
+  color: white;
+  font-size: 0.7rem;
+  padding: 3px 6px;
+  border-radius: 10px;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
 /* Time display */
 .space-time-display {
   position: absolute;

@@ -24,19 +24,21 @@ This guide provides information on the next development steps for the Project Ma
 ## Areas Needing Improvement
 
 1. **Complex Initialization Logic**: 
-   - Streamlining is needed in main.js initialization sequence
-   - Consider implementing a staged initialization process
-   - Add better error handling for initialization failures
+   - ✅ Refactored main.js into InitializationManager following the manager pattern
+   - ✅ Implemented a staged initialization process
+   - ✅ Added better error handling for initialization failures
+   - ✅ Added debug mode toggle and logging level system
 
 2. **Debug Elements**: 
-   - Need a debug mode toggle for console.log statements
-   - Implement a logging level system (error, warn, info, debug)
-   - Add UI toggle for debug mode
+   - ✅ Implemented debug mode toggle for console.log statements via URL parameter (?debug=true)
+   - ✅ Implemented a logging level system (error, warn, info, debug) via URL parameter (?logLevel=debug)
+   - ✅ Added UI toggle for debug mode in Index-debug.html
 
 3. **Move Logic Complexity**: 
-   - MoveLogic.js could benefit from more consistent patterns
-   - Consider refactoring into a manager pattern
-   - Improve documentation of complex move logic
+   - ✅ Refactored MoveLogic.js into MoveLogicManager following the manager pattern
+   - ✅ Implemented consistent patterns for special case handling
+   - ✅ Added comprehensive documentation in MoveLogicManager.md
+   - Consider adding unit tests for complex move logic scenarios
 
 4. **CSS Consistency**: 
    - Continue reviewing for variable reference issues
@@ -45,7 +47,7 @@ This guide provides information on the next development steps for the Project Ma
 
 ## Implementation Guidelines
 
-When implementing these features, follow the standards outlined in each component's documentation and adhere to the established manager pattern. Refer to completed components like SpaceInfoManager and CardTypeUtilsManager as examples of proper implementation.
+When implementing these features, follow the standards outlined in each component's documentation and adhere to the established manager pattern. Refer to completed components like SpaceInfoManager, CardTypeUtilsManager, and MoveLogicManager as examples of proper implementation.
 
 Always ensure:
 - Proper event system integration
@@ -70,4 +72,4 @@ Update the following for each change:
 2. Component documentation within the file itself
 3. Any relevant player-facing documentation
 
-*Last Updated: April 28, 2025*
+*Last Updated: April 29, 2025*

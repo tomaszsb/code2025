@@ -60,6 +60,8 @@ The game architecture follows these key patterns:
    - Displays information about the selected space 
    - Shows dice roll outcomes
    - Presents available moves as clickable buttons
+   - Uses SpaceInfoManager for state management and styling
+   - Properly integrates with GameStateManager event system
 
 7. **PlayerInfo** (`js/components/PlayerInfo.js`): 
    - Shows information about each player
@@ -89,19 +91,26 @@ The game architecture follows these key patterns:
    - Manages space information display
    - Handles exploration of spaces
 
-4. **CardManager** (`js/components/managers/CardManager.js`):
+4. **SpaceInfoManager** (`js/components/managers/SpaceInfoManager.js`):
+   - Manages space information display, interactions, and styling
+   - Tracks button states across spaces and players
+   - Provides CSS classes for space phases instead of inline styles
+   - Handles card drawing through GameStateManager integration
+   - Processes event listeners for game state changes
+
+5. **CardManager** (`js/components/managers/CardManager.js`):
    - Manages card collections
    - Processes card effects
    - Handles drawing and playing cards
    - Dispatches card events
 
-5. **DiceManager** (`js/components/managers/DiceManager.js`):
+6. **DiceManager** (`js/components/managers/DiceManager.js`):
    - Manages dice roll operations
    - Processes dice outcomes
    - Handles movement based on dice results
    - Dispatches dice roll events
 
-6. **NegotiationManager** (`js/components/managers/NegotiationManager.js`):
+7. **NegotiationManager** (`js/components/managers/NegotiationManager.js`):
    - Handles negotiation mechanics
    - Determines when negotiation is allowed
    - Processes negotiation results
@@ -136,10 +145,13 @@ The card system consists of modular components with specific responsibilities:
 
 ### Utility Files
 
-1. **MoveLogic** (`js/utils/MoveLogic.js`):
-   - Contains logic for determining available moves
-   - Handles special case spaces
-   - Processes space dependencies
+1. **MoveLogicManager** (`js/utils/MoveLogicManager.js`):
+   - Manages move determination logic following the manager pattern
+   - Uses GameStateManager event system for efficient state updates
+   - Implements caching for improved performance
+   - Handles special case spaces with consistent patterns
+   - Provides backward compatibility through legacy API
+   - Properly cleans up resources including event listeners
 
 2. **DiceRollLogic** (`js/utils/DiceRollLogic.js`):
    - Processes dice roll outcomes
@@ -160,7 +172,7 @@ The components interact through the following mechanisms:
 1. **Event System**: 
    - GameStateManager dispatches events for state changes
    - Components listen for events to update their state
-   - Event types include: playerMoved, turnChanged, cardDrawn, diceRolled
+   - Event types include: playerMoved, turnChanged, cardDrawn, diceRolled, spaceChanged
 
 2. **Props Passing**:
    - Parent components pass props to children
@@ -250,6 +262,74 @@ The game tracks spaces each player has visited in their `visitedSpaces` array. T
 - Card drawing opportunities
 
 ## Recent Modifications
+
+### MoveLogic Refactoring (April 29, 2025)
+
+The MoveLogic utility has been refactored into a proper manager class following the established manager pattern:
+
+1. **Class-Based Implementation**:
+   - Converted the object with functions into a proper class-based structure
+   - Added constructor for proper initialization and state setup
+   - Implemented proper cleanup method for resource management
+   - Created a backward compatibility layer for legacy code support
+
+2. **Event System Integration**:
+   - Added event listeners for GameStateManager events
+   - Properly handles gameStateChanged, turnChanged, spaceChanged, and diceRolled events
+   - Updates cached move data when relevant game state changes
+   - Follows the same event pattern as other manager components
+
+3. **Performance Optimization**:
+   - Implemented a caching system for frequently accessed moves
+   - Cache uses player position and ID as keys for efficient lookups
+   - Cache is properly cleared when relevant state changes
+   - Significantly reduces redundant calculations
+
+4. **Enhanced Special Case Handling**:
+   - Improved organization of special case space logic
+   - Added consistent patterns for handling different space types
+   - Better dice roll integration for movement decisions
+   - Enhanced documentation of complex move logic
+
+5. **Implementation Details**:
+   - Properly stores event handlers with bind for correct context
+   - Added utility methods for common operations like raw space extraction
+   - Improved code organization with clear method responsibilities
+   - Enhanced logging for better debugging
+
+### SpaceInfo Component Refactoring (April 28, 2025)
+
+The SpaceInfo component has been refactored to follow the manager pattern with these improvements:
+
+1. **Removed Local State Management**:
+   - Eliminated the `usedButtons` array from local state
+   - Added a simple `renderKey` to force re-renders when needed
+   - Now uses the SpaceInfoManager for all button state tracking
+   - Properly updates component state through controlled mechanisms
+
+2. **Improved Event Handling**:
+   - Properly stored event handlers for cleanup
+   - Added proper event registration with GameStateManager
+   - Implemented thorough event cleanup in componentWillUnmount
+   - Added event listening for turnChanged and spaceChanged events
+
+3. **Enhanced GameStateManager Integration**:
+   - Replaced all direct references to GameState with GameStateManager
+   - Added proper event listeners for GameStateManager events
+   - Improved space and player state management through the manager
+   - Properly updates based on GameStateManager events
+
+4. **Improved Code Organization**:
+   - Added comprehensive documentation
+   - Maintained proper logging throughout the component
+   - Simplified state management with proper patterns
+   - Improved method naming and organization
+
+5. **Implementation Details**:
+   - Draws cards through SpaceInfoManager instead of direct GameState calls
+   - Uses SpaceInfoManager for CSS class determination
+   - Maintains backward compatibility with legacy code
+   - Properly renders based on state changes from event system
 
 ### SpaceExplorer Component Enhancement (April 27, 2025)
 
@@ -381,6 +461,84 @@ The game now includes animations for player tokens as they move between spaces:
    - Maintained separation of styling concerns with external CSS
 
 ## Technical Implementation Details
+
+### SpaceInfo Component Event Handling
+
+```javascript
+// SpaceInfo component event handling
+componentDidMount() {
+  console.log('SpaceInfo: Component mounted');
+  
+  // Add event listener for reset buttons event (legacy compatibility)
+  window.addEventListener('resetSpaceInfoButtons', this.eventHandlers.resetButtons);
+  
+  // Register for GameStateManager events
+  if (window.GameStateManager) {
+    window.GameStateManager.addEventListener('turnChanged', this.eventHandlers.turnChanged);
+    window.GameStateManager.addEventListener('spaceChanged', this.eventHandlers.spaceChanged);
+  }
+  
+  // Check manager availability
+  if (!window.SpaceInfoManager) {
+    console.error('SpaceInfo: SpaceInfoManager not available');
+  }
+}
+
+componentWillUnmount() {
+  console.log('SpaceInfo: Component unmounting, cleaning up listeners');
+  
+  // Remove window event listener
+  window.removeEventListener('resetSpaceInfoButtons', this.eventHandlers.resetButtons);
+  
+  // Remove GameStateManager event listeners
+  if (window.GameStateManager) {
+    window.GameStateManager.removeEventListener('turnChanged', this.eventHandlers.turnChanged);
+    window.GameStateManager.removeEventListener('spaceChanged', this.eventHandlers.spaceChanged);
+  }
+}
+```
+
+### SpaceInfoManager Button State Tracking
+
+```javascript
+// SpaceInfoManager button state tracking
+class SpaceInfoManager {
+  constructor() {
+    // State tracking
+    this.usedButtons = new Map(); // Map of playerID -> Set of used button IDs
+  }
+
+  // Check if a button has been used by a player
+  isButtonUsed(playerId, buttonId) {
+    if (!playerId || !buttonId) return false;
+    
+    const playerButtons = this.usedButtons.get(playerId);
+    return playerButtons ? playerButtons.has(buttonId) : false;
+  }
+  
+  // Mark a button as used by a player
+  markButtonUsed(playerId, buttonId) {
+    if (!playerId || !buttonId) return;
+    
+    // Get or create the set of used buttons for this player
+    const playerButtons = this.usedButtons.get(playerId) || new Set();
+    
+    // Add the button ID
+    playerButtons.add(buttonId);
+    
+    // Update the map
+    this.usedButtons.set(playerId, playerButtons);
+  }
+  
+  // Reset buttons for a specific player
+  resetButtonsForPlayer(playerId) {
+    if (!playerId) return;
+    
+    // Remove player from used buttons tracking
+    this.usedButtons.delete(playerId);
+  }
+}
+```
 
 ### Game Memory Management Flow
 
@@ -587,6 +745,15 @@ When working with the refactored card system:
 4. Card action handlers (play, discard, draw) are in CardActions.js
 5. Special dialogs for Work Type cards are in WorkCardDialogs.js
 
+### Implementing Manager Pattern
+
+When refactoring or creating new components:
+1. Create a dedicated manager class for the component's functionality
+2. Move state management to the manager class
+3. Use the event system for component communication
+4. Ensure proper event listener registration and cleanup
+5. Follow SpaceInfoManager as an example implementation
+
 ## Troubleshooting
 
 ### Common Issues
@@ -626,6 +793,12 @@ When working with the refactored card system:
    - Ensure that dependencies (CardTypeUtils, CardActions) load before other card components
    - Verify event handlers are properly attached
 
+8. **SpaceInfo issues**:
+   - Check that SpaceInfoManager is properly initialized
+   - Verify that event listeners are properly registered and cleaned up
+   - Ensure CSS classes are being correctly applied
+   - Check button state tracking in the manager
+
 ### Debugging Tips
 
 1. Check the browser console for errors
@@ -635,7 +808,8 @@ When working with the refactored card system:
 5. Use the browser console to check for card drawing and processing events
 6. Verify that dice outcomes are being properly categorized
 7. Check CSS classes for proper animation sequencing
+8. Examine event listeners to ensure proper registration and cleanup
 
 ---
 
-*Last Updated: April 27, 2025*
+*Last Updated: April 29, 2025*

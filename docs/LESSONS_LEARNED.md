@@ -19,6 +19,7 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Each manager should have a clear, single purpose
    - Managers should reference the parent component for state updates
    - Example: TurnManager, SpaceSelectionManager, and SpaceExplorerManager classes
+   - Example: SpaceInfoManager handling button state tracking and phase styling
 
 3. **Component Hierarchy**
    - Parent components should coordinate child components
@@ -35,13 +36,14 @@ This document consolidates lessons learned, best practices, and optimization rec
 ### State Management
 
 1. **Centralized State**
-   - Use the GameState object for game-wide state
+   - Use the GameStateManager for game-wide state
    - Component state should only be used for UI-specific state
    - Avoid redundant state in components
-   - Example: Player position is stored in GameState, not in player components
+   - Example: Player position is stored in GameStateManager, not in player components
+   - Example: SpaceInfo component now delegates state management to SpaceInfoManager
 
 2. **State Updates**
-   - Use appropriate methods on GameState for updates
+   - Use appropriate methods on GameStateManager for updates
    - Avoid direct mutation of state objects
    - Use spreads or Object.assign for creating new objects
    - Example: Using movePlayer() method instead of directly updating player.position
@@ -50,7 +52,7 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Use custom events for cross-component communication
    - Keep event names descriptive and specific
    - Add event listeners in componentDidMount and remove in componentWillUnmount
-   - Example: resetSpaceInfoButtons event in NegotiationManager
+   - Example: SpaceInfo component registering and cleaning up proper event listeners
 
 ## Performance Optimization
 
@@ -61,7 +63,7 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Memoize expensive calculations
    - Use pure components for presentational components
    - Avoid creating new functions in render methods
-   - Example: Extracting card type color handling to a separate method
+   - Example: SpaceInfo component using a renderKey for controlled re-renders
 
 2. **DOM Manipulation**
    - Avoid direct DOM manipulation when possible
@@ -75,7 +77,7 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Use CSS variables for shared values
    - Avoid direct DOM style manipulation; use class toggling instead
    - Move inline styles to external CSS files for better maintainability
-   - Example: Refactoring BoardSpaceRenderer.js to use external CSS instead of injecting styles through JavaScript
+   - Example: SpaceInfo component using phase classes from SpaceInfoManager instead of inline styles
 
 ### Data Management
 
@@ -95,7 +97,8 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Avoid creating large objects/arrays in render methods
    - Clean up event listeners and timers
    - Use appropriate data structures for lookups
-   - Example: Using Maps for finding spaces by ID instead of array.find()
+   - Example: SpaceInfoManager using Maps for button state tracking
+   - Example: SpaceInfo component properly removing event listeners in componentWillUnmount
 
 ## Lessons from Previous Implementations
 
@@ -132,13 +135,19 @@ This document consolidates lessons learned, best practices, and optimization rec
    - This approach creates maintenance issues and adds complexity
    - Keep styles in external CSS files
    - Use class names for styling instead of programmatic style manipulation
-   - Example: BoardSpaceRenderer.js refactoring to eliminate style element injection
+   - Example: SpaceInfo component using CSS classes from SpaceInfoManager instead of inline styles
 
 6. **Direct Method Access**
    - Previous implementation accessed methods directly from other components
    - This creates tight coupling between components
    - Use manager classes or events for communication
-   - Example: Converting direct GameBoard method access to manager-based access
+   - Example: SpaceInfo component now using proper events from GameStateManager
+
+7. **Local State Redundancy**
+   - Previous components maintained local state that duplicated global state
+   - This creates inconsistencies and makes debugging harder
+   - Delegate state management to managers when appropriate
+   - Example: SpaceInfo component now uses SpaceInfoManager for button state tracking
 
 ### What Worked Well
 
@@ -147,6 +156,7 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Clear separation of concerns made the code more maintainable
    - Easier to add new features without modifying existing code
    - Example: TurnManager, SpaceSelectionManager, and SpaceExplorerManager
+   - Example: SpaceInfoManager handling button states and phase styling
 
 2. **CSV-Driven Approach**
    - Using CSV files for game content worked well
@@ -164,20 +174,20 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Breaking large components into smaller ones improved maintenance
    - Clear separation of concerns improved code quality
    - Made debugging easier
-   - Example: Card system refactoring, GameBoard refactoring, and BoardSpaceRenderer refactoring
+   - Example: Card system refactoring, GameBoard refactoring, SpaceInfo refactoring
 
 5. **Logging**
    - Console logs at the beginning and end of each file helped with debugging
    - Made it easier to track execution flow
    - Simplified troubleshooting
    - Example: All component files now include proper logging with standardized format
-   - Recently standardized game-state.js logging to match other components
+   - Example: SpaceInfo component including detailed logging for state changes and event handling
 
 6. **CSS Extraction**
    - Moving inline styles and JavaScript style injection to external CSS files
    - Improved performance by reducing DOM manipulation
    - Enhanced maintainability by centralizing styling
-   - Examples: BoardSpaceRenderer.js and DiceRoll.js refactoring to use external CSS
+   - Examples: SpaceInfo component using CSS classes from SpaceInfoManager instead of inline styles
    - Properly scoping CSS selectors to prevent styling conflicts between components
    - Naming animations carefully to avoid conflicts between components
 
@@ -189,13 +199,11 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Using z-index management to ensure proper layering of animated elements
    - Example: Player token movement animations with arrival and departure effects
 
-8. **Visual Cues Implementation**
-   - Using CSS classes and DOM manipulation only after React rendering is complete
-   - Creating visual indicators for available moves that clearly guide the player
-   - Implementing cleanup methods to prevent memory leaks from animation timers
-   - Using transform effects for immediate visual feedback on selection
-   - Managing timing to ensure visual updates happen after state changes are processed
-   - Example: SpaceSelectionManager's updateAvailableMoveVisuals method and pulse animation
+8. **Event System Integration**
+   - Using the GameStateManager event system for component communication
+   - Implementing proper event registration and cleanup
+   - Using standard event patterns across components
+   - Example: SpaceInfo component registering for turnChanged and spaceChanged events
 
 ## Implementation Guidelines
 
@@ -231,25 +239,25 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Trace execution flow through the component
    - Understand all dependencies
    - Review related components
-   - Example: Reviewing all manager references before modifying any manager class
+   - Example: Understanding SpaceInfo's relationship with GameStateManager before refactoring
 
 2. **Make Targeted Changes**
    - Focus changes on specific functionality
    - Avoid changing multiple systems at once
    - Keep PR scope narrow
-   - Example: Modifying only the card filtering without changing other card functionality
+   - Example: Modifying only the SpaceInfo component without affecting other components
 
 3. **Preserve Interfaces**
    - Maintain existing method signatures when possible
    - Deprecate old methods rather than removing immediately
    - Add new functionality without breaking existing code
-   - Example: Adding new card types without breaking existing card processing
+   - Example: SpaceInfo component maintaining backward compatibility with SpaceInfoManager
 
 4. **Update All References**
    - When moving functionality, update all references to that functionality
    - Check both direct method calls and event listeners
    - Use search tools to find all references
-   - Example: Updating all isVisitingFirstTime() references when moving to SpaceSelectionManager
+   - Example: Updating GameState references to GameStateManager in SpaceInfo
 
 ### Debugging Tips
 
@@ -257,7 +265,7 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Narrow down the source of issues
    - Use console logging at key points
    - Check browser developer tools
-   - Example: Using console.log in the capturePlayerStatus method
+   - Example: Using console.log in event handlers
 
 2. **Common Issues**
    - Incorrect space filtering for visit types
@@ -265,14 +273,14 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Event listener cleanup missing
    - Props not passed correctly
    - Method references not updated after refactoring
-   - Example: Checking for missing props in componentDidMount or methods being called from the wrong manager
+   - Example: Checking for proper event registration and cleanup in SpaceInfo
 
 3. **Diagnostic Techniques**
    - Use React DevTools to inspect component hierarchy
    - Check localStorage content for state issues
    - Review console for warnings/errors
    - Review component lifecycle order
-   - Example: Checking localStorage when state persistence issues occur
+   - Example: Checking event propagation when state updates don't trigger renders
 
 ## Coding Standards
 
@@ -300,7 +308,7 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Each manager should have a clear responsibility
    - Managers should access parent component through a reference
    - Managers should update state through the parent component
-   - Example: TurnManager.js, SpaceSelectionManager.js, SpaceExplorerManager.js
+   - Example: SpaceInfoManager handling button states and phase styling
 
 ### CSS Guidelines
 
@@ -318,7 +326,7 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Avoid inline styles
    - Keep all styling for a component in a dedicated CSS file
    - Use parent selectors to properly scope styles (e.g., '.dice-roll-container .dice-face')
-   - Example: board-space-renderer.css and dice-animations.css for component-specific styling
+   - Example: space-info.css containing all styles for the SpaceInfo component
 
 3. **Animation Naming**
    - Use component-specific prefixes for animation names to avoid conflicts
@@ -335,7 +343,7 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Resolve selector conflicts by increasing specificity instead of using !important
    - Add component class prefixes to prevent style bleeding between components
    - Test CSS changes thoroughly to ensure they don't affect other components
-   - Example: Using '.board-space .dice-icon' and '.dice-roll-container .dice-icon' to style similar elements differently
+   - Example: Using '.space-info .time-display' to avoid conflicts with other time displays
 
 6. **Visual Indicators and Feedback**
    - Use animations to draw attention to important elements (e.g., pulse for available moves)
@@ -350,21 +358,21 @@ This document consolidates lessons learned, best practices, and optimization rec
    - Comment complex logic
    - Explain "why" not just "what"
    - Document method parameters and return values
-   - Example: Comments explaining negotiation permission checking logic
+   - Example: Comments explaining SpaceInfo's conditional card display logic
 
 2. **Documentation Files**
    - Keep documentation up to date with code changes
    - Focus on high-level concepts and architecture
    - Include examples for complex functionality
    - Document refactoring efforts and their benefits
-   - Example: board-space-renderer-improvements.md and gameboard-refactoring.md documents
+   - Example: Updating CHANGELOG.md with SpaceInfo refactoring details
 
 3. **Logging Standards**
    - Include meaningful log messages
    - Use appropriate log levels
    - Add beginning and end logs for each file
    - Include the source component in log messages
-   - Example: Console logs in StaticPlayerStatus.js and manager components
+   - Example: "SpaceInfo: Space changed from X to Y" with clear source context
 
 ## Manager Component Pattern
 
@@ -373,22 +381,22 @@ This document consolidates lessons learned, best practices, and optimization rec
 1. **Improved Separation of Concerns**
    - Each manager handles a specific aspect of the game
    - Main component remains focused on coordination
-   - Example: TurnManager handling only turn-related operations
+   - Example: SpaceInfoManager handling button states and phase styling
 
 2. **Enhanced Maintainability**
    - Smaller, focused files are easier to understand and modify
    - Changes to one aspect don't affect others
-   - Example: Modifying negotiation logic without touching turn management
+   - Example: Modifying button state tracking without affecting phase styling
 
 3. **Better Testability**
    - Managers can be tested in isolation
    - Easier to mock dependencies
-   - Example: Testing SpaceSelectionManager without a full GameBoard
+   - Example: Testing SpaceInfoManager without a full SpaceInfo component
 
 4. **Simplified Debugging**
    - Errors are isolated to specific managers
    - Log messages clearly indicate the source
-   - Example: "TurnManager: Turn ended" vs generic "Turn ended" message
+   - Example: "SpaceInfoManager: Button marked as used" vs generic message
 
 ### Implementing Manager Pattern
 
@@ -396,33 +404,33 @@ This document consolidates lessons learned, best practices, and optimization rec
    - One class per responsibility area
    - Constructor accepts parent component reference
    - Methods perform specific operations
-   - Example: TurnManager for turn operations, SpaceSelectionManager for space operations
+   - Example: SpaceInfoManager for button state tracking and phase styling
 
 2. **Initialize Managers**
    - Create manager instances in constructor
    - Store as component properties
-   - Example: `this.turnManager = new TurnManager(this);`
+   - Example: `window.SpaceInfoManager = new SpaceInfoManager();`
 
 3. **State Updates**
-   - Managers use this.gameBoard.setState() for updates
+   - Managers use component setState() for updates
    - Avoid direct state manipulation
-   - Example: TurnManager.handleEndTurn() updating game state
+   - Example: SpaceInfoManager.markButtonUsed() updating button states
 
 4. **Method Delegation**
    - Route method calls to appropriate managers
    - Update all references to use managers
-   - Example: BoardRenderer using turnManager.getCurrentPlayer() instead of direct access
+   - Example: SpaceInfo.getPhaseClass() using SpaceInfoManager
 
 5. **Cross-Manager Communication**
-   - Managers can access other managers through gameBoard reference
+   - Managers can access other managers through component reference
    - Use events for complex interactions
-   - Example: NegotiationManager using turnManager for player access
+   - Example: SpaceInfoManager accessing GameStateManager for player information
 
 6. **Resource Cleanup**
    - Implement cleanup methods in all managers that use timers or event listeners
    - Call cleanup methods when components unmount
    - Clear timeouts and intervals to prevent memory leaks
-   - Example: SpaceSelectionManager.cleanup() clearing visualUpdateTimer
+   - Example: SpaceInfoManager.cleanup() removing event listeners
 
 ### Common Pitfalls
 
@@ -433,24 +441,24 @@ This document consolidates lessons learned, best practices, and optimization rec
 
 2. **Circular Dependencies**
    - Managers depending on each other directly creates tight coupling
-   - Use gameBoard as intermediary for cross-manager access
-   - Example: NegotiationManager accessing TurnManager through gameBoard
+   - Use component as intermediary for cross-manager access
+   - Example: SpaceInfoManager accessing other managers through window reference
 
 3. **Inconsistent State Updates**
    - Some state updates happening directly, others through managers
    - Ensure all state updates go through the appropriate manager
-   - Example: Updating player position through TurnManager, not directly
+   - Example: Updating button states through SpaceInfoManager, not directly
 
 4. **Incomplete Documentation**
    - Not documenting manager responsibilities and relationships
    - Document manager purpose and methods
-   - Example: Creating gameboard-refactoring.md to document the approach
+   - Example: Adding JSDoc comments to SpaceInfoManager methods
 
 5. **Uncleaned Resources**
    - Failing to clear timers or remove event listeners when components unmount
    - Implement cleanup methods for all managers and call them in componentWillUnmount
-   - Example: SpaceSelectionManager.cleanup() method being called in GameBoard.componentWillUnmount
+   - Example: SpaceInfoManager.cleanup() method being called when needed
 
 ---
 
-*Last Updated: April 19, 2025 (Updated with CSS variable naming guidelines and fixes)*
+*Last Updated: April 28, 2025 (Updated with SpaceInfo refactoring lessons learned)*

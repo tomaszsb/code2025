@@ -12,6 +12,8 @@ This document outlines the process and benefits of integrating game components w
 | SpaceExplorerManager     | Completed   | April 22, 2025 | Controls space explorer panel visibility         |
 | SpaceExplorerLoggerManager | Completed | April 22, 2025 | Handles CSS and styling for space explorer       |
 | SpaceExplorer            | Enhanced    | April 27, 2025 | Main space exploration display component with hybrid architecture |
+| SpaceInfo                | Completed   | April 28, 2025 | Space information display component with full manager integration |
+| SpaceInfoManager         | Completed   | April 28, 2025 | Manages space information styling and button states |
 | TurnManager              | Completed   | April 20, 2025 | Manages player turns                             |
 | DiceManager              | Completed   | April 18, 2025 | Handles dice rolling and outcome processing      |
 | CardManager              | Completed   | April 19, 2025 | Manages card drawing and playing                 |
@@ -30,6 +32,7 @@ The GameStateManager provides the following standard event types:
 | cardDrawn             | Fired when a player draws a card                      | { playerId, player, cardType, card }              |
 | cardPlayed            | Fired when a player plays a card                      | { playerId, player, card }                        |
 | spaceExplorerToggled  | Fired when the space explorer visibility changes      | { visible, spaceName }                            |
+| spaceChanged          | Fired when space information has been updated         | { spaceId, changeType }                           |
 
 ## Integration Pattern
 
@@ -130,6 +133,183 @@ The standardized logging pattern makes it easier to trace the flow of events and
 
 Proper cleanup methods ensure that event listeners are removed when components are no longer needed, preventing memory leaks.
 
+## Case Study: SpaceInfo Integration
+
+The SpaceInfo component was refactored to follow the manager pattern and integrate with the GameStateManager event system on April 28, 2025.
+
+### SpaceInfo Refactoring (April 28, 2025)
+
+1. **Removing Local State Management**:
+   - Eliminated the `usedButtons` array from local state that tracked button usage
+   - Added a minimal `renderKey` state to force re-renders when needed
+   - Now uses the SpaceInfoManager for all button state tracking with Map/Set data structures
+   - Delegates all state management to the manager for improved consistency
+
+2. **Implementing Event System Integration**:
+   - Added proper event handler storage in constructor for better organization
+   - Registered for turnChanged and spaceChanged events
+   - Implemented proper event cleanup in componentWillUnmount
+   - Added handler methods for each event type with clear logging
+
+3. **GameStateManager Integration**:
+   - Replaced all direct references to window.GameState with window.GameStateManager
+   - Uses GameStateManager for player and space lookups
+   - Draws cards through SpaceInfoManager which uses GameStateManager
+   - Properly integrates with the event system for state updates
+
+4. **CSS Integration**:
+   - Uses CSS classes from SpaceInfoManager instead of inline styles
+   - Applies phase-specific styling through consistent class names
+   - Maintains clean separation of styling and logic
+   - Adheres to the project's CSS naming conventions
+
+### Before-After Code Comparison
+
+**Before Refactoring**:
+```javascript
+constructor(props) {
+  super(props);
+  this.state = {
+    usedButtons: [],
+    currentPlayerId: null // Store current player ID to detect changes
+  };
+}
+
+componentDidUpdate(prevProps) {
+  // Get current player
+  const currentPlayer = window.GameState?.getCurrentPlayer?.();
+  const currentPlayerId = currentPlayer?.id || null;
+  
+  // Check if the space has changed
+  if (prevProps.space?.id !== this.props.space?.id) {
+    // Reset used buttons when space changes
+    this.setState({ 
+      usedButtons: [],
+      currentPlayerId: currentPlayerId // Update player ID state
+    });
+    return;
+  }
+  
+  // Check if the player has changed
+  if (currentPlayerId && this.state.currentPlayerId !== currentPlayerId) {
+    // Reset used buttons when player changes
+    this.setState({ 
+      usedButtons: [],
+      currentPlayerId: currentPlayerId 
+    });
+    return;
+  }
+}
+
+componentDidMount() {
+  // Initialize with current player ID
+  const currentPlayer = window.GameState?.getCurrentPlayer?.();
+  if (currentPlayer?.id) {
+    this.setState({ currentPlayerId: currentPlayer.id });
+  }
+  
+  // Add event listener for reset buttons event
+  window.addEventListener('resetSpaceInfoButtons', this.handleResetButtons);
+}
+
+componentWillUnmount() {
+  // Remove event listener
+  window.removeEventListener('resetSpaceInfoButtons', this.handleResetButtons);
+}
+
+handleResetButtons = () => {
+  this.setState({ usedButtons: [] });
+}
+```
+
+**After Refactoring (April 28, 2025)**:
+```javascript
+constructor(props) {
+  super(props);
+  
+  console.log('SpaceInfo: Constructor initialized');
+  
+  // Minimal state - only tracking render-specific items
+  // All game state is managed by SpaceInfoManager
+  this.state = {
+    renderKey: 0 // Used to force re-renders when needed
+  };
+  
+  // Store event handlers for proper cleanup
+  this.eventHandlers = {
+    resetButtons: this.handleResetButtons.bind(this),
+    turnChanged: this.handleTurnChanged.bind(this),
+    spaceChanged: this.handleSpaceChanged.bind(this)
+  };
+  
+  console.log('SpaceInfo: Constructor completed');
+}
+
+componentDidMount() {
+  console.log('SpaceInfo: Component mounted');
+  
+  // Add event listener for reset buttons event (legacy compatibility)
+  window.addEventListener('resetSpaceInfoButtons', this.eventHandlers.resetButtons);
+  
+  // Register for GameStateManager events
+  if (window.GameStateManager) {
+    window.GameStateManager.addEventListener('turnChanged', this.eventHandlers.turnChanged);
+    window.GameStateManager.addEventListener('spaceChanged', this.eventHandlers.spaceChanged);
+  }
+  
+  // Check manager availability
+  if (!window.SpaceInfoManager) {
+    console.error('SpaceInfo: SpaceInfoManager not available');
+  }
+}
+
+componentWillUnmount() {
+  console.log('SpaceInfo: Component unmounting, cleaning up listeners');
+  
+  // Remove window event listener
+  window.removeEventListener('resetSpaceInfoButtons', this.eventHandlers.resetButtons);
+  
+  // Remove GameStateManager event listeners
+  if (window.GameStateManager) {
+    window.GameStateManager.removeEventListener('turnChanged', this.eventHandlers.turnChanged);
+    window.GameStateManager.removeEventListener('spaceChanged', this.eventHandlers.spaceChanged);
+  }
+}
+
+// Handle the reset buttons event
+handleResetButtons() {
+  console.log('SpaceInfo: Received resetSpaceInfoButtons event, forcing refresh');
+  // Force a re-render
+  this.setState(prevState => ({ renderKey: prevState.renderKey + 1 }));
+}
+
+// Handle turn change events
+handleTurnChanged() {
+  console.log('SpaceInfo: Handling turn changed event');
+  // Force a re-render
+  this.setState(prevState => ({ renderKey: prevState.renderKey + 1 }));
+}
+
+// Handle space change events
+handleSpaceChanged() {
+  console.log('SpaceInfo: Handling space changed event');
+  // Force a re-render
+  this.setState(prevState => ({ renderKey: prevState.renderKey + 1 }));
+}
+
+// Get CSS class for space phase using SpaceInfoManager
+getPhaseClass(type) {
+  // Use the SpaceInfoManager to get the phase class
+  if (window.SpaceInfoManager) {
+    return window.SpaceInfoManager.getPhaseClass(type);
+  }
+  
+  // Fallback if manager is not available
+  console.warn('SpaceInfo: SpaceInfoManager not available for getPhaseClass');
+  return 'space-phase-default';
+}
+```
+
 ## Case Study: SpaceExplorer Integration
 
 The SpaceExplorer component was initially integrated with the manager pattern on April 26, 2025, and then enhanced with a hybrid architecture on April 27, 2025.
@@ -175,193 +355,6 @@ The SpaceExplorer component was initially integrated with the manager pattern on
    - Standardized logging format for better debugging.
    - Improved log context with more descriptive messages.
 
-### Before-After Code Comparison
-
-**Event-based approach (Before)**:
-```javascript
-constructor(props) {
-  this.eventHandlers = {
-    playerMoved: this.handlePlayerMoved.bind(this),
-    // Other event handlers
-  };
-  
-  this.state = {
-    space: null,
-    visitType: 'first',
-    diceRollData: []
-  };
-}
-
-componentDidMount() {
-  this.registerEventListeners();
-}
-
-registerEventListeners() {
-  window.GameStateManager.addEventListener('playerMoved', this.eventHandlers.playerMoved);
-  // Register other event handlers
-}
-
-handlePlayerMoved(event) {
-  if (event.data && event.data.toSpaceId) {
-    const space = window.GameStateManager.findSpaceById(event.data.toSpaceId);
-    if (space) {
-      this.setState({ space: space });
-    }
-  }
-}
-
-cleanup() {
-  window.GameStateManager.removeEventListener('playerMoved', this.eventHandlers.playerMoved);
-  // Remove other event handlers
-}
-
-render() {
-  const { space } = this.state;
-  // Render using state
-}
-```
-
-**Hybrid approach (After April 27, 2025)**:
-```javascript
-constructor(props) {
-  console.log('SpaceExplorer: Constructor initialized');
-  
-  super(props);
-  // Initialize state with error information and UI-specific state
-  this.state = {
-    hasError: false,
-    errorMessage: '',
-    // Cache for processed dice data to avoid reprocessing on every render
-    processedDiceData: null,
-    // Flag to track if data has been processed
-    diceDataProcessed: false
-  };
-  
-  // Track performance metrics for debugging
-  this.renderCount = 0;
-  this.lastRenderTime = 0;
-  
-  // Bind methods to ensure proper this context
-  this.handleGameStateChange = this.handleGameStateChange.bind(this);
-  this.handleCloseExplorer = this.handleCloseExplorer.bind(this);
-  
-  console.log('SpaceExplorer: Constructor completed');
-}
-
-componentDidMount() {
-  console.log('SpaceExplorer: componentDidMount method is being used');
-  
-  // Process dice data if props are available
-  this.processDiceDataFromProps();
-  
-  // Register event listeners with GameStateManager
-  if (window.GameStateManager) {
-    window.GameStateManager.addEventListener('gameStateChanged', this.handleGameStateChange);
-  } else {
-    console.warn('SpaceExplorer: GameStateManager not available, cannot register events');
-  }
-  
-  console.log('SpaceExplorer: componentDidMount method completed');
-}
-
-// Handler for gameStateChanged events
-handleGameStateChange(event) {
-  console.log('SpaceExplorer: handleGameStateChange method is being used');
-  
-  // Only process events that might affect explorer content
-  if (event.data && ['playerMoved', 'cardDrawn', 'cardPlayed', 'newGame'].includes(event.data.changeType)) {
-    // Reprocess dice data when relevant game state changes
-    this.processDiceDataFromProps();
-  }
-  
-  console.log('SpaceExplorer: handleGameStateChange method completed');
-}
-
-processDiceDataFromProps() {
-  console.log('SpaceExplorer: processDiceDataFromProps method is being used');
-  
-  const { space, diceRollData, visitType } = this.props;
-  
-  if (space && diceRollData) {
-    try {
-      // Process dice data and update state
-      const processedData = this.processDiceData(space, diceRollData, visitType);
-      this.setState({ 
-        processedDiceData: processedData,
-        diceDataProcessed: true
-      });
-    } catch (error) {
-      console.error('SpaceExplorer: Error processing dice data:', error.message);
-      this.setState({ 
-        processedDiceData: null,
-        diceDataProcessed: true
-      });
-    }
-  }
-  
-  console.log('SpaceExplorer: processDiceDataFromProps method completed');
-}
-
-handleCloseExplorer() {
-  console.log('SpaceExplorer: handleCloseExplorer method is being used');
-  
-  // Call props.onClose if available
-  if (this.props.onClose && typeof this.props.onClose === 'function') {
-    this.props.onClose();
-    
-    // Dispatch event using GameStateManager
-    if (window.GameStateManager) {
-      window.GameStateManager.dispatchEvent('spaceExplorerToggled', {
-        visible: false,
-        spaceName: this.props.space ? this.props.space.name : ''
-      });
-    }
-  }
-  
-  console.log('SpaceExplorer: handleCloseExplorer method completed');
-}
-
-componentWillUnmount() {
-  console.log('SpaceExplorer: componentWillUnmount method is being used');
-  
-  // Remove GameStateManager event listeners
-  if (window.GameStateManager) {
-    window.GameStateManager.removeEventListener('gameStateChanged', this.handleGameStateChange);
-  }
-  
-  // Clear any timers or resources if used
-  this.lastRenderTime = 0;
-  this.renderCount = 0;
-  
-  console.log('SpaceExplorer: componentWillUnmount method completed');
-}
-
-render() {
-  console.log('SpaceExplorer: render method is being used');
-  
-  // Performance tracking for debugging
-  this.renderCount++;
-  const currentTime = performance.now();
-  if (this.lastRenderTime > 0) {
-    const renderInterval = currentTime - this.lastRenderTime;
-    if (renderInterval < 100) {
-      console.warn('SpaceExplorer: Multiple renders occurring rapidly, interval:', 
-                  renderInterval.toFixed(2), 'ms');
-    }
-  }
-  this.lastRenderTime = currentTime;
-  
-  // Use props for rendering, with state for processed data
-  const { space } = this.props;
-  const { processedDiceData } = this.state;
-  
-  // Render component with error handling
-  // ...
-  
-  console.log('SpaceExplorer: render method completed');
-}
-```
-
 ## Future Integrations
 
 As development continues, all remaining components should be integrated with the GameStateManager event system. This will create a consistent architecture throughout the game, making it easier to maintain, debug, and extend.
@@ -383,7 +376,10 @@ Priority components for integration:
 5. **Include Adequate Event Data**: Ensure event data contains all necessary information for handling the event.
 6. **Maintain Backward Compatibility**: Update components to use events but maintain backward compatibility where necessary.
 7. **Document Event Usage**: Update component documentation to reflect event usage.
+8. **Implement Manager-Based State Management**: Delegate state management to manager classes when possible.
+9. **Use CSS Classes Instead of Inline Styles**: Assign CSS classes from managers instead of inline styles.
+10. **Implement Proper Event Cleanup**: Always remove event listeners in componentWillUnmount or cleanup methods.
 
 ---
 
-*Last Updated: April 27, 2025*
+*Last Updated: April 28, 2025*

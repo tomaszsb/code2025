@@ -63,8 +63,11 @@ console.log('game-components.css file is beginning to be used');
 /* Selected move destination indicator */
 .board-space.selected-move {
   transform: translateY(-0.188rem);
-  box-shadow: 0 0 0 0.188rem #e74c3c, 0 0.313rem 0.938rem rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0 0.188rem #e74c3c, 0 0.313rem 0.938rem rgba(0, 0, 0, 0.3);
   position: relative;
+  border: 3px solid #333 !important; /* Dark thick outline */
+  outline: 2px solid #e74c3c; /* Additional red outline */
+  z-index: 6; /* Ensure it's above other elements */
 }
 
 /* Define pulse animation for available moves */
@@ -117,6 +120,15 @@ console.log('game-components.css file is beginning to be used');
   border-radius: 0.625rem;
   box-shadow: var(--shadow-sm);
   z-index: 10;
+}
+
+/* Style specifically for the SELECTED indicator */
+.board-space.selected-move .move-indicator {
+  background-color: #e74c3c;
+  box-shadow: 0 0 0 2px #333, var(--shadow-sm);
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+  transform: scale(1.1);
 }
 
 .move-details {

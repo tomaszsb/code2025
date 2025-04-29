@@ -170,7 +170,6 @@ class SpaceSelectionManager {
           const selectedIndicator = document.createElement('div');
           selectedIndicator.className = 'move-indicator';
           selectedIndicator.textContent = 'SELECTED';
-          selectedIndicator.style.backgroundColor = '#e74c3c'; // Use red background for selected move
           selectedSpaceElement.appendChild(selectedIndicator);
         }
       }

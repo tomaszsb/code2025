@@ -15,6 +15,7 @@ This is a board game simulation that teaches project management concepts through
 
 ## Recent Updates
 
+- **SpaceInfo Component Refactoring:** Improved SpaceInfo component to follow the manager pattern, integrating fully with GameStateManager and using proper event handling.
 - **Fixed Move Selection:** Players can now properly select available moves on the game board, specifically addressing issues with the OWNER-FUND-INITIATION space.
 - **Enhanced Button Styling:** Improved visibility and usability of move buttons with new styling.
 - **Added Space Info CSS:** Created dedicated styling for the SpaceInfo component to improve UI clarity.
@@ -28,11 +29,12 @@ This is a board game simulation that teaches project management concepts through
 - **DEVELOPMENT_GUIDE.md**: Guide for developers covering environment setup, coding standards, project status, and roadmap
 - **PLAYER_GUIDE.md**: End-user documentation explaining how to play the game
 - **CHANGELOG.md**: Chronological record of changes and updates to the game
+- **LESSONS_LEARNED.md**: Best practices and optimization recommendations based on development experience
 
 ### What's Where
 
 - **Technical Implementation Details**: Find detailed information about component architecture, data flow, and implementation specifics in TECHNICAL_REFERENCE.md
-- **Development Standards**: Coding standards, manager pattern, event system, and CSS guidelines are in DEVELOPMENT_GUIDE.md
+- **Development Standards**: Coding standards, manager pattern, event system, and CSS guidelines are in component-specific documentation
 - **Project Status & Roadmap**: Current status, upcoming priorities, and development phases are documented in DEVELOPMENT_GUIDE.md
 - **Playing the Game**: Instructions for players can be found in PLAYER_GUIDE.md
 
@@ -52,6 +54,13 @@ This is a board game simulation that teaches project management concepts through
 - **MoveLogic.js:** Handles the logic for determining available moves
 - **DiceRollLogic.js:** Manages dice roll outcomes 
 - **CardManager.js:** Handles card-related actions
+
+### Manager Components
+
+- **SpaceInfoManager.js:** Manages space information display, interactions, and styling
+- **SpaceExplorerManager.js:** Handles space explorer panel operations
+- **CardTypeUtilsManager.js:** Manages card type detection, formatting, and styling
+- **SpaceExplorerLoggerManager.js:** Handles Space Explorer layout and logging
 
 ### Utilities
 
@@ -88,11 +97,11 @@ When modifying code, please follow these guidelines:
 - Do not create separate patches or fixes; modify the original code directly
 - No inline CSS; use the dedicated CSS files
 - The game is a closed system; don't introduce external dependencies
-- Follow the manager pattern for new components as outlined in DEVELOPMENT_GUIDE.md
+- Follow the manager pattern for new components as outlined in component documentation
 - Use the event system for component communication
 
-For complete development standards and guidelines, refer to DEVELOPMENT_GUIDE.md.
+For complete development standards and guidelines, refer to component-specific documentation.
 
 ---
 
-*Last Updated: April 22, 2025*
+*Last Updated: April 28, 2025*

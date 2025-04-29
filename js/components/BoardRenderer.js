@@ -132,6 +132,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
                   onRollDice={gameBoard.diceManager.handleRollDiceClick}
                   hasRolledDice={hasRolledDice}
                   hasDiceRollSpace={gameBoard.diceManager.hasDiceRollSpace()}
+                  selectedMoveId={selectedMove}
                 />
               )}
               {/* Debug info */}

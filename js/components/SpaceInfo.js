@@ -1,71 +1,94 @@
-// SpaceInfo component
+// SpaceInfo.js file is beginning to be used
 console.log('SpaceInfo.js file is beginning to be used');
 
+/**
+ * SpaceInfo component - Displays information about a space on the board
+ * 
+ * This component has been refactored to follow the manager pattern:
+ * - Uses SpaceInfoManager for state management and business logic
+ * - Communicates through GameStateManager event system
+ * - Properly handles cleanup to prevent memory leaks
+ * - Uses CSS classes instead of inline styles
+ */
 window.SpaceInfo = class SpaceInfo extends React.Component {
-  // Constructor to handle state for used buttons
   constructor(props) {
     super(props);
+    
+    console.log('SpaceInfo: Constructor initialized');
+    
+    // Minimal state - only tracking render-specific items
+    // All game state is managed by SpaceInfoManager
     this.state = {
-      usedButtons: [],
-      currentPlayerId: null // Store current player ID to detect changes
+      renderKey: 0 // Used to force re-renders when needed
     };
-  }
-  
-  // Reset used buttons when space or player changes
-  componentDidUpdate(prevProps) {
-    // Get current player
-    const currentPlayer = window.GameState?.getCurrentPlayer?.();
-    const currentPlayerId = currentPlayer?.id || null;
     
-    // Check if the space has changed
-    if (prevProps.space?.id !== this.props.space?.id) {
-      // Reset used buttons when space changes
-      this.setState({ 
-        usedButtons: [],
-        currentPlayerId: currentPlayerId // Update player ID state
-      });
-      console.log('SpaceInfo: Space changed, resetting used buttons');
-      return; // Return early to avoid additional state updates
-    }
+    // Store event handlers for proper cleanup
+    this.eventHandlers = {
+      resetButtons: this.handleResetButtons.bind(this),
+      turnChanged: this.handleTurnChanged.bind(this),
+      spaceChanged: this.handleSpaceChanged.bind(this)
+    };
     
-    // Check if the player has changed (without causing infinite loops)
-    if (currentPlayerId && this.state.currentPlayerId !== currentPlayerId) {
-      // Reset used buttons when player changes
-      this.setState({ 
-        usedButtons: [],
-        currentPlayerId: currentPlayerId // Update player ID state
-      });
-      console.log('SpaceInfo: Player changed, resetting used buttons');
-      return; // Return early to avoid additional state updates
-    }
-    
-    // Also log current state of used buttons for debugging
-    console.log('SpaceInfo: Current usedButtons state:', this.state.usedButtons);
+    console.log('SpaceInfo: Constructor completed');
   }
   
   componentDidMount() {
-    // Initialize with current player ID
-    const currentPlayer = window.GameState?.getCurrentPlayer?.();
-    if (currentPlayer?.id) {
-      this.setState({ currentPlayerId: currentPlayer.id });
+    console.log('SpaceInfo: Component mounted');
+    
+    // Add event listener for reset buttons event (legacy compatibility)
+    window.addEventListener('resetSpaceInfoButtons', this.eventHandlers.resetButtons);
+    
+    // Register for GameStateManager events
+    if (window.GameStateManager) {
+      window.GameStateManager.addEventListener('turnChanged', this.eventHandlers.turnChanged);
+      window.GameStateManager.addEventListener('spaceChanged', this.eventHandlers.spaceChanged);
     }
     
-    // Add event listener for reset buttons event
-    window.addEventListener('resetSpaceInfoButtons', this.handleResetButtons);
-    
-    // Log initial state of used buttons
-    console.log('SpaceInfo: Mounted with usedButtons:', this.state.usedButtons);
+    // Check manager availability
+    if (!window.SpaceInfoManager) {
+      console.error('SpaceInfo: SpaceInfoManager not available');
+    }
+  }
+  
+  componentDidUpdate(prevProps) {
+    // Log space changes
+    if (prevProps.space?.id !== this.props.space?.id) {
+      console.log('SpaceInfo: Space changed from', prevProps.space?.name, 'to', this.props.space?.name);
+    }
   }
   
   componentWillUnmount() {
-    // Remove event listener
-    window.removeEventListener('resetSpaceInfoButtons', this.handleResetButtons);
+    console.log('SpaceInfo: Component unmounting, cleaning up listeners');
+    
+    // Remove window event listener
+    window.removeEventListener('resetSpaceInfoButtons', this.eventHandlers.resetButtons);
+    
+    // Remove GameStateManager event listeners
+    if (window.GameStateManager) {
+      window.GameStateManager.removeEventListener('turnChanged', this.eventHandlers.turnChanged);
+      window.GameStateManager.removeEventListener('spaceChanged', this.eventHandlers.spaceChanged);
+    }
   }
   
-  // Handler for the reset buttons event
-  handleResetButtons = () => {
-    console.log('SpaceInfo: Received resetSpaceInfoButtons event, clearing all used buttons');
-    this.setState({ usedButtons: [] });
+  // Handle the reset buttons event
+  handleResetButtons() {
+    console.log('SpaceInfo: Received resetSpaceInfoButtons event, forcing refresh');
+    // Force a re-render
+    this.setState(prevState => ({ renderKey: prevState.renderKey + 1 }));
+  }
+  
+  // Handle turn change events
+  handleTurnChanged() {
+    console.log('SpaceInfo: Handling turn changed event');
+    // Force a re-render
+    this.setState(prevState => ({ renderKey: prevState.renderKey + 1 }));
+  }
+  
+  // Handle space change events
+  handleSpaceChanged() {
+    console.log('SpaceInfo: Handling space changed event');
+    // Force a re-render
+    this.setState(prevState => ({ renderKey: prevState.renderKey + 1 }));
   }
   
   // Get CSS class for space phase using SpaceInfoManager
@@ -100,7 +123,9 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
               className="move-button primary-move-btn"
               onClick={() => {
                 console.log('SpaceInfo: Move button clicked:', move.name, move.id);
-                onMoveSelect(move.id);
+                if (onMoveSelect) {
+                  onMoveSelect(move.id);
+                }
               }}
             >
               {move.name}
@@ -128,7 +153,7 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
       }
       
       // Get current player and calculate scope
-      const currentPlayer = window.GameState?.getCurrentPlayer?.();
+      const currentPlayer = window.GameStateManager ? window.GameStateManager.getCurrentPlayer() : null;
       if (!currentPlayer || !currentPlayer.cards) {
         console.log('SpaceInfo: Cannot determine player scope, defaulting to showing card');
         return true; // Default to showing the card if we can't determine scope
@@ -174,8 +199,9 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     return true;
   }
 
-  // Render a button to draw cards - updated to use SpaceInfoManager
+  // Render a button to draw cards - using SpaceInfoManager
   renderDrawCardsButton(cardType, amount) {
+    // Get current player from GameStateManager
     const currentPlayer = window.GameStateManager?.getCurrentPlayer?.();
     const playerId = currentPlayer?.id || '';
     const spaceId = this.props.space?.id || '';
@@ -253,33 +279,24 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     
     console.log('SpaceInfo: Rendering draw button for', cardCode, 'cards, amount:', cardAmount);
     
-    // Use either the provided callback or the SpaceInfoManager
+    // Handle button click - use SpaceInfoManager
     const handleClick = () => {
       console.log('SpaceInfo: Draw card button clicked for', cardType, 'amount:', cardAmount);
       
       // Mark button as used via SpaceInfoManager
       if (window.SpaceInfoManager) {
         window.SpaceInfoManager.markButtonUsed(playerId, buttonId);
-      }
-      
-      // Force UI update
-      this.forceUpdate();
-      
-      if (this.props.onDrawCards) {
-        // Use the callback if provided
+        
+        // Draw cards using SpaceInfoManager
+        const drawnCards = window.SpaceInfoManager.drawCards(playerId, cardCode, cardAmount);
+        console.log(`SpaceInfo: Drew ${drawnCards.length} ${cardType}(s)`);
+        
+        // Force refresh to show button as used
+        this.setState(prevState => ({ renderKey: prevState.renderKey + 1 }));
+      } else if (this.props.onDrawCards) {
+        // Fallback to using callback if provided
         console.log('SpaceInfo: Drawing cards using onDrawCards callback');
         this.props.onDrawCards(cardCode, cardAmount);
-      } else if (window.SpaceInfoManager) {
-        // Use SpaceInfoManager to draw cards
-        console.log('SpaceInfo: Drawing cards using SpaceInfoManager');
-        const drawnCards = window.SpaceInfoManager.drawCards(playerId, cardCode, cardAmount);
-        console.log(`Drew ${drawnCards.length} ${cardType}(s)`);
-      } else if (window.GameStateManager) {
-        // Fallback to GameStateManager directly
-        console.log('SpaceInfo: Drawing cards using GameStateManager directly');
-        for (let i = 0; i < cardAmount; i++) {
-          window.GameStateManager.drawCard(playerId, cardCode);
-        }
       }
     };
     
@@ -382,12 +399,6 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     // Default to returning original type if no match
     return type;
   }
-
-  // Negotiate button functionality moved to player panel 
-  // This method is kept as a placeholder but doesn't render anything
-  renderNegotiateButton() {
-    return null;
-  }
   
   // Render dice outcomes if available
   renderDiceOutcomes() {
@@ -488,6 +499,8 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
   }
   
   render() {
+    // Force re-render when state.renderKey changes
+    const { renderKey } = this.state;
     const { space, visitType, diceOutcomes, diceRoll, availableMoves, onMoveSelect, onRollDice, hasRolledDice, hasDiceRollSpace } = this.props;
     
     console.log('SpaceInfo render - diceRoll:', diceRoll, 'diceOutcomes:', diceOutcomes);
@@ -523,7 +536,7 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     const phaseClass = this.getPhaseClass(space.type);
     
     return (
-      <div className={`space-info ${phaseClass}`}>
+      <div className={`space-info ${phaseClass}`} key={renderKey}>
         {/* Time display in top right corner */}
         {space['Time'] && space['Time'] !== 'n/a' && (
           <div className="space-time-display">
@@ -551,9 +564,6 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
           </div>
         )}
         
-        {/* Add Negotiate button */}
-        {this.renderNegotiateButton()}
-        
         {/* Main description */}
         <div className="space-section">
           <div className="space-section-label">Description:</div>
@@ -578,22 +588,24 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
         {this.renderAvailableMoves()}
         
         {/* If there's an OWNER-FUND-INITIATION move showing in the blue button but not as a clickable button */}
-        {!this.props.availableMoves?.some(move => move.name.includes('OWNER-FUND-INITIATION')) && 
-         this.props.space?.name === 'OWNER-SCOPE-INITIATION' && 
-         this.props.onMoveSelect && (
+        {!availableMoves?.some(move => move.name.includes('OWNER-FUND-INITIATION')) && 
+         space?.name === 'OWNER-SCOPE-INITIATION' && 
+         onMoveSelect && (
           <div className="space-available-moves">
             <div className="space-section-label">Additional Move:</div>
             <button 
               className="move-button primary-move-btn"
               onClick={() => {
                 console.log('SpaceInfo: OWNER-FUND-INITIATION button clicked');
-                // Find the OWNER-FUND-INITIATION space
-                const fundInitSpace = window.GameState.spaces.find(s => s.name === 'OWNER-FUND-INITIATION');
-                if (fundInitSpace) {
-                  console.log('SpaceInfo: Found OWNER-FUND-INITIATION space:', fundInitSpace.id);
-                  this.props.onMoveSelect(fundInitSpace.id);
-                } else {
-                  console.error('SpaceInfo: OWNER-FUND-INITIATION space not found');
+                // Find the OWNER-FUND-INITIATION space using GameStateManager
+                if (window.GameStateManager) {
+                  const fundInitSpace = window.GameStateManager.spaces.find(s => s.name === 'OWNER-FUND-INITIATION');
+                  if (fundInitSpace) {
+                    console.log('SpaceInfo: Found OWNER-FUND-INITIATION space:', fundInitSpace.id);
+                    onMoveSelect(fundInitSpace.id);
+                  } else {
+                    console.error('SpaceInfo: OWNER-FUND-INITIATION space not found');
+                  }
                 }
               }}
             >
@@ -602,7 +614,7 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
           </div>
         )}
         
-        {/* Display dice outcomes if available - always use renderDiceOutcomes() */}
+        {/* Display dice outcomes if available */}
         {this.renderDiceOutcomes()}
         
         {/* Group cards together with consistent styling */}
@@ -653,8 +665,3 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
 }
 
 console.log('SpaceInfo.js code execution finished');
-
-// Add log statements to debugging methods
-function logSpaceNegotiateUsage(spaceName) {
-  console.log(`SpaceInfo: Negotiate button shown for space: ${spaceName}`);
-};

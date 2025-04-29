@@ -5,6 +5,9 @@ All notable changes to the Project Management Game will be documented in this fi
 ## [Unreleased]
 
 ### Added
+- SpaceInfo component refactoring to follow manager pattern
+- Proper event handling and cleanup in SpaceInfo
+- GameStateManager integration in SpaceInfo
 - CardTypeUtilsManager class implementing the manager pattern
 - Caching system for improved card type detection performance
 - CSS class-based styling methods to replace inline styles
@@ -12,6 +15,9 @@ All notable changes to the Project Management Game will be documented in this fi
 - BackwardCompatibilityLayer for legacy code support
 
 ### Changed
+- Refactored SpaceInfo component to use SpaceInfoManager
+- Removed local state management in SpaceInfo
+- Improved code organization and documentation in SpaceInfo
 - Refactored CardTypeUtils from object with functions to proper class-based manager
 - Updated card type detection with improved fallback mechanisms
 - Enhanced error handling in card processing

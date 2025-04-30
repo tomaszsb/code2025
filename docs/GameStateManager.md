@@ -104,6 +104,7 @@ The GameStateManager defines several standard event types that components can us
 | spaceExplorerToggled  | Fired when space explorer visibility changes       | visible, spaceName                                 |
 | negotiationStarted    | Fired when a negotiation begins                    | initiatorId, targetId, resourceType, amount        |
 | negotiationCompleted  | Fired when a negotiation completes                 | initiatorId, targetId, accepted, finalAmount       |
+| spaceChanged          | Fired when a player changes spaces                 | playerId, spaceId, spaceName                      |
 
 ## Integration with SpaceExplorer Component
 
@@ -123,6 +124,25 @@ The GameStateManager has been updated to properly support the enhanced SpaceExpl
    - Works with SpaceExplorer's performance tracking system
    - Optimizes event dispatch to minimize performance impact
    - Respects render timing to avoid triggering unnecessary re-renders
+
+## Integration with MoveLogicManager
+
+The GameStateManager has been integrated with the MoveLogicManager component (April 29, 2025) which provides the following features:
+
+1. **Movement Event Handling**:
+   - MoveLogicManager listens for gameStateChanged, turnChanged, spaceChanged, and diceRolled events
+   - Updates available moves when player turns change or player moves to a new space
+   - Clears cached moves in response to relevant events
+
+2. **Visual Cue Coordination**:
+   - Coordinates visual cues for player turns and space visits with SpaceSelectionManager
+   - Updates space visit type displays when players visit spaces
+   - Manages "YOUR TURN" indicators on player tokens
+
+3. **Dice Roll Integration**:
+   - Processes dice roll results from diceRolled events
+   - Updates available moves based on dice roll outcomes
+   - Determines special case movement rules based on dice results
 
 ## Component Integration Pattern
 
@@ -222,7 +242,10 @@ The GameStateManager is now integrated with the following components:
 | CardManager              | Completed   | April 19, 2025 | Direct                      |
 | NegotiationManager       | Completed   | April 19, 2025 | Direct                      |
 | SpaceSelectionManager    | Completed   | April 21, 2025 | Direct                      |
+| MoveLogicManager         | Completed   | April 29, 2025 | Direct                      |
+| SpaceInfo                | Completed   | April 28, 2025 | Direct                      |
+| SpaceInfoManager         | Completed   | April 28, 2025 | Direct                      |
 
 ---
 
-*Last Updated: April 27, 2025*
+*Last Updated: April 29, 2025*

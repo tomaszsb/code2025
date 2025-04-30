@@ -4,20 +4,25 @@ This guide provides information on the next development steps for the Project Ma
 
 ## Upcoming Priorities
 
-1. **End Game Experience**:
+1. **Gameplay Mechanics Fixes**:
+   - Fix movement issues for all spaces in MoveLogicManager.js
+   - Implement card effects properly to ensure they introduce changes to the game state
+   - Create a functional leaderboard to track player progress
+
+2. **End Game Experience**:
    - Implement proper game completion UI
    - Add player statistics and performance metrics
    - Create a replay option
    - Add ability to review game history
    - Design and implement win/loss conditions
 
-2. **Testing with Manager Pattern**:
+3. **Testing with Manager Pattern**:
    - Test refactored GameBoard with manager components
    - Validate interaction between managers
    - Verify all game functionality works with new architecture
    - Ensure no performance regressions with the refactored components
 
-3. **Visual Enhancements**:
+4. **Visual Enhancements**:
    - Implement transitions between game states
    - Create consistent visual styling for different card types
 
@@ -38,7 +43,8 @@ This guide provides information on the next development steps for the Project Ma
    - ✅ Refactored MoveLogic.js into MoveLogicManager following the manager pattern
    - ✅ Implemented consistent patterns for special case handling
    - ✅ Added comprehensive documentation in MoveLogicManager.md
-   - Consider adding unit tests for complex move logic scenarios
+   - Issues with movement functionality for certain spaces need to be fixed
+   - Card effects don't properly affect game state during movement
 
 4. **CSS Consistency**: 
    - Continue reviewing for variable reference issues
@@ -64,6 +70,8 @@ Prior to submitting any changes:
 3. Check for memory leaks with extended play
 4. Validate proper event cleanup
 5. Ensure proper logging is implemented
+6. Test specific spaces that had movement issues
+7. Verify card effects are properly applied during gameplay
 
 ## Documentation Requirements
 

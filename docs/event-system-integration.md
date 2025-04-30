@@ -19,6 +19,7 @@ This document outlines the process and benefits of integrating game components w
 | CardManager              | Completed   | April 19, 2025 | Manages card drawing and playing                 |
 | NegotiationManager       | Completed   | April 19, 2025 | Handles negotiation mechanics                    |
 | SpaceSelectionManager    | Completed   | April 21, 2025 | Manages available space selection                |
+| MoveLogicManager         | Completed   | April 29, 2025 | Handles game movement logic and visual indicators|
 
 ## Event Types
 
@@ -27,12 +28,13 @@ The GameStateManager provides the following standard event types:
 | Event Type            | Description                                           | Data Payload                                      |
 |-----------------------|-------------------------------------------------------|---------------------------------------------------|
 | playerMoved           | Fired when a player moves to a new space              | { playerId, fromSpaceId, toSpaceId, player }      |
-| turnChanged           | Fired when the active player changes                  | { previousPlayerIndex, currentPlayerIndex }       |
+| turnChanged           | Fired when the active player changes                  | { previousPlayerIndex, currentPlayerIndex, player }|
 | gameStateChanged      | Fired for general game state changes                  | { changeType, [additional data] }                 |
 | cardDrawn             | Fired when a player draws a card                      | { playerId, player, cardType, card }              |
 | cardPlayed            | Fired when a player plays a card                      | { playerId, player, card }                        |
 | spaceExplorerToggled  | Fired when the space explorer visibility changes      | { visible, spaceName }                            |
-| spaceChanged          | Fired when space information has been updated         | { spaceId, changeType }                           |
+| spaceChanged          | Fired when space information has been updated         | { spaceId, spaceName, playerId, visitType }       |
+| diceRolled            | Fired when dice are rolled                            | { playerId, result }                              |
 
 ## Integration Pattern
 
@@ -132,6 +134,94 @@ The standardized logging pattern makes it easier to trace the flow of events and
 ### 5. Reduced Memory Leaks
 
 Proper cleanup methods ensure that event listeners are removed when components are no longer needed, preventing memory leaks.
+
+## Case Study: MoveLogicManager Integration
+
+The MoveLogicManager component was refactored to follow the manager pattern and integrated with the GameStateManager event system on April 29, 2025.
+
+### MoveLogicManager Refactoring (April 29, 2025)
+
+1. **Implementing Class Inheritance Structure**:
+   - Created a layered inheritance structure for better organization:
+     - MoveLogicBase: Core move logic calculations
+     - MoveLogicSpecialCases: Extends Base with special case handling
+     - MoveLogicUIUpdates: Extends SpecialCases with UI operations
+     - MoveLogicManager: Extends UIUpdates with event system integration
+
+2. **Event System Integration**:
+   - Added proper event handler registration in constructor
+   - Implemented handlers for gameStateChanged, turnChanged, spaceChanged, and diceRolled events
+   - Added cleanup method for removing event listeners
+   - Follows standardized logging pattern for all methods
+
+3. **Visual UI Updates**:
+   - Implemented DOM manipulation for UI updates through MoveLogicUIUpdates class
+   - Added "YOUR TURN" indicators for player tokens
+   - Implemented visit type display updates
+   - Enhanced selected move styling
+
+4. **Caching Framework**:
+   - Implemented a cache framework for frequently accessed moves
+   - Added clearCachedMovesForPlayer method for cache management
+   - Cache gets cleared on relevant events for consistency
+
+5. **Backward Compatibility**:
+   - Added MoveLogicBackwardCompatibility layer for legacy code support
+   - Maintains window.MoveLogic global object for existing code
+   - Maps old method calls to new MoveLogicManager implementation
+
+### MoveLogicManager Event Handlers
+
+```javascript
+/**
+ * Handle gameStateChanged events from GameStateManager
+ * @param {Object} event - The gameStateChanged event object
+ */
+handleGameStateChangedEvent(event) {
+  console.log('MoveLogicManager: Handling gameStateChanged event');
+  
+  if (!event || !event.data) {
+    return;
+  }
+  
+  // Handle relevant game state changes
+  if (event.data.changeType === 'newGame') {
+    // Clear move cache for a new game
+    this.moveCache.clear();
+    console.log('MoveLogicManager: Cleared move cache for new game');
+  }
+
+  // Other state change handling
+  
+  console.log('MoveLogicManager: Finished handling gameStateChanged event');
+}
+
+/**
+ * Handle turnChanged events from GameStateManager
+ * @param {Object} event - The turnChanged event object
+ */
+handleTurnChangedEvent(event) {
+  console.log('MoveLogicManager: Handling turnChanged event');
+  
+  // Clear cache for the current player
+  const currentPlayer = window.GameStateManager.getCurrentPlayer();
+  if (currentPlayer) {
+    this.clearCachedMovesForPlayer(currentPlayer.id);
+    this.updateCurrentPlayerTokenDisplay(currentPlayer);
+  }
+  
+  console.log('MoveLogicManager: Finished handling turnChanged event');
+}
+```
+
+### MoveLogicManager Interaction with SpaceSelectionManager
+
+While both MoveLogicManager and SpaceSelectionManager manipulate the DOM for visual cues, they serve different purposes:
+
+- **MoveLogicManager**: Focuses on player token indicators and visit type displays
+- **SpaceSelectionManager**: Manages available move highlighting and selection feedback
+
+This division allows for separation of concerns while maintaining a cohesive visual system.
 
 ## Case Study: SpaceInfo Integration
 
@@ -310,51 +400,6 @@ getPhaseClass(type) {
 }
 ```
 
-## Case Study: SpaceExplorer Integration
-
-The SpaceExplorer component was initially integrated with the manager pattern on April 26, 2025, and then enhanced with a hybrid architecture on April 27, 2025.
-
-### Initial Manager Pattern Integration (April 26, 2025)
-
-1. **Converting from State to Props**:
-   - Instead of maintaining its own state with event listeners, the component received space data and other properties via props from SpaceExplorerManager.
-   - This improved separation of concerns and better followed the manager pattern.
-
-2. **Removing Direct Event Handling**:
-   - Removed direct event listeners with GameStateManager.
-   - The component relied on SpaceExplorerManager to handle events and pass updates via props.
-
-3. **Implementing Simplified Communication**:
-   - The component called props.onClose when the close button is clicked instead of dispatching events directly.
-   - This created a cleaner boundary between the component and the event system.
-
-### Hybrid Architecture Enhancement (April 27, 2025)
-
-1. **Hybrid State Management**:
-   - Implemented a hybrid approach that works with both props-based (manager) and event-based architectures.
-   - Added direct GameStateManager event handling while maintaining props compatibility.
-   - Component can now function both as a standalone component or as part of the manager system.
-
-2. **Performance Monitoring**:
-   - Added render count and timing metrics for performance tracking.
-   - Implemented warning system for detecting rapid re-renders.
-   - Added performance tracking properties (renderCount, lastRenderTime).
-
-3. **Enhanced Error Handling**:
-   - Implemented comprehensive error boundary with detailed stack trace logging.
-   - Added component stack information to error reports.
-   - Improved error state recovery with better fallbacks.
-
-4. **Resource Management**:
-   - Enhanced componentWillUnmount for thorough resource cleanup.
-   - Added proper event listener management when used in standalone mode.
-   - Improved state transitions for better resource handling.
-
-5. **Consistent Logging**:
-   - Added uniform console.log statements at beginning and end of all methods.
-   - Standardized logging format for better debugging.
-   - Improved log context with more descriptive messages.
-
 ## Future Integrations
 
 As development continues, all remaining components should be integrated with the GameStateManager event system. This will create a consistent architecture throughout the game, making it easier to maintain, debug, and extend.
@@ -382,4 +427,4 @@ Priority components for integration:
 
 ---
 
-*Last Updated: April 28, 2025*
+*Last Updated: April 29, 2025*

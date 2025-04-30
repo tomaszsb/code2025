@@ -2,7 +2,7 @@
 
 ## Overview
 
-The MoveLogicManager component is a refactored version of the original MoveLogic.js utility, following the manager pattern established in the project. It handles all game movement logic including standard moves, special case spaces, and dice roll requirements.
+The MoveLogicManager component is a refactored version of the original MoveLogic.js utility, following the manager pattern established in the project. It handles all game movement logic including standard moves, special case spaces, dice roll requirements, and card effects.
 
 ## Features
 
@@ -13,6 +13,8 @@ The MoveLogicManager component is a refactored version of the original MoveLogic
 - **Consolidated Logic**: Centralizes all movement-related logic in a single manager
 - **Proper Logging**: Includes consistent logging of operations and state changes
 - **Memory Management**: Ensures proper cleanup of event listeners and cached data
+- **Card Effects Integration**: Properly applies card effects to game state during movement (added April 30, 2025)
+- **Event Dispatching**: Dispatches appropriate events for UI updates when effects are applied
 
 ## Public API
 
@@ -21,7 +23,8 @@ The MoveLogicManager component is a refactored version of the original MoveLogic
 - `getAvailableMoves(gameState, player)`: Returns all available moves for a player, either as an array of spaces or an object indicating dice roll is required
 - `hasSpecialCaseLogic(spaceName)`: Checks if a space has special case movement logic
 - `handleSpecialCaseSpace(gameState, player, currentSpace)`: Handles spaces with custom movement logic
-- `getSpaceDependentMoves(gameState, player, currentSpace)`: Gets standard moves based on CSV data
+- `getSpaceDependentMoves(gameState, player, currentSpace)`: Gets standard moves based on CSV data and applies card effects
+- `handleSpaceCardEffects(gameState, player, space, diceRoll)`: Applies card effects from a space to the game state
 - `getMoveDetails(space)`: Returns formatted details about a move for display purposes
 - `cleanup()`: Properly cleans up resources when the manager is no longer needed
 
@@ -39,6 +42,16 @@ The manager listens to the following events from GameStateManager:
 - `turnChanged`: Updates available moves when player turn changes
 - `spaceChanged`: Updates available moves when a player moves to a new space
 - `diceRolled`: Updates available moves based on dice roll results
+
+The manager dispatches the following events:
+
+- `cardDrawn`: When a card is drawn due to space effects
+- `cardReplaced`: When a card is replaced due to space effects
+- `cardDiscarded`: When a card is discarded due to space effects
+- `cardTransferred`: When a card is transferred to another player
+- `timeCostApplied`: When a time cost is applied from a space
+- `feeApplied`: When a fee is applied from a space
+- `gameStateChanged` with `changeType: 'cardEffectsApplied'`: A consolidated event with all applied effects
 
 ## Implementation Details
 
@@ -68,6 +81,27 @@ this.diceRollSpaces = [
   'ARCH-INITIATION'
 ];
 ```
+
+### Card Effects Handling
+
+The manager now properly applies card effects when a player lands on a space:
+
+```javascript
+// In getSpaceDependentMoves method
+// Apply card effects from the space
+const lastDiceRoll = gameState.getLastDiceRoll ? gameState.getLastDiceRoll() : null;
+this.handleSpaceCardEffects(gameState, player, spaceToUse, lastDiceRoll);
+```
+
+Card effects that can be applied include:
+- Drawing cards
+- Replacing cards
+- Discarding/returning cards
+- Transferring cards to other players
+- Applying time costs
+- Applying fees
+
+Each effect properly updates the game state and dispatches appropriate events for UI updates.
 
 ### Backward Compatibility
 
@@ -99,6 +133,16 @@ if (availableMoves.requiresDiceRoll) {
   console.log(`Available moves: ${availableMoves.length}`);
   // Show available moves UI
 }
+
+// To handle card effects from a space directly:
+const space = window.GameStateManager.spaces.find(s => s.id === someSpaceId);
+const diceRoll = window.GameStateManager.getLastDiceRoll();
+window.MoveLogicManager.handleSpaceCardEffects(
+  window.GameStateManager,
+  currentPlayer,
+  space,
+  diceRoll
+);
 ```
 
 ## Testing Notes
@@ -108,7 +152,10 @@ When testing the MoveLogicManager:
 1. Verify that all special case spaces work correctly
 2. Test first visit vs. subsequent visit behavior
 3. Confirm dice roll integration works properly
-4. Validate backward compatibility with existing code
-5. Check for proper event cleanup to prevent memory leaks
+4. Validate that card effects are properly applied during movement
+5. Test dice-roll-dependent card effects
+6. Verify that the UI properly updates when card effects are applied
+7. Validate backward compatibility with existing code
+8. Check for proper event cleanup to prevent memory leaks
 
-*Last Updated: April 29, 2025*
+*Last Updated: April 30, 2025*

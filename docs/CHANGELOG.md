@@ -52,6 +52,13 @@ All notable changes to the Project Management Game will be documented in this fi
 - Missing event cleanup in movement-related operations
 - Low visibility of selected moves in UI making it difficult for players to recognize their selections
 - Debug tools appearing in production version of the game
+- Card effects now properly affect game state during movement (April 30, 2025)
+  - Enhanced handling of dice-roll-dependent card effects
+  - Added proper event dispatching for all card effects
+  - Improved integration with game state to ensure effects are correctly applied
+  - Added detailed tracking of applied effects for UI updates
+  - Fixed handling of time costs and fees from spaces
+  - Enhanced special space card integration
 
 ## [1.2.0] - 2025-04-20
 

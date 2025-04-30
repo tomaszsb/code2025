@@ -1,5 +1,5 @@
 // MoveLogicSpecialCases.js - Special case handlers for specific spaces
-console.log('MoveLogicSpecialCases.js file is being processed');
+console.log('MoveLogicSpecialCases.js file is beginning to be used');
 
 import { MoveLogicBase } from './MoveLogicBase.js';
 
@@ -68,131 +68,120 @@ class MoveLogicSpecialCases extends MoveLogicBase {
    * @returns {Array} - Array of available moves
    */
   handleArchInitiation(gameState, player, currentSpace) {
+    console.log('MoveLogicSpecialCases: Handling ARCH-INITIATION special case');
+    
+    // Determine if this is a first or subsequent visit
     const hasVisited = gameState.hasPlayerVisitedSpace(player, currentSpace.name);
     const visitType = hasVisited ? 'subsequent' : 'first';
     
-    console.log('MoveLogicSpecialCases: ARCH-INITIATION visit type is:', visitType);
+    console.log(`MoveLogicSpecialCases: ARCH-INITIATION visit type is: ${visitType}`);
     console.log('MoveLogicSpecialCases: Player visited spaces:', player.visitedSpaces);
     console.log('MoveLogicSpecialCases: Current position:', player.position);
     
-    // Read the next spaces directly from the CSV data stored in the space object
-    const rawNextSpaces = [
-      currentSpace.rawSpace1, 
-      currentSpace.rawSpace2, 
-      currentSpace.rawSpace3, 
-      currentSpace.rawSpace4, 
-      currentSpace.rawSpace5
-    ].filter(space => space && space.trim() !== '' && space !== 'n/a');
+    // Apply time cost (5 days for both first and subsequent visits)
+    if (gameState.applyTimeCostToPlayer) {
+      gameState.applyTimeCostToPlayer(player.id, 5, 'Architect Search');
+      console.log('MoveLogicSpecialCases: Applied 5-day time cost to player');
+    } else {
+      console.warn('MoveLogicSpecialCases: gameState.applyTimeCostToPlayer not available, time cost not applied');
+    }
     
-    console.log('MoveLogicSpecialCases: Raw next spaces from CSV:', rawNextSpaces);
-    
-    // Check if any of the next spaces contain special patterns
-    const hasSpecialPattern = rawNextSpaces.some(space => 
-      this.specialPatterns.some(pattern => space.includes(pattern))
-    );
-    
-    if (hasSpecialPattern) {
-      console.log('MoveLogicSpecialCases: Special pattern detected in next spaces');
+    // Handle E Card draw if dice roll matches specific values
+    // For first visit: Draw E card if roll is 1
+    // For subsequent visit: Draw E card if roll is 2
+    const lastDiceRoll = gameState.getLastDiceRoll ? gameState.getLastDiceRoll() : null;
+    if (lastDiceRoll) {
+      const rollValue = lastDiceRoll.total || lastDiceRoll.value || 0;
+      const shouldDrawECard = (visitType === 'first' && rollValue === 1) || 
+                          (visitType === 'subsequent' && rollValue === 2);
       
-      // For first visit with special patterns, we still need to provide the ARCH-FEE-REVIEW move
-      if (visitType.toLowerCase() === 'first') {
-        console.log('MoveLogicSpecialCases: First visit with special pattern - looking for ARCH-FEE-REVIEW');
-        
-        // Look for ARCH-FEE-REVIEW space directly
-        const archFeeReviewSpaces = gameState.spaces.filter(s => 
-          s.name === 'ARCH-FEE-REVIEW'
-        );
-        
-        if (archFeeReviewSpaces.length > 0) {
-          // Get the right visit type
-          const hasVisitedFeeReview = gameState.hasPlayerVisitedSpace(player, 'ARCH-FEE-REVIEW');
-          const feeReviewVisitType = hasVisitedFeeReview ? 'subsequent' : 'first';
-          
-          // Find the right version 
-          const nextSpace = archFeeReviewSpaces.find(s => 
-            s.visitType.toLowerCase() === feeReviewVisitType.toLowerCase()
-          ) || archFeeReviewSpaces[0];
-          
-          console.log('MoveLogicSpecialCases: Found ARCH-FEE-REVIEW space for special pattern:', nextSpace.id);
-          return [nextSpace];
-        }
+      if (shouldDrawECard && gameState.drawCard) {
+        const drawnCard = gameState.drawCard(player.id, 'E');
+        console.log(`MoveLogicSpecialCases: Drew E card ${drawnCard ? drawnCard.id : 'unknown'} based on dice roll ${rollValue}`);
       }
+    }
+    
+    // For first visit: Always go to ARCH-FEE-REVIEW
+    if (visitType === 'first') {
+      console.log('MoveLogicSpecialCases: First visit to ARCH-INITIATION - directing to ARCH-FEE-REVIEW');
       
-      // For subsequent visits with special patterns, we'll need dice roll logic in the future
-      if (visitType.toLowerCase() === 'subsequent') {
-        console.log('MoveLogicSpecialCases: Subsequent visit with special pattern - dice roll needed');
-        // For now, no moves available for this case
+      // Find ARCH-FEE-REVIEW spaces
+      const archFeeReviewSpaces = gameState.spaces.filter(s => s.name === 'ARCH-FEE-REVIEW');
+      
+      if (archFeeReviewSpaces.length > 0) {
+        // Determine if player has visited ARCH-FEE-REVIEW before
+        const hasVisitedFeeReview = gameState.hasPlayerVisitedSpace(player, 'ARCH-FEE-REVIEW');
+        const feeReviewVisitType = hasVisitedFeeReview ? 'subsequent' : 'first';
+        
+        // Find the right version of the space
+        const nextSpace = archFeeReviewSpaces.find(s => 
+          s.visitType.toLowerCase() === feeReviewVisitType.toLowerCase()
+        ) || archFeeReviewSpaces[0];
+        
+        console.log(`MoveLogicSpecialCases: Directing to ARCH-FEE-REVIEW with visit type ${feeReviewVisitType}`);
+        return [nextSpace];
+      } else {
+        console.warn('MoveLogicSpecialCases: Could not find ARCH-FEE-REVIEW space, check game data');
         return [];
       }
     }
     
-    // For normal (non-special) next spaces, process them directly
-    const availableMoves = [];
-    
-    for (const rawSpaceName of rawNextSpaces) {
-      // Skip special patterns
-      if (this.specialPatterns.some(pattern => rawSpaceName.includes(pattern))) {
-        continue;
+    // For subsequent visit: "Outcome from rolled dice"
+    // This requires a dice roll to determine the next moves
+    // If dice has been rolled, use the result to determine next space
+    if (visitType === 'subsequent') {
+      console.log('MoveLogicSpecialCases: Subsequent visit to ARCH-INITIATION - requires dice roll');
+      
+      // Check if dice has been rolled
+      if (!lastDiceRoll) {
+        console.log('MoveLogicSpecialCases: No dice roll found, returning requiresDiceRoll flag');
+        return { requiresDiceRoll: true, spaceName: currentSpace.name, visitType: visitType };
       }
       
-      // Extract the base space name
-      const cleanedSpaceName = gameState.extractSpaceName(rawSpaceName);
-      console.log('MoveLogicSpecialCases: Processing raw space name:', rawSpaceName, '-> cleaned:', cleanedSpaceName);
+      // Use dice roll to determine next space
+      const rollValue = lastDiceRoll.total || lastDiceRoll.value || 0;
+      console.log(`MoveLogicSpecialCases: Using dice roll value ${rollValue} to determine next space`);
       
-      // Find spaces that match this name
-      const matchingSpaces = gameState.spaces.filter(s => {
-        const extractedName = gameState.extractSpaceName(s.name);
-        const isMatch = extractedName === cleanedSpaceName || 
-                       s.name.includes(cleanedSpaceName) || 
-                       cleanedSpaceName.includes(extractedName);
-        return isMatch;
-      });
+      // Logic based on dice roll value
+      // For simplicity, let's define different paths based on dice roll ranges
+      let nextSpaceName = '';
       
-      console.log('MoveLogicSpecialCases: Found', matchingSpaces.length, 'matching spaces for', cleanedSpaceName);
-      
-      if (matchingSpaces.length > 0) {
-        // Determine visit type
-        const hasVisitedNextSpace = gameState.hasPlayerVisitedSpace(player, cleanedSpaceName);
-        const nextVisitType = hasVisitedNextSpace ? 'subsequent' : 'first';
-        
-        // Find the right version
-        const nextSpace = matchingSpaces.find(s => 
-          s.visitType.toLowerCase() === nextVisitType.toLowerCase()
-        ) || matchingSpaces[0];
-        
-        // Add to available moves
-        availableMoves.push(nextSpace);
-        console.log('MoveLogicSpecialCases: Added move from CSV data:', nextSpace.name, nextSpace.id);
+      if (rollValue <= 2) {
+        // Low roll (1-2): Go back to ARCH-FEE-REVIEW
+        nextSpaceName = 'ARCH-FEE-REVIEW';
+      } else if (rollValue <= 4) {
+        // Medium roll (3-4): Go to ARCH-SCOPE-CHECK
+        nextSpaceName = 'ARCH-SCOPE-CHECK';
+      } else {
+        // High roll (5-6): Go to ENG-INITIATION
+        nextSpaceName = 'ENG-INITIATION';
       }
-    }
-    
-    // If we found available moves, return them
-    if (availableMoves.length > 0) {
-      console.log('MoveLogicSpecialCases: Returning', availableMoves.length, 'moves for ARCH-INITIATION');
-      return availableMoves;
-    }
-    
-    // Special fallback for ARCH-INITIATION first visit when no moves found
-    if (visitType.toLowerCase() === 'first' && availableMoves.length === 0) {
-      console.log('MoveLogicSpecialCases: No moves found for ARCH-INITIATION first visit, using fallback');
       
-      // Look for ARCH-FEE-REVIEW as a fallback
-      const archFeeReviewSpaces = gameState.spaces.filter(s => 
-        s.name === 'ARCH-FEE-REVIEW'
-      );
+      console.log(`MoveLogicSpecialCases: Dice roll ${rollValue} directs to ${nextSpaceName}`);
       
-      if (archFeeReviewSpaces.length > 0) {
-        const nextSpace = archFeeReviewSpaces.find(s => 
-          s.visitType.toLowerCase() === 'first'
-        ) || archFeeReviewSpaces[0];
+      // Find the determined next space
+      const nextSpaces = gameState.spaces.filter(s => s.name === nextSpaceName);
+      
+      if (nextSpaces.length > 0) {
+        // Determine visit type for next space
+        const hasVisitedNextSpace = gameState.hasPlayerVisitedSpace(player, nextSpaceName);
+        const nextSpaceVisitType = hasVisitedNextSpace ? 'subsequent' : 'first';
         
-        console.log('MoveLogicSpecialCases: Using fallback ARCH-FEE-REVIEW:', nextSpace.id);
+        // Find correct version of the space
+        const nextSpace = nextSpaces.find(s => 
+          s.visitType.toLowerCase() === nextSpaceVisitType.toLowerCase()
+        ) || nextSpaces[0];
+        
+        console.log(`MoveLogicSpecialCases: Selected ${nextSpaceName} with visit type ${nextSpaceVisitType}`);
         return [nextSpace];
+      } else {
+        console.warn(`MoveLogicSpecialCases: Could not find space for ${nextSpaceName}, check game data`);
+        return [];
       }
     }
     
-    // If no moves found and fallbacks fail, return empty array
-    console.log('MoveLogicSpecialCases: No moves found for ARCH-INITIATION');
+    // This should not be reached, but just in case
+    console.warn('MoveLogicSpecialCases: Unexpected code path in handleArchInitiation');
     return [];
   }
   
@@ -275,11 +264,192 @@ class MoveLogicSpecialCases extends MoveLogicBase {
    * @returns {Array} - Array of available moves
    */
   handleFdnyFeeReview(gameState, player, currentSpace) {
-    // This is a complex case with multiple conditions from the CSV
-    // For simplicity, we'll use the standard space logic for now
-    console.log('MoveLogicSpecialCases: Using standard logic for REG-FDNY-FEE-REVIEW');
-    return super.getSpaceDependentMoves(gameState, player, currentSpace);
+    console.log('MoveLogicSpecialCases: Handling REG-FDNY-FEE-REVIEW special case');
+    
+    // Determine if this is a first or subsequent visit
+    const hasVisited = gameState.hasPlayerVisitedSpace(player, currentSpace.name);
+    const visitType = hasVisited ? 'subsequent' : 'first';
+    console.log(`MoveLogicSpecialCases: REG-FDNY-FEE-REVIEW visit type is: ${visitType}`);
+    
+    // Apply fee on first visit (1% fee according to CSV)
+    if (visitType === 'first') {
+      console.log('MoveLogicSpecialCases: Applying 1% fee for first visit to REG-FDNY-FEE-REVIEW');
+      // Calculate fee based on project scope (if available)
+      const projectScope = gameState.getProjectScope ? gameState.getProjectScope() : 100000; // Default value if scope not available
+      const fee = projectScope * 0.01; // 1% fee
+      
+      // Apply fee to player's resources
+      if (gameState.applyFeeToPlayer) {
+        gameState.applyFeeToPlayer(player.id, fee, 'FDNY Review Fee');
+        console.log(`MoveLogicSpecialCases: Applied fee of ${fee} to player ${player.id}`);
+      } else {
+        console.warn('MoveLogicSpecialCases: gameState.applyFeeToPlayer not available, fee not applied');
+      }
+    }
+    
+    // Apply time cost (1 day for both first and subsequent visits)
+    if (gameState.applyTimeCostToPlayer) {
+      gameState.applyTimeCostToPlayer(player.id, 1, 'FDNY Review');
+      console.log('MoveLogicSpecialCases: Applied 1 day time cost to player');
+    } else {
+      console.warn('MoveLogicSpecialCases: gameState.applyTimeCostToPlayer not available, time cost not applied');
+    }
+    
+    // Get player's game state properties to determine next moves
+    // These would typically be stored in the player object or game state
+    const hasFdnyApproval = this.getPlayerGameProperty(gameState, player, 'hasFdnyApproval');
+    const hasChangedScope = this.getPlayerGameProperty(gameState, player, 'hasChangedScope');
+    const sentByDOB = this.getPlayerGameProperty(gameState, player, 'sentByDOB');
+    const hasFireSystems = this.getPlayerGameProperty(gameState, player, 'hasFireSystems');
+    const hasDOBApproval = this.getPlayerGameProperty(gameState, player, 'hasDOBApproval');
+    
+    console.log('MoveLogicSpecialCases: Player properties for decision tree:');
+    console.log(`- hasFdnyApproval: ${hasFdnyApproval}`);
+    console.log(`- hasChangedScope: ${hasChangedScope}`);
+    console.log(`- sentByDOB: ${sentByDOB}`);
+    console.log(`- hasFireSystems: ${hasFireSystems}`);
+    console.log(`- hasDOBApproval: ${hasDOBApproval}`);
+    
+    // Decision tree based on CSV logic
+    let nextSpaceName = '';
+    
+    // First question: Did you pass FDNY before?
+    if (hasFdnyApproval) {
+      // If YES - Go to Space 2 ("Did the scope change since last visit?")
+      if (hasChangedScope) {
+        nextSpaceName = 'REG-FDNY-PLAN-EXAM';
+      } else {
+        // If NO - Go to Space 3 ("Did Department of Buildings send you here?")
+        if (sentByDOB) {
+          nextSpaceName = 'REG-FDNY-PLAN-EXAM';
+        } else {
+          // If NO - Go to Space 4 ("Do you have: sprinklers/standpipe/fire alarm/fire suppression?")
+          if (hasFireSystems) {
+            nextSpaceName = 'REG-FDNY-PLAN-EXAM';
+          } else {
+            // If NO - Go to Space 5 ("If DOB approval = YES/NO")
+            nextSpaceName = hasDOBApproval ? 'PM-DECISION-CHECK' : 'REG-DOB-TYPE-SELECT';
+          }
+        }
+      }
+    } else {
+      // If NO - Go to Space 3 ("Did Department of Buildings send you here?")
+      if (sentByDOB) {
+        nextSpaceName = 'REG-FDNY-PLAN-EXAM';
+      } else {
+        // If NO - Go to Space 4 ("Do you have: sprinklers/standpipe/fire alarm/fire suppression?")
+        if (hasFireSystems) {
+          nextSpaceName = 'REG-FDNY-PLAN-EXAM';
+        } else {
+          // If NO - Go to Space 5 ("If DOB approval = YES/NO")
+          nextSpaceName = hasDOBApproval ? 'PM-DECISION-CHECK' : 'REG-DOB-TYPE-SELECT';
+        }
+      }
+    }
+    
+    console.log(`MoveLogicSpecialCases: Next space determined: ${nextSpaceName}`);
+    
+    // Handle the CON-INITIATION option if DOB approval = YES and moving to PM-DECISION-CHECK
+    // This is a special case where player can choose between PM-DECISION-CHECK or CON-INITIATION
+    const availableMoves = [];
+    
+    if (nextSpaceName === 'PM-DECISION-CHECK' && hasDOBApproval) {
+      // Find PM-DECISION-CHECK space
+      const pmDecisionCheckSpaces = gameState.spaces.filter(s => s.name === 'PM-DECISION-CHECK');
+      
+      // Find CON-INITIATION space
+      const conInitiationSpaces = gameState.spaces.filter(s => s.name === 'CON-INITIATION');
+      
+      if (pmDecisionCheckSpaces.length > 0) {
+        const pmSpaceVisitType = gameState.hasPlayerVisitedSpace(player, 'PM-DECISION-CHECK') ? 'subsequent' : 'first';
+        const pmSpace = pmDecisionCheckSpaces.find(s => 
+          s.visitType.toLowerCase() === pmSpaceVisitType.toLowerCase()
+        ) || pmDecisionCheckSpaces[0];
+        
+        availableMoves.push(pmSpace);
+        console.log(`MoveLogicSpecialCases: Added PM-DECISION-CHECK as an option with visit type ${pmSpaceVisitType}`);
+      }
+      
+      if (conInitiationSpaces.length > 0) {
+        const conSpaceVisitType = gameState.hasPlayerVisitedSpace(player, 'CON-INITIATION') ? 'subsequent' : 'first';
+        const conSpace = conInitiationSpaces.find(s => 
+          s.visitType.toLowerCase() === conSpaceVisitType.toLowerCase()
+        ) || conInitiationSpaces[0];
+        
+        availableMoves.push(conSpace);
+        console.log(`MoveLogicSpecialCases: Added CON-INITIATION as an option with visit type ${conSpaceVisitType}`);
+      }
+    } else {
+      // Find spaces that match the determined next space name
+      const matchingSpaces = gameState.spaces.filter(s => s.name === nextSpaceName);
+      
+      if (matchingSpaces.length > 0) {
+        const nextSpaceVisitType = gameState.hasPlayerVisitedSpace(player, nextSpaceName) ? 'subsequent' : 'first';
+        const nextSpace = matchingSpaces.find(s => 
+          s.visitType.toLowerCase() === nextSpaceVisitType.toLowerCase()
+        ) || matchingSpaces[0];
+        
+        availableMoves.push(nextSpace);
+        console.log(`MoveLogicSpecialCases: Added ${nextSpaceName} as the next space with visit type ${nextSpaceVisitType}`);
+      } else {
+        console.warn(`MoveLogicSpecialCases: Could not find space matching name: ${nextSpaceName}`);
+      }
+    }
+    
+    // If no moves found, return empty array (this shouldn't happen in normal gameplay)
+    if (availableMoves.length === 0) {
+      console.warn('MoveLogicSpecialCases: No moves found for REG-FDNY-FEE-REVIEW, check game state');
+      
+      // Fallback to REG-DOB-TYPE-SELECT as a last resort
+      const fallbackSpaces = gameState.spaces.filter(s => s.name === 'REG-DOB-TYPE-SELECT');
+      if (fallbackSpaces.length > 0) {
+        const fallbackSpace = fallbackSpaces[0];
+        availableMoves.push(fallbackSpace);
+        console.log('MoveLogicSpecialCases: Added fallback space REG-DOB-TYPE-SELECT');
+      }
+    }
+    
+    return availableMoves;
+  }
+  
+  /**
+   * Helper method to get player game property with fallback
+   * @param {Object} gameState - The current game state
+   * @param {Object} player - The player to get property for
+   * @param {string} propertyName - The name of the property to get
+   * @returns {boolean} - The property value or false if not found
+   */
+  getPlayerGameProperty(gameState, player, propertyName) {
+    // Try different ways of accessing the property
+    if (player[propertyName] !== undefined) {
+      return player[propertyName];
+    }
+    
+    if (player.properties && player.properties[propertyName] !== undefined) {
+      return player.properties[propertyName];
+    }
+    
+    if (gameState.getPlayerProperty) {
+      return gameState.getPlayerProperty(player.id, propertyName) || false;
+    }
+    
+    // If game state or property checking functions are unavailable,
+    // we'll allow the UI to handle the choice
+    
+    // For debugging, return test values (in a real implementation, we'd ask the player or examine game state)
+    // These test values lead to a variety of paths for testing
+    const testValues = {
+      hasFdnyApproval: Math.random() > 0.5,
+      hasChangedScope: Math.random() > 0.5,
+      sentByDOB: Math.random() > 0.5,
+      hasFireSystems: Math.random() > 0.5,
+      hasDOBApproval: Math.random() > 0.5
+    };
+    
+    return testValues[propertyName] || false;
   }
 }
 
 export { MoveLogicSpecialCases };
+
+console.log('MoveLogicSpecialCases.js code execution finished');

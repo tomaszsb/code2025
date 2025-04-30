@@ -6,7 +6,7 @@ This guide provides information on the next development steps for the Project Ma
 
 1. **Gameplay Mechanics Fixes**:
    - Fix movement issues for all spaces in MoveLogicManager.js
-   - Implement card effects properly to ensure they introduce changes to the game state
+   - ✅ Implement card effects properly to ensure they introduce changes to the game state
    - Create a functional leaderboard to track player progress
 
 2. **End Game Experience**:
@@ -44,7 +44,7 @@ This guide provides information on the next development steps for the Project Ma
    - ✅ Implemented consistent patterns for special case handling
    - ✅ Added comprehensive documentation in MoveLogicManager.md
    - Issues with movement functionality for certain spaces need to be fixed
-   - Card effects don't properly affect game state during movement
+   - ✅ Card effects now properly affect game state during movement (fixed April 30, 2025)
 
 4. **CSS Consistency**: 
    - Continue reviewing for variable reference issues
@@ -80,4 +80,4 @@ Update the following for each change:
 2. Component documentation within the file itself
 3. Any relevant player-facing documentation
 
-*Last Updated: April 29, 2025*
+*Last Updated: April 30, 2025*

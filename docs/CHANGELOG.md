@@ -26,6 +26,10 @@ All notable changes to the Project Management Game will be documented in this fi
 - Debug UI toggle panel in Index-debug.html with debug mode and log level controls
 - Improved UI inspector that only loads in debug mode
 - Isolated debug functionality to prevent impact on production game
+- Fully data-driven dice roll system that relies solely on CSV data for decision making (May 1, 2025)
+  - Removed all hardcoded exclusions for spaces that should not show dice rolls
+  - Added detailed logging of dice roll decisions for better debugging
+  - Improved conditional requirement extraction from card text with better pattern matching
 
 ### Changed
 - Refactored SpaceInfo component to use SpaceInfoManager
@@ -42,6 +46,8 @@ All notable changes to the Project Management Game will be documented in this fi
 - Improved move selection UI with dark outlines and visual indicators for better visibility
 - Removed UI inspector from Index.html to improve loading performance
 - Replaced inline CSS in UI inspector with proper CSS class-based approach
+- Updated DiceManager.js to use a fully data-driven approach for determining when to show dice roll buttons (May 1, 2025)
+- Improved BoardRenderer.js to properly evaluate dice roll requirements on each render (May 1, 2025)
 
 ### Fixed
 - Card type detection consistency issues
@@ -59,6 +65,10 @@ All notable changes to the Project Management Game will be documented in this fi
   - Added detailed tracking of applied effects for UI updates
   - Fixed handling of time costs and fees from spaces
   - Enhanced special space card integration
+- Fixed inconsistent dice roll button visibility issues by making the system fully data-driven (May 1, 2025)
+  - Dice roll buttons now only appear when CSV data indicates they should
+  - Eliminated special case handling causing unexpected button appearances
+  - Resolved issue with OWNER-FUND-INITIATION showing dice button when it shouldn't
 
 ## [1.2.0] - 2025-04-20
 

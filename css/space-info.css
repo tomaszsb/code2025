@@ -265,6 +265,15 @@ console.log('space-info.css file is beginning to be used');
   cursor: not-allowed;
 }
 
+.draw-cards-btn.dice-condition-not-met {
+  background-color: #dc3545;
+  cursor: not-allowed;
+}
+
+.draw-cards-btn.dice-condition-not-met:hover {
+  background-color: #c82333;
+}
+
 /* Dice face styling */
 .dice-face-compact {
   width: 2rem;
@@ -303,14 +312,74 @@ console.log('space-info.css file is beginning to be used');
 .dice-dot-8 { grid-area: 3 / 2; }
 .dice-dot-9 { grid-area: 3 / 3; }
 
-/* Empty state */
-.space-info.empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 10rem;
-  font-style: italic;
-  color: #6c757d;
+/* Roll Dice button */
+.space-roll-dice-container {
+  margin: 1rem 0;
+  text-align: center;
 }
 
-console.log('space-info.css code execution finished');
+.roll-dice-btn {
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.25rem;
+  background-color: #4285f4;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  min-width: 120px;
+}
+
+.roll-dice-btn:hover {
+  background-color: #3367d6;
+  transform: translateY(-2px);
+}
+
+.roll-dice-btn.used {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.roll-dice-btn.disabled {
+  background-color: #e9ecef;
+  color: #adb5bd;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Conditional card effects */
+.conditional-card-effect {
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  background-color: #f0f5ff;
+  margin-bottom: 0.5rem;
+  border-left: 3px solid #4285f4;
+}
+
+.dice-result-message {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  padding: 0.25rem 0.5rem;
+  background-color: #f0f0f0;
+  border-radius: 0.25rem;
+}
+
+.condition-met {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.condition-not-met {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.dice-outcome-message {
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+  border-radius: 0.25rem;
+  border-left: 3px solid #6c757d;
+  margin-top: 0.5rem;
+}

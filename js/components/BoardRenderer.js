@@ -42,6 +42,10 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
     // Use spaceSelectionManager instead of directly calling isVisitingFirstTime from gameBoard
     const visitType = gameBoard.spaceSelectionManager.isVisitingFirstTime() ? 'first' : 'subsequent';
     
+    // Calculate hasDiceRollSpace by calling the method directly - ensuring fresh evaluation
+    const hasDiceRollSpace = gameBoard.diceManager.hasDiceRollSpace();
+    console.log('BoardRenderer: hasDiceRollSpace evaluated to:', hasDiceRollSpace);
+    
     return (
       <div className="game-container">
         <div className="game-header">
@@ -129,9 +133,9 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
                   availableMoves={availableMoves}
                   onMoveSelect={gameBoard.spaceSelectionManager.handleSpaceClick}
                   onDrawCards={gameBoard.handleDrawCards}
-                  onRollDice={gameBoard.diceManager.handleRollDiceClick}
+                  onRollDice={hasDiceRollSpace ? gameBoard.diceManager.handleRollDiceClick : null}
                   hasRolledDice={hasRolledDice}
-                  hasDiceRollSpace={gameBoard.diceManager.hasDiceRollSpace()}
+                  hasDiceRollSpace={hasDiceRollSpace}
                   selectedMoveId={selectedMove}
                 />
               )}
@@ -177,7 +181,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
                   disabled={
                     !currentPlayer || 
                     !gameBoard.state.hasSelectedMove ||
-                    (gameBoard.diceManager.hasDiceRollSpace() && !hasRolledDice)
+                    (hasDiceRollSpace && !hasRolledDice)
                   }
                   className="end-turn-btn"
                 >

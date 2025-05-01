@@ -15,6 +15,8 @@ This is a board game simulation that teaches project management concepts through
 
 ## Recent Updates
 
+- **SpaceInfo Component Modularization:** Broke up SpaceInfo.js into smaller modules (SpaceInfoDice.js, SpaceInfoCards.js, SpaceInfoMoves.js, SpaceInfoUtils.js) for better maintainability (May 1, 2025).
+- **Browser Compatibility Improvements:** Implemented browser-friendly module pattern using window objects and prototype mixins.
 - **SpaceInfo Component Refactoring:** Improved SpaceInfo component to follow the manager pattern, integrating fully with GameStateManager and using proper event handling.
 - **Fixed Move Selection:** Players can now properly select available moves on the game board, specifically addressing issues with the OWNER-FUND-INITIATION space.
 - **Enhanced Button Styling:** Improved visibility and usability of move buttons with new styling.
@@ -45,6 +47,10 @@ This is a board game simulation that teaches project management concepts through
 - **GameBoard.js:** Main controller component that orchestrates the game state
 - **BoardRenderer.js:** Handles rendering of all game elements
 - **SpaceInfo.js:** Displays information about the current space and available moves
+  - **SpaceInfoDice.js:** Handles dice-related rendering and functionality
+  - **SpaceInfoCards.js:** Manages card drawing button functionality
+  - **SpaceInfoMoves.js:** Handles move button rendering and functionality
+  - **SpaceInfoUtils.js:** Provides utility functions for the SpaceInfo component
 - **DiceRoll.js:** Manages dice rolling mechanics
 - **CardDisplay.js:** Handles card display and management
 
@@ -104,4 +110,4 @@ For complete development standards and guidelines, refer to component-specific d
 
 ---
 
-*Last Updated: April 28, 2025*
+*Last Updated: May 1, 2025*

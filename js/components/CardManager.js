@@ -304,13 +304,49 @@ class CardManager {
     });
   }
   
-  // Handle drawing cards manually - Updated to use event system
+  // Handle drawing cards manually - Updated to use event system and conditional dice rolls
   handleDrawCards = (cardType, amount, currentPlayer, cardDisplayRef) => {
     console.log('CardManager: Drawing cards manually -', amount, cardType, 'cards');
     
     if (!currentPlayer) {
       console.log('CardManager: No current player found');
       return;
+    }
+    
+    // NEW: Check if this card draw is conditional on a dice roll
+    const currentSpaceId = currentPlayer.position;
+    
+    // Safely check if conditionalCardRequirements exists and has requirements for this space
+    const conditionalRequirements = this.gameBoard.state && 
+                                   this.gameBoard.state.conditionalCardRequirements && 
+                                   this.gameBoard.state.conditionalCardRequirements[currentSpaceId];
+    
+    // If there are conditional requirements for this space
+    if (conditionalRequirements && conditionalRequirements.cardType === cardType) {
+      console.log('CardManager: Found conditional card requirements:', conditionalRequirements);
+      
+      // Check if the requirements have been satisfied by a dice roll
+      if (!conditionalRequirements.satisfied) {
+        console.log('CardManager: Conditional requirements not satisfied. Cannot draw card without required dice roll.');
+        
+        // Show a message to the player
+        if (this.gameBoard.showMessage) {
+          this.gameBoard.showMessage(`You need to roll a ${conditionalRequirements.requiredRoll} before drawing this card.`);
+        } else {
+          alert(`Roll the dice first! You need to roll a ${conditionalRequirements.requiredRoll} to draw this card.`);
+        }
+        
+        // If the dice roll hasn't happened yet, trigger it
+        if (this.gameBoard.diceManager && !this.gameBoard.state.hasRolledDice) {
+          console.log('CardManager: Triggering dice roll for conditional card draw');
+          this.gameBoard.diceManager.handleRollDiceClick();
+        }
+        
+        return [];
+      } else {
+        console.log('CardManager: Conditional requirements satisfied. Proceeding with card draw.');
+        // Requirements are satisfied, proceed with the card draw
+      }
     }
     
     const drawnCards = [];

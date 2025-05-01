@@ -16,6 +16,9 @@ class DiceManager {
       diceRolled: this.handleDiceRolledEvent.bind(this)
     };
     
+    // Initialize pendingRequirements to store conditional requirements
+    this.pendingRequirements = {};
+    
     // Register event listeners with GameStateManager
     this.registerEventListeners();
     
@@ -65,6 +68,9 @@ class DiceManager {
     // Process W card discard/replacement requirements
     this.processWCardRequirements(outcomes);
     
+    // Process any conditional card requirements
+    this.processConditionalCardRequirements(result, currentPlayer);
+    
     // Dispatch diceRolled event with complete information instead of updating state directly
     window.GameStateManager.dispatchEvent('diceRolled', {
       result: result,
@@ -81,6 +87,59 @@ class DiceManager {
     this.updateGameBoardState(result, outcomes, currentPlayer, currentPosition);
   }
   
+  // Process conditional card requirements after dice roll
+  processConditionalCardRequirements = (result, currentPlayer) => {
+    if (!currentPlayer) return;
+    
+    // Get the current space
+    const currentSpaceId = currentPlayer.position;
+    if (!currentSpaceId) return;
+    
+    // Skip if gameBoard or state is not initialized
+    if (!this.gameBoard || !this.gameBoard.state) {
+      console.log('DiceManager: gameBoard or state not initialized in processConditionalCardRequirements');
+      return;
+    }
+    
+    // Ensure conditionalCardRequirements is initialized
+    if (!this.gameBoard.state.conditionalCardRequirements) {
+      console.log('DiceManager: initializing conditionalCardRequirements');
+      this.gameBoard.setState({ conditionalCardRequirements: {} });
+      return;
+    }
+    
+    // Check if we have conditional requirements for this space
+    const requirements = this.gameBoard.state.conditionalCardRequirements[currentSpaceId];
+    if (!requirements) return;
+    
+    console.log(`DiceManager: Checking dice roll ${result} against requirements:`, requirements);
+    
+    // Create a copy of requirements to update
+    const updatedRequirements = {...requirements};
+    
+    // Check if the dice roll matches the required value
+    if (result === requirements.requiredRoll) {
+      console.log(`DiceManager: Dice roll ${result} matches required roll ${requirements.requiredRoll}`);
+      
+      // Mark the requirement as satisfied and add a success message
+      updatedRequirements.satisfied = true;
+      updatedRequirements.message = requirements.successMessage;
+      
+    } else {
+      console.log(`DiceManager: Dice roll ${result} does not match required roll ${requirements.requiredRoll}`);
+      
+      // Mark the requirement as not satisfied and add a failure message
+      updatedRequirements.satisfied = false;
+      updatedRequirements.message = `You rolled a ${result}. ${requirements.failureMessage}`;
+    }
+    
+    // Update the state with the processed requirements
+    const allRequirements = {...this.gameBoard.state.conditionalCardRequirements};
+    allRequirements[currentSpaceId] = updatedRequirements;
+    
+    this.gameBoard.setState({ conditionalCardRequirements: allRequirements });
+  }
+  
   // Process W card requirements from dice outcomes
   processWCardRequirements(outcomes) {
     console.log('DiceManager: Processing W card requirements');
@@ -91,7 +150,7 @@ class DiceManager {
       console.log(`DiceManager: Dice outcome requires discarding ${discardCount} W cards`);
       
       // Trigger W card discard dialog if the CardDisplay component is available
-      if (this.gameBoard.cardDisplayRef.current) {
+      if (this.gameBoard.cardDisplayRef && this.gameBoard.cardDisplayRef.current) {
         this.gameBoard.cardDisplayRef.current.setRequiredWDiscards(discardCount);
       }
     }
@@ -99,13 +158,13 @@ class DiceManager {
     // Check for "W Cards: Remove X" format
     if (outcomes && outcomes["W Cards"] && outcomes["W Cards"].includes("Remove")) {
       // Extract the number from "Remove X" format
-      const matches = outcomes["W Cards"].match(/Remove\\s+(\\d+)/i);
+      const matches = outcomes["W Cards"].match(/Remove\s+(\d+)/i);
       if (matches && matches[1]) {
         const discardCount = parseInt(matches[1], 10);
         console.log(`DiceManager: Dice outcome requires removing ${discardCount} W cards`);
         
         // Trigger W card discard dialog
-        if (this.gameBoard.cardDisplayRef.current) {
+        if (this.gameBoard.cardDisplayRef && this.gameBoard.cardDisplayRef.current) {
           this.gameBoard.cardDisplayRef.current.setRequiredWDiscards(discardCount);
         }
       }
@@ -114,13 +173,13 @@ class DiceManager {
     // Check for "W Cards: Replace X" format
     if (outcomes && outcomes["W Cards"] && outcomes["W Cards"].includes("Replace")) {
       // Extract the number from "Replace X" format
-      const matches = outcomes["W Cards"].match(/Replace\\s+(\\d+)/i);
+      const matches = outcomes["W Cards"].match(/Replace\s+(\d+)/i);
       if (matches && matches[1]) {
         const replaceCount = parseInt(matches[1], 10);
         console.log(`DiceManager: Dice outcome requires replacing ${replaceCount} W cards`);
         
         // Trigger W card replacement dialog
-        if (this.gameBoard.cardDisplayRef.current && this.gameBoard.cardDisplayRef.current.setRequiredWReplacements) {
+        if (this.gameBoard.cardDisplayRef && this.gameBoard.cardDisplayRef.current && this.gameBoard.cardDisplayRef.current.setRequiredWReplacements) {
           this.gameBoard.cardDisplayRef.current.setRequiredWReplacements(replaceCount);
         }
       }
@@ -157,6 +216,12 @@ class DiceManager {
   // Temporary method for backward compatibility until all components use events
   updateGameBoardState(result, outcomes, currentPlayer, currentPosition) {
     console.log('DiceManager: Updating GameBoard state for backward compatibility');
+    
+    // Skip if gameBoard is not initialized
+    if (!this.gameBoard || !this.gameBoard.state) {
+      console.log('DiceManager: gameBoard or state not initialized in updateGameBoardState');
+      return;
+    }
     
     // Update the diceOutcomes and lastDiceRoll state for SpaceInfo component
     this.gameBoard.setState({
@@ -214,6 +279,12 @@ class DiceManager {
       player: currentPlayer
     });
     
+    // Skip if gameBoard is not initialized
+    if (!this.gameBoard || !this.gameBoard.state) {
+      console.log('DiceManager: gameBoard or state not initialized in handleDiceRollMoveSelect');
+      return;
+    }
+    
     // Temporary compatibility: Update GameBoard state until all components are refactored
     this.gameBoard.setState({
       selectedSpace: currentPosition, // Keep showing current player's space info
@@ -225,28 +296,202 @@ class DiceManager {
     console.log('DiceManager: Dice roll move selected:', space.id, '- Will be executed on End Turn');
   }
   
-  // Check if the current space requires a dice roll
+  // Check if the current space requires a dice roll - fully data-driven implementation
   hasDiceRollSpace = () => {
-    // Use GameStateManager to get current player
+    // Get current player
     const currentPlayer = window.GameStateManager.getCurrentPlayer();
-    if (!currentPlayer) return false;
+    if (!currentPlayer) {
+      console.log('DiceManager: No current player found');
+      return false;
+    }
+    
+    // Skip if gameBoard or state is not initialized
+    if (!this.gameBoard || !this.gameBoard.state) {
+      console.log('DiceManager: gameBoard or state not initialized in hasDiceRollSpace');
+      return false;
+    }
     
     // If we've already rolled dice this turn, we don't need to roll again
-    if (this.gameBoard.state.hasRolledDice) return false;
+    if (this.gameBoard.state.hasRolledDice) {
+      console.log('DiceManager: Dice already rolled this turn');
+      return false;
+    }
     
-    // Check if the current space has a dice roll in the CSV data
+    // Get the current space
     const currentSpaceId = currentPlayer.position;
     const currentSpace = window.GameStateManager.findSpaceById(currentSpaceId);
-    if (!currentSpace) return false;
+    if (!currentSpace) {
+      console.log('DiceManager: No current space found');
+      return false;
+    }
     
-    // Use the same logic as in the BoardDisplay component
-    return this.gameBoard.state.diceRollData.some(data => data['Space Name'] === currentSpace.name);
+    // Determine the visit type for this space
+    const visitType = this.gameBoard.spaceSelectionManager?.isVisitingFirstTime() ? 'First' : 'Subsequent';
+    console.log(`DiceManager: Checking if space ${currentSpace.name} needs dice roll. Visit type: ${visitType}`);
+    
+    // Initialize variables to track decision and reason
+    let needsDiceRoll = false;
+    let reason = '';
+    
+    // Method 1: Check if there are dice roll entries in DiceRoll Info.csv
+    if (this.gameBoard.state.diceRollData) {
+      const hasDiceRollInData = this.gameBoard.state.diceRollData.some(data => 
+        data['Space Name'] === currentSpace.name && 
+        data['Visit Type'] === visitType
+      );
+      
+      if (hasDiceRollInData) {
+        needsDiceRoll = true;
+        reason = `Found dice roll data for space ${currentSpace.name} and visit type ${visitType} in DiceRoll Info.csv`;
+        console.log(`DiceManager: ${reason}`);
+      }
+    }
+    
+    // Method 2: Check if any card columns contain conditional text "if you roll"
+    if (!needsDiceRoll) {
+      const cardTypes = ['W card', 'B card', 'I card', 'L card', 'E Card'];
+      for (const cardType of cardTypes) {
+        const cardText = currentSpace[cardType];
+        if (cardText && typeof cardText === 'string' && cardText.includes('if you roll')) {
+          needsDiceRoll = true;
+          reason = `Found conditional dice roll requirement in ${cardType}: "${cardText}" from Spaces.csv`;
+          console.log(`DiceManager: ${reason}`);
+          
+          // Store the conditional requirement for later validation
+          this.saveConditionalRequirement(currentSpace, cardType, cardText);
+          
+          break; // Found one condition, no need to check others
+        }
+      }
+    }
+    
+    // Log the final decision
+    if (!needsDiceRoll) {
+      console.log(`DiceManager: No dice roll required for space ${currentSpace.name} based on CSV data`);
+    } else {
+      console.log(`DiceManager: Dice roll required for space ${currentSpace.name}. Reason: ${reason}`);
+    }
+    
+    return needsDiceRoll;
+  }
+  
+  // Save conditional requirement from card text with improved logging
+  saveConditionalRequirement(space, cardType, cardText) {
+    // Log start of processing
+    console.log(`DiceManager: Processing conditional requirement from ${cardType}: "${cardText}"`);
+    
+    // Skip if gameBoard or state is not initialized
+    if (!this.gameBoard || !this.gameBoard.state) {
+      console.log('DiceManager: gameBoard or state not initialized in saveConditionalRequirement');
+      return;
+    }
+    
+    // Ensure conditionalCardRequirements is initialized
+    if (!this.gameBoard.state.conditionalCardRequirements) {
+      console.log('DiceManager: initializing conditionalCardRequirements on first use');
+      this.initializeConditionalRequirements();
+      return;
+    }
+    
+    // Extract the required roll value from the text
+    const conditionalRollPattern = /if\s+you\s+roll\s+(?:a|an)?\s*(\d+)/i;
+    const match = cardText.match(conditionalRollPattern);
+    
+    if (match && match[1]) {
+      const requiredRoll = parseInt(match[1], 10);
+      console.log(`DiceManager: Extracted required roll value: ${requiredRoll}`);
+      
+      // Extract the card action (e.g., "Draw 1")
+      const actionPattern = /(Draw|Remove|Replace)\s+(\d+)/i;
+      const actionMatch = cardText.match(actionPattern);
+      
+      let action = 'Draw';
+      let count = 1;
+      
+      if (actionMatch && actionMatch.length >= 3) {
+        action = actionMatch[1];
+        count = parseInt(actionMatch[2], 10);
+        console.log(`DiceManager: Extracted action: ${action} ${count}`);
+      } else {
+        console.log(`DiceManager: Using default action: ${action} ${count}`);
+      }
+      
+      // Format the card type for display
+      let displayCardType = cardType;
+      if (cardType.includes(' ')) {
+        displayCardType = cardType.split(' ')[0]; // Get just the letter part
+      }
+      
+      // Store the requirement details with message templates
+      const requirements = {
+        cardType: displayCardType.charAt(0), // Convert to single letter format (W, B, I, L, E)
+        requiredRoll: requiredRoll,
+        action: action,
+        count: count,
+        originalText: cardText,
+        satisfied: false,
+        // Add message templates for user feedback
+        successMessage: `You rolled a ${requiredRoll}! You can ${action.toLowerCase()} ${count} ${displayCardType} card(s).`,
+        failureMessage: `You need to roll a ${requiredRoll} to ${action.toLowerCase()} ${count} ${displayCardType} card(s).`
+      };
+      
+      console.log(`DiceManager: Saved conditional requirement: ${JSON.stringify(requirements)}`);
+      
+      // Update directly in the pending requirements object to avoid setState loops
+      this.pendingRequirements = this.pendingRequirements || {};
+      this.pendingRequirements[space.id] = requirements;
+      
+      // Schedule a state update outside the current call stack
+      setTimeout(() => {
+        this.applyPendingRequirements();
+      }, 0);
+    } else {
+      console.log(`DiceManager: Unable to extract required roll from text: "${cardText}"`);
+    }
+  }
+  
+  // Initialize conditionalCardRequirements state
+  initializeConditionalRequirements() {
+    if (this.gameBoard && this.gameBoard.state && !this.gameBoard.state.conditionalCardRequirements) {
+      console.log('DiceManager: Creating initial conditionalCardRequirements state');
+      this.gameBoard.setState({ conditionalCardRequirements: {} });
+    }
+  }
+  
+  // Apply any pending requirements updates in a single operation
+  applyPendingRequirements() {
+    // Skip if no pending requirements
+    if (!this.pendingRequirements || Object.keys(this.pendingRequirements).length === 0) {
+      return;
+    }
+    
+    // Skip if gameBoard or state is not initialized
+    if (!this.gameBoard || !this.gameBoard.state || !this.gameBoard.state.conditionalCardRequirements) {
+      console.log('DiceManager: gameBoard or conditionalCardRequirements not ready for updates');
+      return;
+    }
+    
+    console.log('DiceManager: Applying pending requirements updates');
+    
+    // Create updated requirements object
+    const updatedRequirements = {...this.gameBoard.state.conditionalCardRequirements};
+    
+    // Merge in pending requirements
+    Object.keys(this.pendingRequirements).forEach(spaceId => {
+      updatedRequirements[spaceId] = this.pendingRequirements[spaceId];
+    });
+    
+    // Update state once
+    this.gameBoard.setState({ conditionalCardRequirements: updatedRequirements });
+    
+    // Clear pending updates
+    this.pendingRequirements = {};
   }
   
   // Handle roll dice button click
   handleRollDiceClick = () => {
     // Use SpaceSelectionManager to get selected space
-    const selectedSpace = this.gameBoard.spaceSelectionManager.getSelectedSpace();
+    const selectedSpace = this.gameBoard.spaceSelectionManager?.getSelectedSpace();
     let spaceName;
     let visitType;
     let spaceId;
@@ -254,7 +499,7 @@ class DiceManager {
     if (selectedSpace && selectedSpace.name) {
       // If a space is selected, use it
       spaceName = selectedSpace.name;
-      visitType = selectedSpace.visitType || (this.gameBoard.spaceSelectionManager.isVisitingFirstTime() ? 'first' : 'subsequent');
+      visitType = selectedSpace.visitType || (this.gameBoard.spaceSelectionManager?.isVisitingFirstTime() ? 'first' : 'subsequent');
       spaceId = selectedSpace.id;
     } else {
       // If no space is selected, use the current player's position
@@ -266,6 +511,17 @@ class DiceManager {
           spaceName = currentSpace.name;
           visitType = currentSpace.visitType || 'first';
           console.log('DiceManager: Using current player position for dice roll:', spaceName, 'Visit type:', visitType);
+          
+          // Check and store conditional card requirements if present
+          const cardTypes = ['W card', 'B card', 'I card', 'L card', 'E Card'];
+          for (const cardType of cardTypes) {
+            const cardText = currentSpace[cardType];
+            if (cardText && typeof cardText === 'string' && cardText.includes('if you roll')) {
+              console.log(`DiceManager: Found conditional dice roll requirement in ${cardType}: ${cardText}`);
+              // Use the new method that doesn't cause infinite loops
+              this.saveConditionalRequirement(currentSpace, cardType, cardText);
+            }
+          }
         } else {
           // Fallback only if we can't find the current space
           spaceName = "ARCH-INITIATION";
@@ -300,6 +556,12 @@ class DiceManager {
       spaceId: spaceId
     });
     
+    // Skip if gameBoard is not initialized
+    if (!this.gameBoard || !this.gameBoard.state) {
+      console.log('DiceManager: gameBoard or state not initialized in handleRollDiceClick');
+      return;
+    }
+    
     // Temporary compatibility: Update GameBoard state until all components are refactored
     this.gameBoard.setState({
       showDiceRoll: true,
@@ -307,7 +569,7 @@ class DiceManager {
       diceRollVisitType: visitType
     }, () => {
       // After setState completes, use the ref to call rollDice on the DiceRoll component
-      if (this.gameBoard.diceRollRef.current) {
+      if (this.gameBoard.diceRollRef && this.gameBoard.diceRollRef.current) {
         console.log('DiceManager: Automatically rolling dice after showing component');
         // Add a small delay to ensure the component is fully rendered
         setTimeout(() => {
@@ -323,49 +585,69 @@ class DiceManager {
   handlePlayerMovedEvent(event) {
     console.log('DiceManager: Player moved event received', event.data);
     
-    // Reset dice roll state when player moves
-    if (this.gameBoard) {
-      this.gameBoard.setState({
-        hasRolledDice: false,
-        diceOutcomes: null,
-        lastDiceRoll: null,
-        showDiceRoll: false
-      });
+    // Skip if gameBoard is not initialized
+    if (!this.gameBoard || !this.gameBoard.state) {
+      console.log('DiceManager: gameBoard or state not initialized in handlePlayerMovedEvent');
+      return;
     }
+    
+    // Reset dice roll state when player moves
+    this.gameBoard.setState({
+      hasRolledDice: false,
+      diceOutcomes: null,
+      lastDiceRoll: null,
+      showDiceRoll: false,
+      // Reset conditional card requirements when moving to a new space
+      conditionalCardRequirements: {}
+    });
   }
   
   // Event handler for turnChanged event
   handleTurnChangedEvent(event) {
     console.log('DiceManager: Turn changed event received', event.data);
     
-    // Reset dice state for new player's turn
-    if (this.gameBoard) {
-      this.gameBoard.setState({
-        hasRolledDice: false,
-        diceOutcomes: null,
-        lastDiceRoll: null,
-        showDiceRoll: false
-      });
+    // Skip if gameBoard is not initialized
+    if (!this.gameBoard || !this.gameBoard.state) {
+      console.log('DiceManager: gameBoard or state not initialized in handleTurnChangedEvent');
+      return;
     }
+    
+    // Reset dice state for new player's turn
+    this.gameBoard.setState({
+      hasRolledDice: false,
+      diceOutcomes: null,
+      lastDiceRoll: null,
+      showDiceRoll: false,
+      // Reset conditional card requirements for new turn
+      conditionalCardRequirements: {}
+    });
   }
   
   // Event handler for gameStateChanged event
   handleGameStateChangedEvent(event) {
     console.log('DiceManager: Game state changed event received', event.data);
     
+    // Initialize conditionalCardRequirements if needed
+    this.initializeConditionalRequirements();
+    
+    // Skip if gameBoard is not initialized
+    if (!this.gameBoard || !this.gameBoard.state) {
+      console.log('DiceManager: gameBoard or state not initialized in handleGameStateChangedEvent');
+      return;
+    }
+    
     // Only process relevant change types
     if (event.data && event.data.changeType) {
       switch (event.data.changeType) {
         case 'newGame':
           // Reset dice state for new game
-          if (this.gameBoard) {
-            this.gameBoard.setState({
-              hasRolledDice: false,
-              diceOutcomes: null,
-              lastDiceRoll: null,
-              showDiceRoll: false
-            });
-          }
+          this.gameBoard.setState({
+            hasRolledDice: false,
+            diceOutcomes: null,
+            lastDiceRoll: null,
+            showDiceRoll: false,
+            conditionalCardRequirements: {}
+          });
           break;
           
         // Add other change types as needed
@@ -383,8 +665,14 @@ class DiceManager {
       return;
     }
     
+    // Skip if gameBoard is not initialized
+    if (!this.gameBoard || !this.gameBoard.state) {
+      console.log('DiceManager: gameBoard or state not initialized in handleDiceRolledEvent');
+      return;
+    }
+    
     // Update GameBoard state based on the event
-    if (this.gameBoard && event.data) {
+    if (event.data) {
       const { result, outcomes, currentPosition } = event.data;
       
       // Temporary compatibility: Update GameBoard state until all components are refactored

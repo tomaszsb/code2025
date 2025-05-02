@@ -1,8 +1,5 @@
 // MoveLogicManager.js - Main manager class for game move operations
-console.log('MoveLogicManager.js file is being processed');
-
-import { MoveLogicUIUpdates } from './MoveLogicUIUpdates.js';
-import { MoveLogicBackwardCompatibility } from './MoveLogicBackwardCompatibility.js';
+console.log('MoveLogicManager.js file is beginning to be used');
 
 /**
  * MoveLogicManager - Manager class for game move operations
@@ -17,12 +14,18 @@ import { MoveLogicBackwardCompatibility } from './MoveLogicBackwardCompatibility
  * - Provides consistent space navigation for game flow
  * - Follows the manager pattern with proper initialization and cleanup
  */
-class MoveLogicManager extends MoveLogicUIUpdates {
-  /**
-   * Initialize the Move Logic Manager
-   */
-  constructor() {
-    super();
+(function() {
+  // Make sure MoveLogicUIUpdates is loaded
+  if (!window.MoveLogicUIUpdates) {
+    console.error('MoveLogicManager: MoveLogicUIUpdates not found. Make sure to include MoveLogicUIUpdates.js first.');
+    return;
+  }
+  
+  // Define the MoveLogicManager class
+  function MoveLogicManager() {
+    // Call the parent constructor
+    window.MoveLogicUIUpdates.call(this);
+    
     console.log('MoveLogicManager: Constructor initialized');
     
     // State tracking
@@ -63,10 +66,14 @@ class MoveLogicManager extends MoveLogicUIUpdates {
     }, 500); // Short delay to ensure React has initialized properly
   }
   
+  // Inherit from MoveLogicUIUpdates
+  MoveLogicManager.prototype = Object.create(window.MoveLogicUIUpdates.prototype);
+  MoveLogicManager.prototype.constructor = MoveLogicManager;
+  
   /**
    * Register event listeners with GameStateManager
    */
-  registerEventListeners() {
+  MoveLogicManager.prototype.registerEventListeners = function() {
     console.log('MoveLogicManager: Registering event listeners');
     
     if (!window.GameStateManager) {
@@ -81,13 +88,13 @@ class MoveLogicManager extends MoveLogicUIUpdates {
     window.GameStateManager.addEventListener('diceRolled', this.eventHandlers.diceRolled);
     
     console.log('MoveLogicManager: Event listeners registered successfully');
-  }
+  };
   
   /**
    * Handle gameStateChanged events from GameStateManager
    * @param {Object} event - The gameStateChanged event object
    */
-  handleGameStateChangedEvent(event) {
+  MoveLogicManager.prototype.handleGameStateChangedEvent = function(event) {
     console.log('MoveLogicManager: Handling gameStateChanged event');
     
     if (!event || !event.data) {
@@ -119,13 +126,13 @@ class MoveLogicManager extends MoveLogicUIUpdates {
         event.data.changeType === 'spaceSelectionChanged') {
       this.updateSelectedMoveStyling();
     }
-  }
+  };
   
   /**
    * Handle turnChanged events from GameStateManager
    * @param {Object} event - The turnChanged event object
    */
-  handleTurnChangedEvent(event) {
+  MoveLogicManager.prototype.handleTurnChangedEvent = function(event) {
     console.log('MoveLogicManager: Handling turnChanged event');
     
     // We may need to update available moves when turn changes
@@ -137,13 +144,13 @@ class MoveLogicManager extends MoveLogicUIUpdates {
       // Update the current player token display to show "YOUR TURN"
       this.updateCurrentPlayerTokenDisplay(currentPlayer);
     }
-  }
+  };
   
   /**
    * Handle spaceChanged events from GameStateManager
    * @param {Object} event - The spaceChanged event object
    */
-  handleSpaceChangedEvent(event) {
+  MoveLogicManager.prototype.handleSpaceChangedEvent = function(event) {
     console.log('MoveLogicManager: Handling spaceChanged event');
     
     // Space has changed, we need to update available moves
@@ -167,13 +174,13 @@ class MoveLogicManager extends MoveLogicUIUpdates {
         this.updateSelectedMoveStyling();
       }
     }
-  }
+  };
   
   /**
    * Handle diceRolled events from GameStateManager
    * @param {Object} event - The diceRolled event object
    */
-  handleDiceRolledEvent(event) {
+  MoveLogicManager.prototype.handleDiceRolledEvent = function(event) {
     console.log('MoveLogicManager: Handling diceRolled event');
     
     if (!event || !event.data) {
@@ -186,13 +193,13 @@ class MoveLogicManager extends MoveLogicUIUpdates {
       // Clear cached moves to force recalculation with dice roll result
       this.clearCachedMovesForPlayer(currentPlayer.id);
     }
-  }
+  };
   
   /**
    * Clear cached moves for a specific player
    * @param {string} playerId - The player ID
    */
-  clearCachedMovesForPlayer(playerId) {
+  MoveLogicManager.prototype.clearCachedMovesForPlayer = function(playerId) {
     if (!playerId) return;
     
     // Use player position as part of the cache key
@@ -204,25 +211,25 @@ class MoveLogicManager extends MoveLogicUIUpdates {
         console.log(`MoveLogicManager: Cleared move cache for player ${playerId} at position ${player.position}`);
       }
     }
-  }
+  };
 
   /**
    * Get player by ID - Helper method
    * @param {string} playerId - The player ID to find
    * @returns {Object|null} The player object or null if not found
    */
-  getPlayerById(playerId) {
+  MoveLogicManager.prototype.getPlayerById = function(playerId) {
     if (!window.GameStateManager || !window.GameStateManager.players) {
       return null;
     }
     
     return window.GameStateManager.players.find(p => p.id === playerId);
-  }
+  };
   
   /**
    * Clean up resources when the manager is no longer needed
    */
-  cleanup() {
+  MoveLogicManager.prototype.cleanup = function() {
     console.log('MoveLogicManager: Cleaning up resources');
     
     // Remove all event listeners
@@ -237,7 +244,10 @@ class MoveLogicManager extends MoveLogicUIUpdates {
     this.moveCache.clear();
     
     console.log('MoveLogicManager: Cleanup completed');
-  }
-}
+  };
+  
+  // Expose the class to the global scope
+  window.MoveLogicManager = MoveLogicManager;
+})();
 
-export { MoveLogicManager };
+console.log('MoveLogicManager.js code execution finished');

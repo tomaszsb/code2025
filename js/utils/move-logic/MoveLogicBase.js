@@ -9,8 +9,9 @@ console.log('MoveLogicBase.js file is beginning to be used');
  * - Handling space-dependent moves
  * - Processing special patterns in spaces
  */
-class MoveLogicBase {
-  constructor() {
+(function() {
+  // Define the MoveLogicBase class
+  function MoveLogicBase() {
     console.log('MoveLogicBase: Constructor initialized');
     
     // Configuration for move logic
@@ -29,7 +30,7 @@ class MoveLogicBase {
    * @param {Object} player - The player to get moves for
    * @returns {Array|Object} - Array of available moves or object with dice roll requirement
    */
-  getAvailableMoves(gameState, player) {
+  MoveLogicBase.prototype.getAvailableMoves = function(gameState, player) {
     // Get the player's current space
     const currentSpace = gameState.spaces.find(s => s.id === player.position);
     if (!currentSpace) return [];
@@ -67,17 +68,17 @@ class MoveLogicBase {
     // Standard case - array of available moves
     console.log('MoveLogicBase: Space-dependent moves count:', result.length);
     return result;
-  }
+  };
   
   /**
    * Check if a space has special case logic
    * @param {string} spaceName - The name of the space to check
    * @returns {boolean} - True if space has special case logic
    */
-  hasSpecialCaseLogic(spaceName) {
+  MoveLogicBase.prototype.hasSpecialCaseLogic = function(spaceName) {
     const specialCaseSpaces = ['ARCH-INITIATION', 'PM-DECISION-CHECK', 'REG-FDNY-FEE-REVIEW'];
     return specialCaseSpaces.includes(spaceName);
-  }
+  };
   
   /**
    * Handle special case spaces with custom logic
@@ -86,13 +87,13 @@ class MoveLogicBase {
    * @param {Object} currentSpace - The current space of the player
    * @returns {Array} - Array of available moves
    */
-  handleSpecialCaseSpace(gameState, player, currentSpace) {
+  MoveLogicBase.prototype.handleSpecialCaseSpace = function(gameState, player, currentSpace) {
     // This is just a dispatcher to the appropriate special case handler
     // The actual implementations are in MoveLogicSpecialCases.js
     // This method will be overridden by the special cases module
     console.log('MoveLogicBase: Default special case handler');
     return [];
-  }
+  };
   
   /**
    * Get moves based on space data and visit type
@@ -101,7 +102,7 @@ class MoveLogicBase {
    * @param {Object} currentSpace - The current space of the player
    * @returns {Array|Object} - Array of available moves or object with dice roll requirement
    */
-  getSpaceDependentMoves(gameState, player, currentSpace) {
+  MoveLogicBase.prototype.getSpaceDependentMoves = function(gameState, player, currentSpace) {
     // Get visit type for the current space
     const hasVisited = gameState.hasPlayerVisitedSpace(player, currentSpace.name);
     const visitType = hasVisited ? 'subsequent' : 'first';
@@ -201,7 +202,7 @@ class MoveLogicBase {
     }
     
     return availableMoves;
-  }
+  };
   
   /**
    * Handle standard card effects for any space based on space properties and dice roll
@@ -211,8 +212,11 @@ class MoveLogicBase {
    * @param {Object} diceRoll - The current dice roll result (optional)
    * @returns {boolean} - True if effects were applied
    */
-  handleSpaceCardEffects(gameState, player, space, diceRoll = null) {
+  MoveLogicBase.prototype.handleSpaceCardEffects = function(gameState, player, space, diceRoll) {
     console.log('MoveLogicBase: Handling standard card effects for space:', space.name);
+    
+    // Default diceRoll to null if not provided
+    diceRoll = diceRoll || null;
     
     // Track if any effects were applied
     let effectsApplied = false;
@@ -518,9 +522,10 @@ class MoveLogicBase {
     }
     
     return effectsApplied;
-  }
-}
-
-export { MoveLogicBase };
+  };
+  
+  // Expose the class to the global scope
+  window.MoveLogicBase = MoveLogicBase;
+})();
 
 console.log('MoveLogicBase.js code execution finished');

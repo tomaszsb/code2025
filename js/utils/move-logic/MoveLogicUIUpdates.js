@@ -1,7 +1,5 @@
 // MoveLogicUIUpdates.js - DOM/UI update methods for move logic
-console.log('MoveLogicUIUpdates.js file is being processed');
-
-import { MoveLogicSpecialCases } from './MoveLogicSpecialCases.js';
+console.log('MoveLogicUIUpdates.js file is beginning to be used');
 
 /**
  * MoveLogicUIUpdates - UI helper methods for move logic
@@ -9,9 +7,18 @@ import { MoveLogicSpecialCases } from './MoveLogicSpecialCases.js';
  * This module extends MoveLogicSpecialCases to add UI update methods
  * for visualizing move-related changes to the DOM.
  */
-class MoveLogicUIUpdates extends MoveLogicSpecialCases {
-  constructor() {
-    super();
+(function() {
+  // Make sure MoveLogicSpecialCases is loaded
+  if (!window.MoveLogicSpecialCases) {
+    console.error('MoveLogicUIUpdates: MoveLogicSpecialCases not found. Make sure to include MoveLogicSpecialCases.js first.');
+    return;
+  }
+  
+  // Define the MoveLogicUIUpdates class
+  function MoveLogicUIUpdates() {
+    // Call the parent constructor
+    window.MoveLogicSpecialCases.call(this);
+    
     console.log('MoveLogicUIUpdates: Constructor initialized');
     
     // Initialize CSS for visual feedback if needed
@@ -20,10 +27,14 @@ class MoveLogicUIUpdates extends MoveLogicSpecialCases {
     console.log('MoveLogicUIUpdates: Initialized successfully');
   }
   
+  // Inherit from MoveLogicSpecialCases
+  MoveLogicUIUpdates.prototype = Object.create(window.MoveLogicSpecialCases.prototype);
+  MoveLogicUIUpdates.prototype.constructor = MoveLogicUIUpdates;
+  
   /**
    * Initialize CSS styles for visual feedback
    */
-  initializeStyles() {
+  MoveLogicUIUpdates.prototype.initializeStyles = function() {
     const style = document.createElement('style');
     style.textContent = `
       .visit-type-updated {
@@ -68,13 +79,13 @@ class MoveLogicUIUpdates extends MoveLogicSpecialCases {
     `;
     document.head.appendChild(style);
     console.log('MoveLogicUIUpdates: Added CSS styles to document');
-  }
+  };
   
   /**
    * Update the current player token to show "YOUR TURN" indicator
    * @param {Object} currentPlayer - The current player object
    */
-  updateCurrentPlayerTokenDisplay(currentPlayer) {
+  MoveLogicUIUpdates.prototype.updateCurrentPlayerTokenDisplay = function(currentPlayer) {
     console.log('MoveLogicUIUpdates: Updating current player token display');
     
     // Use a longer timeout to ensure React has fully rendered the DOM
@@ -117,7 +128,7 @@ class MoveLogicUIUpdates extends MoveLogicSpecialCases {
         console.error('MoveLogicUIUpdates: Error updating player token display', error);
       }
     }, 300); // Longer delay to ensure DOM is fully rendered
-  }
+  };
   
   /**
    * Update space visit display in the DOM
@@ -125,7 +136,7 @@ class MoveLogicUIUpdates extends MoveLogicSpecialCases {
    * @param {string} spaceName - The name of the space to update
    * @param {string} visitType - The visit type ('first' or 'subsequent')
    */
-  updateSpaceVisitDisplay(spaceName, visitType) {
+  MoveLogicUIUpdates.prototype.updateSpaceVisitDisplay = function(spaceName, visitType) {
     console.log(`MoveLogicUIUpdates: Updating space visit display for ${spaceName} to ${visitType}`);
     
     // Wait for DOM to be ready with a longer delay to ensure React has rendered
@@ -165,12 +176,12 @@ class MoveLogicUIUpdates extends MoveLogicSpecialCases {
         console.error('MoveLogicUIUpdates: Error updating space visit display', error);
       }
     }, 200); // Longer delay to ensure DOM is fully updated
-  }
+  };
   
   /**
    * Update the selected move styling to ensure dark black border is visible
    */
-  updateSelectedMoveStyling() {
+  MoveLogicUIUpdates.prototype.updateSelectedMoveStyling = function() {
     setTimeout(() => {
       try {
         // Find all selected move elements
@@ -199,7 +210,10 @@ class MoveLogicUIUpdates extends MoveLogicSpecialCases {
         console.error('MoveLogicUIUpdates: Error updating selected move styling', error);
       }
     }, 200); // Short delay to ensure DOM is updated
-  }
-}
+  };
+  
+  // Expose the class to the global scope
+  window.MoveLogicUIUpdates = MoveLogicUIUpdates;
+})();
 
-export { MoveLogicUIUpdates };
+console.log('MoveLogicUIUpdates.js code execution finished');

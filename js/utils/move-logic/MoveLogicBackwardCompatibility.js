@@ -1,7 +1,5 @@
 // MoveLogicBackwardCompatibility.js - Compatibility layer for old code
-console.log('MoveLogicBackwardCompatibility.js file is being processed');
-
-import { MoveLogicManager } from './MoveLogicManager.js';
+console.log('MoveLogicBackwardCompatibility.js file is beginning to be used');
 
 /**
  * MoveLogicBackwardCompatibility - Backward compatibility layer for legacy code
@@ -9,12 +7,9 @@ import { MoveLogicManager } from './MoveLogicManager.js';
  * This module maintains the window.MoveLogic global object that was used in legacy code
  * and forwards the calls to the new MoveLogicManager implementation.
  */
-class MoveLogicBackwardCompatibility {
-  /**
-   * Create a backward compatibility layer
-   * @param {MoveLogicManager} manager - The MoveLogicManager instance
-   */
-  constructor(manager) {
+(function() {
+  // Define the MoveLogicBackwardCompatibility class
+  function MoveLogicBackwardCompatibility(manager) {
     console.log('MoveLogicBackwardCompatibility: Initializing compatibility layer');
     this.manager = manager;
     
@@ -35,11 +30,14 @@ class MoveLogicBackwardCompatibility {
       handleFdnyFeeReview: (gameState, player, currentSpace) => 
         this.manager.handleFdnyFeeReview(gameState, player, currentSpace),
       getMoveDetails: (space) => 
-        this.manager.getMoveDetails(space)
+        this.manager.getMoveDetails ? this.manager.getMoveDetails(space) : null
     };
     
     console.log('MoveLogicBackwardCompatibility: Compatibility layer initialized');
   }
-}
+  
+  // Expose the class to the global scope
+  window.MoveLogicBackwardCompatibility = MoveLogicBackwardCompatibility;
+})();
 
-export { MoveLogicBackwardCompatibility };
+console.log('MoveLogicBackwardCompatibility.js code execution finished');

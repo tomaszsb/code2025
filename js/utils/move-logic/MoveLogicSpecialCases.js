@@ -1,17 +1,24 @@
 // MoveLogicSpecialCases.js - Special case handlers for specific spaces
 console.log('MoveLogicSpecialCases.js file is beginning to be used');
 
-import { MoveLogicBase } from './MoveLogicBase.js';
-
 /**
  * MoveLogicSpecialCases - Handlers for spaces with special logic
  * 
  * This module extends MoveLogicBase to add special case handlers for 
  * specific spaces that have unique movement rules.
  */
-class MoveLogicSpecialCases extends MoveLogicBase {
-  constructor() {
-    super();
+(function() {
+  // Make sure MoveLogicBase is loaded
+  if (!window.MoveLogicBase) {
+    console.error('MoveLogicSpecialCases: MoveLogicBase not found. Make sure to include MoveLogicBase.js first.');
+    return;
+  }
+  
+  // Define the MoveLogicSpecialCases class
+  function MoveLogicSpecialCases() {
+    // Call the parent constructor
+    window.MoveLogicBase.call(this);
+    
     console.log('MoveLogicSpecialCases: Constructor initialized');
     
     // Special case spaces that require custom logic
@@ -29,14 +36,18 @@ class MoveLogicSpecialCases extends MoveLogicBase {
     console.log('MoveLogicSpecialCases: Initialized successfully');
   }
   
+  // Inherit from MoveLogicBase
+  MoveLogicSpecialCases.prototype = Object.create(window.MoveLogicBase.prototype);
+  MoveLogicSpecialCases.prototype.constructor = MoveLogicSpecialCases;
+  
   /**
    * Override hasSpecialCaseLogic to use our class property
    * @param {string} spaceName - The name of the space to check
    * @returns {boolean} - True if space has special case logic
    */
-  hasSpecialCaseLogic(spaceName) {
+  MoveLogicSpecialCases.prototype.hasSpecialCaseLogic = function(spaceName) {
     return this.specialCaseSpaces.includes(spaceName);
-  }
+  };
   
   /**
    * Override handleSpecialCaseSpace to dispatch to the appropriate handler
@@ -45,7 +56,7 @@ class MoveLogicSpecialCases extends MoveLogicBase {
    * @param {Object} currentSpace - The current space of the player
    * @returns {Array} - Array of available moves
    */
-  handleSpecialCaseSpace(gameState, player, currentSpace) {
+  MoveLogicSpecialCases.prototype.handleSpecialCaseSpace = function(gameState, player, currentSpace) {
     // Implementation for each special case
     switch (currentSpace.name) {
       case 'ARCH-INITIATION':
@@ -56,9 +67,9 @@ class MoveLogicSpecialCases extends MoveLogicBase {
         return this.handleFdnyFeeReview(gameState, player, currentSpace);
       default:
         console.log('MoveLogicSpecialCases: No handler for space:', currentSpace.name);
-        return super.getSpaceDependentMoves(gameState, player, currentSpace);
+        return window.MoveLogicBase.prototype.getSpaceDependentMoves.call(this, gameState, player, currentSpace);
     }
-  }
+  };
   
   /**
    * Handle ARCH-INITIATION space
@@ -67,7 +78,7 @@ class MoveLogicSpecialCases extends MoveLogicBase {
    * @param {Object} currentSpace - The current space of the player
    * @returns {Array} - Array of available moves
    */
-  handleArchInitiation(gameState, player, currentSpace) {
+  MoveLogicSpecialCases.prototype.handleArchInitiation = function(gameState, player, currentSpace) {
     console.log('MoveLogicSpecialCases: Handling ARCH-INITIATION special case');
     
     // Determine if this is a first or subsequent visit
@@ -183,7 +194,7 @@ class MoveLogicSpecialCases extends MoveLogicBase {
     // This should not be reached, but just in case
     console.warn('MoveLogicSpecialCases: Unexpected code path in handleArchInitiation');
     return [];
-  }
+  };
   
   /**
    * Handle PM-DECISION-CHECK space
@@ -192,7 +203,7 @@ class MoveLogicSpecialCases extends MoveLogicBase {
    * @param {Object} currentSpace - The current space of the player
    * @returns {Array} - Array of available moves
    */
-  handlePmDecisionCheck(gameState, player, currentSpace) {
+  MoveLogicSpecialCases.prototype.handlePmDecisionCheck = function(gameState, player, currentSpace) {
     console.log('MoveLogicSpecialCases: Special case for PM-DECISION-CHECK');
     console.log('MoveLogicSpecialCases: Player position:', player.position);
     console.log('MoveLogicSpecialCases: Visit type:', currentSpace.visitType);
@@ -254,7 +265,7 @@ class MoveLogicSpecialCases extends MoveLogicBase {
     
     console.log('MoveLogicSpecialCases: PM-DECISION-CHECK moves count:', availableMoves.length);
     return availableMoves;
-  }
+  };
   
   /**
    * Handle REG-FDNY-FEE-REVIEW space
@@ -263,7 +274,7 @@ class MoveLogicSpecialCases extends MoveLogicBase {
    * @param {Object} currentSpace - The current space of the player
    * @returns {Array} - Array of available moves
    */
-  handleFdnyFeeReview(gameState, player, currentSpace) {
+  MoveLogicSpecialCases.prototype.handleFdnyFeeReview = function(gameState, player, currentSpace) {
     console.log('MoveLogicSpecialCases: Handling REG-FDNY-FEE-REVIEW special case');
     
     // Determine if this is a first or subsequent visit
@@ -410,7 +421,7 @@ class MoveLogicSpecialCases extends MoveLogicBase {
     }
     
     return availableMoves;
-  }
+  };
   
   /**
    * Helper method to get player game property with fallback
@@ -419,7 +430,7 @@ class MoveLogicSpecialCases extends MoveLogicBase {
    * @param {string} propertyName - The name of the property to get
    * @returns {boolean} - The property value or false if not found
    */
-  getPlayerGameProperty(gameState, player, propertyName) {
+  MoveLogicSpecialCases.prototype.getPlayerGameProperty = function(gameState, player, propertyName) {
     // Try different ways of accessing the property
     if (player[propertyName] !== undefined) {
       return player[propertyName];
@@ -447,9 +458,10 @@ class MoveLogicSpecialCases extends MoveLogicBase {
     };
     
     return testValues[propertyName] || false;
-  }
-}
-
-export { MoveLogicSpecialCases };
+  };
+  
+  // Expose the class to the global scope
+  window.MoveLogicSpecialCases = MoveLogicSpecialCases;
+})();
 
 console.log('MoveLogicSpecialCases.js code execution finished');

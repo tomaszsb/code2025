@@ -35,8 +35,18 @@
     
     <!-- Load utilities with Babel -->
     <script type="text/babel" src="js/utils/csv-parser.js"></script>
-    <script type="text/babel" src="js/utils/MoveLogic.js"></script>
+    
+    <!-- Load MoveLogic modules in correct dependency order -->
+    <script type="text/babel" src="js/utils/move-logic/MoveLogicBase.js"></script>
+    <script type="text/babel" src="js/utils/move-logic/MoveLogicSpecialCases.js"></script>
+    <script type="text/babel" src="js/utils/move-logic/MoveLogicUIUpdates.js"></script>
+    <script type="text/babel" src="js/utils/move-logic/MoveLogicManager.js"></script>
+    <script type="text/babel" src="js/utils/move-logic/MoveLogicBackwardCompatibility.js"></script>
     <script type="text/babel" src="js/utils/MoveLogicManager.js"></script>
+    
+    <!-- Keep legacy file for backward compatibility -->
+    <script type="text/babel" src="js/utils/MoveLogic.js"></script>
+    
     <script type="text/babel" src="js/utils/DiceRollLogic.js"></script>
     <script type="text/babel" src="js/utils/CardDrawUtil.js"></script>
     <script type="text/babel" src="js/data/GameStateManager.js"></script>

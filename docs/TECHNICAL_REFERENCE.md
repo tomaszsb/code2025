@@ -8,10 +8,9 @@
 5. [Data Flow](#data-flow)
 6. [CSS Structure](#css-structure)
 7. [Game Mechanics](#game-mechanics)
-8. [Recent Modifications](#recent-modifications)
-9. [Technical Implementation Details](#technical-implementation-details)
-10. [Maintaining The Game](#maintaining-the-game)
-11. [Troubleshooting](#troubleshooting)
+8. [Technical Implementation Details](#technical-implementation-details)
+9. [Maintaining The Game](#maintaining-the-game)
+10. [Troubleshooting](#troubleshooting)
 
 ## Game Overview
 
@@ -116,6 +115,18 @@ The game architecture follows these key patterns:
    - Determines when negotiation is allowed
    - Processes negotiation results
 
+8. **MoveLogicManager** (`js/utils/move-logic/MoveLogicManager.js`):
+   - Manages player movement options, special space logic, and game flow
+   - Uses browser-friendly window global objects instead of ES modules
+   - Follows proper object prototype inheritance pattern
+   - Integrates with GameStateManager events system for state updates
+   - Implements caching system for frequently accessed moves
+   - Handles special case spaces with custom movement logic
+   - Properly processes dice roll requirements for certain spaces
+   - Applies card effects during movement
+   - Maintains backward compatibility through compatibility layer
+   - Ensures proper cleanup of resources and event listeners
+
 ### Card Components
 
 The card system consists of modular components with specific responsibilities:
@@ -147,12 +158,11 @@ The card system consists of modular components with specific responsibilities:
 ### Utility Files
 
 1. **MoveLogicManager** (`js/utils/MoveLogicManager.js`):
-   - Manages move determination logic following the manager pattern
-   - Uses GameStateManager event system for efficient state updates
-   - Implements caching for improved performance
-   - Handles special case spaces with consistent patterns
-   - Provides backward compatibility through legacy API
-   - Properly cleans up resources including event listeners
+   - Main entry point file for the MoveLogicManager component
+   - Creates and initializes the manager instance
+   - Sets up backward compatibility for legacy code
+   - Ensures correct loading order of module files
+   - Exposes the manager globally for direct access
 
 2. **DiceRollLogic** (`js/utils/DiceRollLogic.js`):
    - Processes dice roll outcomes
@@ -262,236 +272,49 @@ The game tracks spaces each player has visited in their `visitedSpaces` array. T
 - The appropriate dice roll outcomes based on visit type
 - Card drawing opportunities
 
-## Recent Modifications
-
-### MoveLogic Refactoring (April 29, 2025)
-
-The MoveLogic utility has been refactored into a proper manager class following the established manager pattern:
-
-1. **Class-Based Implementation**:
-   - Converted the object with functions into a proper class-based structure
-   - Added constructor for proper initialization and state setup
-   - Implemented proper cleanup method for resource management
-   - Created a backward compatibility layer for legacy code support
-
-2. **Event System Integration**:
-   - Added event listeners for GameStateManager events
-   - Properly handles gameStateChanged, turnChanged, spaceChanged, and diceRolled events
-   - Updates cached move data when relevant game state changes
-   - Follows the same event pattern as other manager components
-
-3. **Performance Optimization**:
-   - Implemented a caching system for frequently accessed moves
-   - Cache uses player position and ID as keys for efficient lookups
-   - Cache is properly cleared when relevant state changes
-   - Significantly reduces redundant calculations
-
-4. **Enhanced Special Case Handling**:
-   - Improved organization of special case space logic
-   - Added consistent patterns for handling different space types
-   - Better dice roll integration for movement decisions
-   - Enhanced documentation of complex move logic
-
-5. **Implementation Details**:
-   - Properly stores event handlers with bind for correct context
-   - Added utility methods for common operations like raw space extraction
-   - Improved code organization with clear method responsibilities
-   - Enhanced logging for better debugging
-
-### SpaceInfo Component Modularization (May 1, 2025)
-
-The SpaceInfo component has been modularized to improve maintainability and code organization:
-
-1. **Module-Based Structure**:
-   - Split into multiple focused files (SpaceInfo.js, SpaceInfoDice.js, SpaceInfoCards.js, SpaceInfoMoves.js, SpaceInfoUtils.js)
-   - Used browser-friendly module pattern with window global objects
-   - Applied prototype mixins for efficient sharing of methods
-   - Maintained backward compatibility
-
-2. **Module Responsibilities**:
-   - **SpaceInfo.js**: Core component with lifecycle methods and main render function
-   - **SpaceInfoDice.js**: Dice-related rendering and functionality
-   - **SpaceInfoCards.js**: Card drawing button rendering and functionality
-   - **SpaceInfoMoves.js**: Move button rendering and functionality
-   - **SpaceInfoUtils.js**: Utility functions used across other modules
-
-3. **Implementation Details**:
-   - Used Object.assign to mix methods into SpaceInfo.prototype
-   - Avoided ES module imports/exports for better browser compatibility
-   - Used window-based objects with proper namespacing
-   - Maintained consistent logging in all files
-   - Ensured proper loading order in Index.html
-
-4. **Enhanced Documentation**:
-   - Updated SpaceInfo-Component.md to reflect the new modular structure
-   - Added browser compatibility information to documentation
-   - Documented module loading order and dependencies
-   - Clarified the mixin-based approach for future developers
-
-### SpaceInfo Component Refactoring (April 28, 2025)
-
-The SpaceInfo component has been refactored to follow the manager pattern with these improvements:
-
-1. **Removed Local State Management**:
-   - Eliminated the `usedButtons` array from local state
-   - Added a simple `renderKey` to force re-renders when needed
-   - Now uses the SpaceInfoManager for all button state tracking
-   - Properly updates component state through controlled mechanisms
-
-2. **Improved Event Handling**:
-   - Properly stored event handlers for cleanup
-   - Added proper event registration with GameStateManager
-   - Implemented thorough event cleanup in componentWillUnmount
-   - Added event listening for turnChanged and spaceChanged events
-
-3. **Enhanced GameStateManager Integration**:
-   - Replaced all direct references to GameState with GameStateManager
-   - Added proper event listeners for GameStateManager events
-   - Improved space and player state management through the manager
-   - Properly updates based on GameStateManager events
-
-4. **Improved Code Organization**:
-   - Added comprehensive documentation
-   - Maintained proper logging throughout the component
-   - Simplified state management with proper patterns
-   - Improved method naming and organization
-
-5. **Implementation Details**:
-   - Draws cards through SpaceInfoManager instead of direct GameState calls
-   - Uses SpaceInfoManager for CSS class determination
-   - Maintains backward compatibility with legacy code
-   - Properly renders based on state changes from event system
-
-### SpaceExplorer Component Enhancement (April 27, 2025)
-
-The SpaceExplorer component has been enhanced with the following improvements:
-
-1. **Enhanced Documentation**:
-   - Added detailed JSDoc comments to describe component purpose and features
-   - Improved method documentation with clear descriptions
-   - Updated component interface documentation
-
-2. **Performance Optimizations**:
-   - Implemented render count and timing metrics for performance monitoring
-   - Added improved componentDidUpdate checks to reduce unnecessary processing
-   - Implemented more efficient dice data processing with better caching
-
-3. **Improved Error Handling**:
-   - Enhanced error boundary implementation with detailed stack trace logging
-   - Added better error recovery with more graceful degradation
-   - Improved error state management with more detailed reporting
-
-4. **Resource Management**:
-   - Enhanced cleanup in componentWillUnmount to prevent memory leaks
-   - Improved state transitions for better resource management
-   - Added performance tracking for excessive re-renders
-
-5. **CSS and Accessibility**:
-   - Added better semantic CSS classes for different outcome types
-   - Implemented proper ARIA attributes for better accessibility
-   - Enhanced CSS organization with dedicated class names
-
-6. **Implementation Details**:
-   - All methods now have consistent logging at beginning and end
-   - Card handling improved with better pattern matching for text clarification
-   - Enhanced dice outcome presentation with semantic grouping
-
-7. **Integration with Related Components**:
-   - Works seamlessly with [SpaceExplorerManager](event-system-space-explorer-manager.md) for manager-pattern usage
-   - Properly integrates with [SpaceExplorerLoggerManager](SpaceExplorerLoggerManager.md) for styling and CSS
-   - Fully connected to [GameStateManager](GameStateManager.md) event system through hybrid architecture
-   - See the [Event System Integration](event-system-integration.md) document for complete architectural details
-
-### Game Memory Management Enhancement
-
-The game now features improved memory management with user-friendly options for handling saved games:
-
-1. **Saved Game Detection**:
-   - When the game starts, it checks for previously saved game data in localStorage
-   - If a saved game is detected, players are presented with options to continue or start new
-   - The PlayerSetup component handles this logic in its initial rendering
-
-2. **Player Options**:
-   - Players can choose to "Continue Game" to resume their previous session
-   - Players can select "Start New Game" to clear saved data and start fresh
-   - The interface is intuitive and user-friendly with clearly labeled buttons
-
-3. **Implementation Details**:
-   - The PlayerSetup component uses `checkForSavedGame()` to detect saved games
-   - The GameState object's `loadSavedState()` method loads data but defers setting `gameStarted`
-   - The App component properly handles the flow between PlayerSetup and GameBoard
-   - Memory clearing is handled through the "Start New Game" option
-
-### Card System Refactoring
-
-The card system has been refactored from a single large component into a modular system with improved separation of concerns:
-
-1. **Refactored Card Components**:
-   - The original monolithic CardDisplay.js file (over 700 lines) has been split into six focused components
-   - Each component has a single responsibility for better maintainability
-   - Console.log statements added at the beginning and end of each file for easier debugging
-   - Clearer component interfaces with proper imports/exports
-
-2. **Component Responsibilities**:
-   - **CardDisplay.js**: Core display component that orchestrates the card system
-   - **CardDetailView.js**: Handles the card detail popup when a card is selected
-   - **CardTypeUtils.js**: Contains utility functions for card types, styling, and fields
-   - **CardAnimations.js**: Manages card draw animations and visual effects
-   - **WorkCardDialogs.js**: Specific to Work (W) card discard and replacement dialogs
-   - **CardActions.js**: Contains action handlers for playing, discarding, and drawing cards
-
-### Space Visibility Filtering
-
-The game has been updated to show only one version of each space (first visit or subsequent visit) based on the player's visit history:
-
-1. **BoardDisplay.js**: Modified to filter spaces and only show the appropriate version:
-   - Spaces are grouped by their base names
-   - Only one version of each space is displayed based on whether the current player has visited it
-   - First-time visits show the "first" version
-   - Subsequent visits show the "subsequent" version
-
-2. **Space Layout Optimization**:
-   - Board layout now uses a dynamic number of spaces per row based on the square root of total filtered spaces
-   - This creates a more balanced, grid-like layout that adapts to the number of spaces
-
-### Dice Roll System Implementation
-
-A complete dice roll system has been implemented with the following features:
-
-1. **3D Dice Visualization**:
-   - Realistic 3D dice with proper CSS transforms
-   - Improved dot layout and styling for each face
-   - Added depth and shading effects for a more polished appearance
-   - Added result number badge for clear outcome display
-
-2. **Improved Animation System**:
-   - Smoother and more dynamic rolling animations using CSS classes
-   - Phased animation for a more engaging dice roll experience
-   - Proper transition effects between states
-   - Visual cues to indicate when dice is actively rolling
-
-3. **Data-Driven Approach**:
-   - Dice outcomes are strictly based on CSV data with no assumptions
-   - Spaces only show dice roll outcomes when explicit entries exist in DiceRoll Info.csv
-   - Exact match required for both space name AND visit type
-   - No fallbacks or default behaviors for missing data
-
-### Player Token Animations
-
-The game now includes animations for player tokens as they move between spaces:
-
-1. **Token Animation System**:
-   - CSS transitions provide smooth movement and visibility effects
-   - Current player's token is visually highlighted for better identification
-   - Organized in a dedicated CSS file for maintainability
-
-2. **Implementation Details**:
-   - Player tokens use transform and opacity transitions
-   - Current player token is scaled up slightly with a subtle glow effect
-   - Hover effects added for better interactivity
-   - Maintained separation of styling concerns with external CSS
-
 ## Technical Implementation Details
+
+### MoveLogicManager Module Structure
+
+```javascript
+// Main manager implementation and initialization
+(function() {
+  // Define the MoveLogicManager class
+  function MoveLogicManager() {
+    // Call the parent constructor
+    window.MoveLogicUIUpdates.call(this);
+    
+    console.log('MoveLogicManager: Constructor initialized');
+    
+    // State tracking
+    this.initialized = false;
+    this.moveCache = new Map(); // Cache for frequently accessed moves
+    
+    // Store event handlers for proper cleanup
+    this.eventHandlers = {
+      gameStateChanged: this.handleGameStateChangedEvent.bind(this),
+      turnChanged: this.handleTurnChangedEvent.bind(this),
+      spaceChanged: this.handleSpaceChangedEvent.bind(this),
+      diceRolled: this.handleDiceRolledEvent.bind(this)
+    };
+    
+    // Register event listeners with GameStateManager
+    this.registerEventListeners();
+    
+    this.initialized = true;
+    console.log('MoveLogicManager: Constructor completed');
+  }
+  
+  // Inherit from MoveLogicUIUpdates
+  MoveLogicManager.prototype = Object.create(window.MoveLogicUIUpdates.prototype);
+  MoveLogicManager.prototype.constructor = MoveLogicManager;
+  
+  // Method implementations...
+  
+  // Expose the class to the global scope
+  window.MoveLogicManager = MoveLogicManager;
+})();
+```
 
 ### SpaceInfo Component Event Handling
 
@@ -571,53 +394,6 @@ class SpaceInfoManager {
 }
 ```
 
-### Game Memory Management Flow
-
-```javascript
-// Memory management flow in PlayerSetup.js
-
-// 1. Check for saved game during initialization
-checkForSavedGame = () => {
-  try {
-    const savedPlayers = localStorage.getItem('game_players');
-    const savedStatus = localStorage.getItem('game_status');
-    
-    // Check if we have players saved and that the game was started
-    if (savedPlayers && savedStatus) {
-      const players = JSON.parse(savedPlayers);
-      const status = JSON.parse(savedStatus);
-      
-      // Only consider it a valid saved game if there are players and the game was started
-      return players && players.length > 0 && status.started === true;
-    }
-  } catch (error) {
-    console.error('Error checking for saved game:', error);
-  }
-  
-  return false;
-}
-
-// 2. Handle continuing with a saved game
-handleContinueGame = () => {
-  // Ensure gameStarted is true
-  GameState.gameStarted = true;
-  GameState.saveState();
-  
-  // Notify parent component to proceed to game board
-  this.props.onSetupComplete();
-}
-
-// 3. Handle starting a new game
-handleStartNewGame = () => {
-  // Clear saved game data and show the setup form
-  GameState.startNewGame();
-  this.setState({ 
-    hasSavedGame: false,
-    showSetupForm: true 
-  });
-}
-```
-
 ### Space Filtering Algorithm
 
 ```javascript
@@ -658,74 +434,6 @@ Object.keys(spaceNameMap).forEach(baseName => {
 });
 ```
 
-### Enhanced Dice Roll Implementation
-
-```javascript
-// Example of dice face rendering with dots
-renderDiceFace = (result) => {
-  // Create dot layouts for each face of the dice
-  const generateDots = (count) => {
-    const dots = [];
-    
-    for (let i = 1; i <= 9; i++) {
-      // Only show dots that should be visible for this number
-      const visible = (
-        (count === 1 && i === 5) ||  // Center dot for 1
-        (count === 2 && (i === 1 || i === 9)) ||  // Diagonal corners for 2
-        (count === 3 && (i === 1 || i === 5 || i === 9)) ||  // Diagonal plus center for 3
-        (count === 4 && (i === 1 || i === 3 || i === 7 || i === 9)) ||  // Four corners for 4
-        (count === 5 && (i === 1 || i === 3 || i === 5 || i === 7 || i === 9)) ||  // Four corners and center for 5
-        (count === 6 && (i === 1 || i === 3 || i === 4 || i === 6 || i === 7 || i === 9))  // Six dots for 6
-      );
-      
-      dots.push(
-        <div 
-          key={i} 
-          className={`dice-dot dice-dot-${i} ${visible ? 'visible' : ''}`}
-        ></div>
-      );
-    }
-    
-    return dots;
-  };
-  
-  return (
-    <div className="dice-face-compact">
-      {generateDots(result)}
-    </div>
-  );
-}
-```
-
-### Dice Outcome Categorization
-
-```javascript
-// Example of outcome categorization
-categorizeOutcomes = (displayOutcomes) => {
-  const categories = {
-    movement: { title: 'Movement', outcomes: {} },
-    cards: { title: 'Cards', outcomes: {} },
-    resources: { title: 'Resources', outcomes: {} },
-    other: { title: 'Other Effects', outcomes: {} }
-  };
-  
-  // Sort outcomes by category
-  Object.entries(displayOutcomes).forEach(([type, value]) => {
-    if (type === 'Next Step') {
-      categories.movement.outcomes[type] = value;
-    } else if (type.includes('Cards')) {
-      categories.cards.outcomes[type] = value;
-    } else if (type.includes('Time') || type.includes('Fee')) {
-      categories.resources.outcomes[type] = value;
-    } else {
-      categories.other.outcomes[type] = value;
-    }
-  });
-  
-  return categories;
-}
-```
-
 ### Dynamic Space Layout
 
 The number of spaces per row is now calculated dynamically:
@@ -752,6 +460,52 @@ When adding new card types to the CSV files:
 2. Include all required fields for that card type
 3. Ensure the CSV data is properly formatted for parsing
 
+### Customizing Move Logic
+
+To modify or add new special case space handling:
+
+1. Update the appropriate method in MoveLogicSpecialCases.js:
+   ```javascript
+   // Add a new special case space handler
+   MoveLogicSpecialCases.prototype.handleMyNewSpecialSpace = function(gameState, player, currentSpace) {
+     console.log('MoveLogicSpecialCases: Handling MY-NEW-SPECIAL-SPACE special case');
+     
+     // Implementation...
+     
+     return availableMoves;
+   };
+   ```
+
+2. Add the new space name to the specialCaseSpaces array in the constructor:
+   ```javascript
+   this.specialCaseSpaces = [
+     'ARCH-INITIATION',
+     'PM-DECISION-CHECK',
+     'REG-FDNY-FEE-REVIEW',
+     'MY-NEW-SPECIAL-SPACE'  // New special case space
+   ];
+   ```
+
+3. Update the handleSpecialCaseSpace method to dispatch to your new handler:
+   ```javascript
+   MoveLogicSpecialCases.prototype.handleSpecialCaseSpace = function(gameState, player, currentSpace) {
+     // Implementation for each special case
+     switch (currentSpace.name) {
+       case 'ARCH-INITIATION':
+         return this.handleArchInitiation(gameState, player, currentSpace);
+       case 'PM-DECISION-CHECK':
+         return this.handlePmDecisionCheck(gameState, player, currentSpace);
+       case 'REG-FDNY-FEE-REVIEW':
+         return this.handleFdnyFeeReview(gameState, player, currentSpace);
+       case 'MY-NEW-SPECIAL-SPACE':  // Add case for new special space
+         return this.handleMyNewSpecialSpace(gameState, player, currentSpace);
+       default:
+         console.log('MoveLogicSpecialCases: No handler for space:', currentSpace.name);
+         return window.MoveLogicBase.prototype.getSpaceDependentMoves.call(this, gameState, player, currentSpace);
+     }
+   };
+   ```
+
 ### Customizing Dice Roll Behavior
 
 To customize the dice roll behavior:
@@ -767,23 +521,27 @@ The board layout can be further customized by adjusting:
 2. The space dimensions and gap sizes in `board.css`
 3. The container sizes in `main.css`
 
-### Modifying Card Components
+### Working with MoveLogicManager
 
-When working with the refactored card system:
-1. Each component has a specific role - modify the appropriate file for the functionality you need
-2. The main CardDisplay component coordinates the other components
-3. Card utilities like colors and field mappings are in CardTypeUtils.js
-4. Card action handlers (play, discard, draw) are in CardActions.js
-5. Special dialogs for Work Type cards are in WorkCardDialogs.js
+When maintaining or extending the MoveLogicManager component:
 
-### Implementing Manager Pattern
+1. **File Order Dependencies**:
+   - The files must be loaded in the correct order (as specified in Index.html)
+   - MoveLogicBase.js → MoveLogicSpecialCases.js → MoveLogicUIUpdates.js → MoveLogicManager.js → MoveLogicBackwardCompatibility.js → utils/MoveLogicManager.js
 
-When refactoring or creating new components:
-1. Create a dedicated manager class for the component's functionality
-2. Move state management to the manager class
-3. Use the event system for component communication
-4. Ensure proper event listener registration and cleanup
-5. Follow SpaceInfoManager as an example implementation
+2. **Adding New Functionality**:
+   - Add basic logic to MoveLogicBase.js
+   - Add special case handling to MoveLogicSpecialCases.js
+   - Add UI-related methods to MoveLogicUIUpdates.js
+   - Add event handling or state management to MoveLogicManager.js
+
+3. **Best Practices**:
+   - Always bind event handlers and store references for cleanup
+   - Use the cache system for frequently accessed moves
+   - Follow the established naming conventions
+   - Add proper logging at the beginning and end of each method
+   - Clear cached data when relevant game state changes
+   - Ensure all event listeners are properly removed during cleanup
 
 ## Troubleshooting
 
@@ -824,11 +582,11 @@ When refactoring or creating new components:
    - Ensure that dependencies (CardTypeUtils, CardActions) load before other card components
    - Verify event handlers are properly attached
 
-8. **SpaceInfo issues**:
-   - Check that SpaceInfoManager is properly initialized
-   - Verify that event listeners are properly registered and cleaned up
-   - Ensure CSS classes are being correctly applied
-   - Check button state tracking in the manager
+8. **MoveLogicManager issues**:
+   - Check that all required modules are loaded in the correct order
+   - Verify that event listeners are properly registered with GameStateManager
+   - Check the cache invalidation logic when game state changes
+   - Ensure proper cleanup of event listeners
 
 ### Debugging Tips
 

@@ -1,4 +1,4 @@
-// PlayerSetup component
+// PlayerSetup.js file is beginning to be used
 console.log('PlayerSetup.js file is being processed');
 
 window.PlayerSetup = class PlayerSetup extends React.Component {
@@ -13,8 +13,16 @@ window.PlayerSetup = class PlayerSetup extends React.Component {
       playerColors: ['#FF5733', '#33FF57'],
       error: null,
       hasSavedGame: hasSavedGame,
-      showSetupForm: !hasSavedGame // Don't show setup form initially if there's a saved game
+      showSetupForm: !hasSavedGame, // Don't show setup form initially if there's a saved game
+      animationPhase: 'intro' // Track animation phases: intro, form, starting
     };
+  }
+  
+  componentDidMount() {
+    // Add animation phase transitions
+    setTimeout(() => {
+      this.setState({ animationPhase: this.state.showSetupForm ? 'form' : 'intro' });
+    }, 500);
   }
   
   // Check if a saved game exists
@@ -41,6 +49,8 @@ window.PlayerSetup = class PlayerSetup extends React.Component {
   // Handle continuing with the saved game
   handleContinueGame = () => {
     console.log('Continuing saved game');
+    this.setState({ animationPhase: 'starting' });
+    
     // No need to modify GameState, it already loaded the saved state
     // But we need to ensure gameStarted is true
     if (!GameState.gameStarted) {
@@ -50,10 +60,13 @@ window.PlayerSetup = class PlayerSetup extends React.Component {
       GameState.saveState();
     }
     
-    // Notify parent component if provided
-    if (this.props.onSetupComplete) {
-      this.props.onSetupComplete();
-    }
+    // Add slight delay for animation
+    setTimeout(() => {
+      // Notify parent component if provided
+      if (this.props.onSetupComplete) {
+        this.props.onSetupComplete();
+      }
+    }, 800);
   }
   
   // Handle starting a new game
@@ -63,17 +76,8 @@ window.PlayerSetup = class PlayerSetup extends React.Component {
     GameState.startNewGame();
     this.setState({ 
       hasSavedGame: false,
-      showSetupForm: true 
-    });
-  }
-  
-  // Handle clearing memory explicitly
-  handleClearMemory = () => {
-    console.log('Clearing game memory');
-    GameState.startNewGame();
-    this.setState({ 
-      hasSavedGame: false,
-      showSetupForm: true 
+      showSetupForm: true,
+      animationPhase: 'form' 
     });
   }
   
@@ -84,8 +88,15 @@ window.PlayerSetup = class PlayerSetup extends React.Component {
       const names = [...prevState.playerNames];
       const colors = [...prevState.playerColors];
       
-      // Default colors
-      const defaultColors = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3', '#33FFF3'];
+      // Default colors - more vibrant options
+      const defaultColors = [
+        '#FF5733', // Coral
+        '#33FF57', // Lime Green
+        '#3357FF', // Royal Blue
+        '#F3FF33', // Yellow
+        '#FF33F3', // Magenta
+        '#33FFF3'  // Cyan
+      ];
       
       while (names.length < count) {
         names.push(`Player ${names.length + 1}`);
@@ -123,80 +134,139 @@ window.PlayerSetup = class PlayerSetup extends React.Component {
       return;
     }
     
+    // Set animation phase first
+    this.setState({ animationPhase: 'starting' });
+    
     // Create players - startNewGame() was already called when choosing "Start New Game"
     this.state.playerNames.forEach((name, index) => {
       GameState.addPlayer(name, this.state.playerColors[index]);
     });
     
-    // Notify parent component if provided
-    if (this.props.onSetupComplete) {
-      this.props.onSetupComplete();
-    }
+    // Add slight delay for animation
+    setTimeout(() => {
+      // Notify parent component if provided
+      if (this.props.onSetupComplete) {
+        this.props.onSetupComplete();
+      }
+    }, 800);
+  }
+  
+  // Render player color preview
+  renderPlayerColorPreview = (color, index) => {
+    return (
+      <div 
+        className="player-color-preview"
+        style={{
+          backgroundColor: color,
+          width: '24px',
+          height: '24px',
+          borderRadius: '50%',
+          marginRight: '8px',
+          border: '2px solid #ccc'
+        }}
+      >
+      </div>
+    );
   }
   
   render() {
-    const { playerCount, playerNames, playerColors, error, hasSavedGame, showSetupForm } = this.state;
+    const { playerCount, playerNames, playerColors, error, hasSavedGame, showSetupForm, animationPhase } = this.state;
+    
+    const containerClass = `player-setup-container ${animationPhase}-phase`;
     
     return (
-      <div className="player-setup">
-        <h2>Player Setup</h2>
-        
-        {error && <div className="error">{error}</div>}
-        
-        {/* Clear memory button removed - Start New Game button will handle this */}
-        
-        {/* Show continue or new game options if a saved game exists */}
-        {hasSavedGame && !showSetupForm && (
-          <div className="saved-game-options">
-            <p>A previous game was found in memory.</p>
-            <p>Would you like to continue or start a new game?</p>
-            <div className="game-option-buttons">
-              <button onClick={this.handleContinueGame} className="continue-game-btn">
-                Continue Game
-              </button>
-              <button onClick={this.handleStartNewGame} className="new-game-btn">
-                Start New Game
-              </button>
-            </div>
+      <div className={containerClass}>
+        <div className="player-setup-content">
+          <div className="game-logo-container">
+            <img 
+              src="graphics/My ChatGPT image.png" 
+              alt="Project Management Game" 
+              className="game-logo"
+            />
+            <h1 className="game-title">Project Management Game</h1>
           </div>
-        )}
-        
-        {/* Show the regular setup form if no saved game or if starting a new game */}
-        {showSetupForm && (
-          <form onSubmit={this.handleSubmit}>
-            <div className="form-group">
-              <label>Number of Players:</label>
-              <select value={playerCount} onChange={this.handlePlayerCountChange}>
-                <option value="1">1 Player</option>
-                <option value="2">2 Players</option>
-                <option value="3">3 Players</option>
-                <option value="4">4 Players</option>
-              </select>
+          
+          {error && (
+            <div className="error-message">
+              <span className="error-icon">⚠️</span> {error}
             </div>
-            
-            <div className="player-list">
-              {Array.from({ length: playerCount }).map((_, index) => (
-                <div key={index} className="player-entry">
-                  <input
-                    type="text"
-                    value={playerNames[index]}
-                    onChange={(e) => this.handleNameChange(index, e)}
-                    placeholder={`Player ${index + 1} Name`}
-                  />
-                  <input
-                    type="color"
-                    value={playerColors[index]}
-                    onChange={(e) => this.handleColorChange(index, e)}
-                  />
+          )}
+          
+          {/* Show continue or new game options if a saved game exists */}
+          {hasSavedGame && !showSetupForm && (
+            <div className="saved-game-options">
+              <div className="info-box">
+                <div className="info-icon">ℹ️</div>
+                <p>A previous game was found in memory.</p>
+                <p>Would you like to continue or start a new game?</p>
+              </div>
+              
+              <div className="game-option-buttons">
+                <button onClick={this.handleContinueGame} className="continue-game-btn">
+                  <span className="btn-icon">▶️</span> Continue Game
+                </button>
+                <button onClick={this.handleStartNewGame} className="new-game-btn">
+                  <span className="btn-icon">🔄</span> Start New Game
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {/* Show the regular setup form if no saved game or if starting a new game */}
+          {showSetupForm && (
+            <form onSubmit={this.handleSubmit} className="player-setup-form">
+              <div className="form-group player-count-selector">
+                <label htmlFor="player-count">Number of Players:</label>
+                <div className="custom-select-wrapper">
+                  <select 
+                    id="player-count"
+                    value={playerCount} 
+                    onChange={this.handlePlayerCountChange}
+                    className="player-count-select"
+                  >
+                    <option value="1">1 Player</option>
+                    <option value="2">2 Players</option>
+                    <option value="3">3 Players</option>
+                    <option value="4">4 Players</option>
+                  </select>
+                  <span className="select-arrow">▼</span>
                 </div>
-              ))}
-            </div>
-            
-            <button type="submit" className="start-game-btn">
-              Start Game
-            </button>
-          </form>
-        )}
+              </div>
+              
+              <div className="player-list">
+                {Array.from({ length: playerCount }).map((_, index) => (
+                  <div key={index} className="player-entry">
+                    <div className="player-number">{index + 1}</div>
+                    <div className="player-form-fields">
+                      <div className="player-name-input">
+                        <input
+                          type="text"
+                          value={playerNames[index]}
+                          onChange={(e) => this.handleNameChange(index, e)}
+                          placeholder={`Player ${index + 1} Name`}
+                          className="name-input"
+                        />
+                      </div>
+                      <div className="player-color-input">
+                        {this.renderPlayerColorPreview(playerColors[index], index)}
+                        <input
+                          type="color"
+                          value={playerColors[index]}
+                          onChange={(e) => this.handleColorChange(index, e)}
+                          className="color-picker"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <button type="submit" className="start-game-btn">
+                <span className="btn-icon">🚀</span> Start Game
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     );
   }

@@ -4,6 +4,12 @@ All notable changes to the Project Management Game will be documented in this fi
 
 ## [Unreleased]
 
+### Enhanced
+- Improved player setup process with a more attractive UI design
+- Added game logo to the player setup screen
+- Added smooth animations for a better user experience during setup
+- Created dedicated CSS file for player setup (player-setup.css)
+
 ### Fixed
 - Fixed MoveLogicManager.js to properly use browser-friendly window global objects instead of ES6 modules
 - Fixed movement issues for all spaces in MoveLogicManager

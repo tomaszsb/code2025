@@ -27,6 +27,7 @@ class SpaceSelectionManager {
     // Register event listeners with GameStateManager
     this.registerEventListeners();
     
+    console.log('SpaceSelectionManager: Supporting data-driven move selection with CSV-based approach [2025-05-04]');
     console.log('SpaceSelectionManager: Successfully initialized with event system');
   }
   
@@ -52,6 +53,7 @@ class SpaceSelectionManager {
   
   /**
    * Update the available moves for the current player
+   * Uses the data-driven approach with CSV files through GameStateManager
    */
   updateAvailableMoves = () => {
     const result = window.GameStateManager.getAvailableMoves();
@@ -434,6 +436,7 @@ class SpaceSelectionManager {
           
         case 'diceRollCompleted':
           // Update available moves after dice roll
+          // This will now use the fully data-driven approach with DiceRollLogic outcomes
           this.updateAvailableMoves();
           break;
           

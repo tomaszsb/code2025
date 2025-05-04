@@ -92,6 +92,34 @@ This document serves as a consolidated record of all completed tasks in the proj
 - ✓ COMPLETED! Component loading order has been adjusted in HTML files for proper dependency loading
 - ✓ COMPLETED! BoardSpaceRenderer.js has been refactored to eliminate all inline CSS and style injections
 
+## Visit Type Resolution Improvements
+
+- ✓ COMPLETED! Added resolveSpaceForVisitType helper method to MoveLogicBase for consistent space resolution
+- ✓ COMPLETED! Implemented a clear three-step fallback hierarchy for visit type resolution:
+  1. Find exact visit type match first
+  2. Try opposite visit type if exact match not found
+  3. Use first available space as last resort
+- ✓ COMPLETED! Updated all special case handlers to use the new space resolution method
+- ✓ COMPLETED! Fixed handling of special patterns like "Option from first visit"
+- ✓ COMPLETED! Improved consistency in visit type handling across all spaces
+- ✓ COMPLETED! Enhanced logging for visit type resolution process
+- ✓ COMPLETED! Created comprehensive visit-type-resolution.md documentation
+- ✓ COMPLETED! Fixed movement issues for all spaces that depend on visit type
+- ✓ COMPLETED! Ensured consistent use of GameStateManager.extractSpaceName across all components
+
+## Movement System Improvements
+
+- ✓ COMPLETED! Fixed issues with movement functionality for all spaces in MoveLogicManager
+- ✓ COMPLETED! Improved dice roll integration with movement decision logic
+- ✓ COMPLETED! Enhanced space selection validation to prevent invalid moves
+- ✓ COMPLETED! Fixed inconsistencies in special case space handling
+- ✓ COMPLETED! Implemented proper event dispatching for player movements
+- ✓ COMPLETED! Improved caching mechanism for frequently accessed moves
+- ✓ COMPLETED! Added proper cleanup for all event listeners
+- ✓ COMPLETED! Enhanced error reporting for movement-related operations
+- ✓ COMPLETED! Fixed issues with duplicate spaces in available moves list
+- ✓ COMPLETED! Updated all special case spaces to follow consistent patterns
+
 ## SpaceExplorer Component Improvements
 
 - ✓ COMPLETED! Implemented modular structure with smaller, focused methods
@@ -242,6 +270,7 @@ This document serves as a consolidated record of all completed tasks in the proj
 - ✓ COMPLETED! Updated all documentation files to reflect GameStateManager implementation
 - ✓ COMPLETED! Updated documentation to reflect CardManager event system integration
 - ✓ COMPLETED! Updated SpaceExplorer-Component.md with new performance optimizations
+- ✓ COMPLETED! Created detailed visit-type-resolution.md documentation (May 2, 2025)
 
 ## CSS Consistency Improvements
 
@@ -276,7 +305,8 @@ This document serves as a consolidated record of all completed tasks in the proj
 - ✓ COMPLETED! Fixed inconsistent move logic patterns causing maintenance challenges
 - ✓ COMPLETED! Resolved performance issues with repeated move calculations
 - ✓ COMPLETED! Fixed missing event cleanup in movement-related operations
+- ✓ COMPLETED! Implemented improved visit type resolution with consistent handling (May 2, 2025)
 
 ## Last Updated
 
-April 29, 2025 (Updated with MoveLogicManager implementation)
+May 2, 2025 (Updated with Visit Type Resolution improvements)

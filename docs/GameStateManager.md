@@ -4,6 +4,19 @@
 
 The GameStateManager is the central event system hub for the game, providing a standardized way for components to communicate without direct dependencies. It implements a publish-subscribe pattern that enables loose coupling between components while maintaining a consistent approach to state changes and updates.
 
+## Updates
+
+### May 2, 2025 - Visit Type Resolution Fix
+
+The GameStateManager's `hasPlayerVisitedSpace` method has been updated to fix issues with visit type resolution when a player is currently on a space:
+
+- Fixed logic that incorrectly identified spaces as "first visits" when a player was currently on a space they had visited before
+- Implemented a more reliable counting approach to determine if a space has been visited before
+- Added clearer debug logging for visit type determination
+- Improved detection of previously visited spaces for correct first/subsequent visit experience
+
+This update ensures that players will consistently see the correct content based on their visit history, even for the space they're currently on.
+
 ## Core Functionality
 
 The GameStateManager provides three primary capabilities:
@@ -248,4 +261,4 @@ The GameStateManager is now integrated with the following components:
 
 ---
 
-*Last Updated: April 29, 2025*
+*Last Updated: May 2, 2025*

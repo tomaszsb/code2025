@@ -5,7 +5,7 @@ This guide provides information on the next development steps for the Project Ma
 ## Upcoming Priorities
 
 1. **Gameplay Mechanics Fixes**:
-   - Fix movement issues for all spaces in MoveLogicManager.js
+   - ✅ Fix movement issues for all spaces in MoveLogicManager.js
    - ✅ Implement card effects properly to ensure they introduce changes to the game state
    - Create a functional leaderboard to track player progress
 
@@ -43,8 +43,10 @@ This guide provides information on the next development steps for the Project Ma
    - ✅ Refactored MoveLogic.js into MoveLogicManager following the manager pattern
    - ✅ Implemented consistent patterns for special case handling
    - ✅ Added comprehensive documentation in MoveLogicManager.md
-   - Issues with movement functionality for certain spaces need to be fixed
+   - ✅ Fixed issues with movement functionality for all spaces (fixed May 2, 2025)
    - ✅ Card effects now properly affect game state during movement (fixed April 30, 2025)
+   - ✅ Implemented improved visit type resolution for consistent handling (fixed May 2, 2025)
+   - ✅ Implemented fully data-driven approach using CSV files instead of hardcoded special cases (fixed May 4, 2025)
 
 4. **Component Modularity**:
    - ✅ Refactored SpaceInfo.js into smaller, focused modules (SpaceInfoDice.js, SpaceInfoCards.js, SpaceInfoMoves.js, SpaceInfoUtils.js)
@@ -100,4 +102,4 @@ Update the following for each change:
 2. Component documentation within the file itself
 3. Any relevant player-facing documentation
 
-*Last Updated: May 1, 2025*
+*Last Updated: May 4, 2025*

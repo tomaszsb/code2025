@@ -2,7 +2,7 @@
 
 ## Overview
 
-The MoveLogicManager component is a refactored version of the original MoveLogic.js utility, following the manager pattern established in the project. It handles all game movement logic including standard moves, special case spaces, dice roll requirements, and card effects.
+The MoveLogicManager component is a refactored version of the original MoveLogic.js utility, following the manager pattern established in the project. It handles all game movement logic including standard moves, dice roll requirements, and card effects. As of May 4, 2025, it has been updated to use a fully data-driven approach with CSV files instead of hardcoded special cases.
 
 ## Features
 
@@ -15,14 +15,16 @@ The MoveLogicManager component is a refactored version of the original MoveLogic
 - **Memory Management**: Ensures proper cleanup of event listeners and cached data
 - **Card Effects Integration**: Properly applies card effects to game state during movement (added April 30, 2025)
 - **Event Dispatching**: Dispatches appropriate events for UI updates when effects are applied
+- **Data-Driven Approach**: Uses CSV data for all space behavior instead of hardcoded special cases (added May 4, 2025)
+- **DiceRollLogic Integration**: Consistently uses DiceRollLogic utilities for dice roll outcomes (added May 4, 2025)
 
 ## Public API
 
 ### Key Methods
 
 - `getAvailableMoves(gameState, player)`: Returns all available moves for a player, either as an array of spaces or an object indicating dice roll is required
-- `hasSpecialCaseLogic(spaceName)`: Checks if a space has special case movement logic
-- `handleSpecialCaseSpace(gameState, player, currentSpace)`: Handles spaces with custom movement logic
+- `hasSpecialCaseLogic(spaceName, visitType)`: Checks if a space requires a dice roll using CSV data
+- `handleSpecialCaseSpace(gameState, player, currentSpace)`: [Deprecated] Now simply forwards to getSpaceDependentMoves
 - `getSpaceDependentMoves(gameState, player, currentSpace)`: Gets standard moves based on CSV data and applies card effects
 - `handleSpaceCardEffects(gameState, player, space, diceRoll)`: Applies card effects from a space to the game state
 - `getMoveDetails(space)`: Returns formatted details about a move for display purposes
@@ -30,9 +32,7 @@ The MoveLogicManager component is a refactored version of the original MoveLogic
 
 ### Special Case Handlers
 
-- `handleArchInitiation(gameState, player, currentSpace)`: Special logic for ARCH-INITIATION space
-- `handlePmDecisionCheck(gameState, player, currentSpace)`: Special logic for PM-DECISION-CHECK space
-- `handleFdnyFeeReview(gameState, player, currentSpace)`: Special logic for REG-FDNY-FEE-REVIEW space
+As of May 4, 2025, special case handlers have been deprecated and are no longer used. The manager now uses a fully data-driven approach based on CSV files:
 
 ## Event Handling
 
@@ -41,7 +41,7 @@ The manager listens to the following events from GameStateManager:
 - `gameStateChanged`: Updates cache when game state changes (e.g., new game)
 - `turnChanged`: Updates available moves when player turn changes
 - `spaceChanged`: Updates available moves when a player moves to a new space
-- `diceRolled`: Updates available moves based on dice roll results
+- `diceRolled`: Updates available moves based on dice roll results using DiceRollLogic
 
 The manager dispatches the following events:
 
@@ -68,18 +68,12 @@ The cache is cleared in response to relevant events to ensure data consistency.
 
 ### Special Case Detection
 
-Special case spaces are configured in the constructor:
+As of May 4, 2025, the manager no longer uses hardcoded special case detection. Instead, it uses the DiceRollLogic utility to check if a space requires a dice roll based on CSV data:
 
 ```javascript
-this.specialCaseSpaces = [
-  'ARCH-INITIATION',
-  'PM-DECISION-CHECK',
-  'REG-FDNY-FEE-REVIEW'
-];
-
-this.diceRollSpaces = [
-  'ARCH-INITIATION'
-];
+// In hasSpecialCaseLogic method
+const hasOutcomes = window.DiceRollLogic.getOutcomes(spaceName, visitType) !== null;
+return hasOutcomes;
 ```
 
 ### Card Effects Handling
@@ -149,13 +143,14 @@ window.MoveLogicManager.handleSpaceCardEffects(
 
 When testing the MoveLogicManager:
 
-1. Verify that all special case spaces work correctly
+1. Verify that all spaces work correctly with the data-driven approach
 2. Test first visit vs. subsequent visit behavior
-3. Confirm dice roll integration works properly
+3. Confirm dice roll integration works properly with DiceRollLogic
 4. Validate that card effects are properly applied during movement
 5. Test dice-roll-dependent card effects
 6. Verify that the UI properly updates when card effects are applied
 7. Validate backward compatibility with existing code
 8. Check for proper event cleanup to prevent memory leaks
+9. Verify that spaces previously handled as special cases (ARCH-INITIATION, PM-DECISION-CHECK, REG-FDNY-FEE-REVIEW) work correctly with the data-driven approach
 
-*Last Updated: April 30, 2025*
+*Last Updated: May 4, 2025*

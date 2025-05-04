@@ -44,6 +44,7 @@ console.log('MoveLogicManager.js file is beginning to be used');
     this.registerEventListeners();
     
     this.initialized = true;
+    console.log('MoveLogicManager: Using data-driven approach with DiceRollLogic for all spaces. [2025-05-04]');
     console.log('MoveLogicManager: Constructor completed');
 
     // Dispatch event for initial player's turn and add YOUR TURN indicator
@@ -184,14 +185,61 @@ console.log('MoveLogicManager.js file is beginning to be used');
     console.log('MoveLogicManager: Handling diceRolled event');
     
     if (!event || !event.data) {
+      console.log('MoveLogicManager: Invalid diceRolled event - missing data');
       return;
     }
     
-    // Dice has been rolled, we may need to update available moves based on dice roll
+    // Get dice roll result
+    const diceResult = event.data.result;
+    console.log(`MoveLogicManager: Dice rolled with result: ${diceResult}`);
+    
+    // Store the dice roll in the window object for global access (for backward compatibility)
+    window.lastDiceRoll = diceResult;
+    console.log(`MoveLogicManager: Stored dice roll ${diceResult} in window.lastDiceRoll`);
+    
+    // Dice has been rolled, update available moves based on dice roll
     const currentPlayer = window.GameStateManager.getCurrentPlayer();
     if (currentPlayer) {
-      // Clear cached moves to force recalculation with dice roll result
-      this.clearCachedMovesForPlayer(currentPlayer.id);
+      // Get current space
+      const currentSpaceId = currentPlayer.position;
+      const currentSpace = window.GameStateManager.findSpaceById(currentSpaceId);
+      
+      if (currentSpace) {
+        console.log(`MoveLogicManager: Player is on space ${currentSpace.name}`);
+        
+        // Determine visit type
+        const hasVisited = window.GameStateManager.hasPlayerVisitedSpace(
+          currentPlayer, currentSpace.name);
+        const visitType = hasVisited ? 'subsequent' : 'first';
+        
+        // Use DiceRollLogic to get outcomes for this roll
+        const outcomes = window.DiceRollLogic.handleDiceRoll(
+          currentSpace.name, visitType, diceResult);
+        
+        console.log('MoveLogicManager: Dice roll outcomes:', outcomes);
+        
+        // If we have a next space outcome, get available moves
+        if (outcomes.nextSpace) {
+          // Use DiceRollLogic to find spaces from outcome
+          const availableMoves = window.DiceRollLogic.findSpacesFromOutcome(
+            window.GameStateManager, outcomes.nextSpace);
+          
+          console.log('MoveLogicManager: Available moves from dice roll:', 
+            availableMoves.map(m => m.name));
+          
+          // Update the game state with the new moves
+          window.GameStateManager.dispatchEvent('gameStateChanged', {
+            changeType: 'availableMovesUpdated',
+            moves: availableMoves,
+            player: currentPlayer,
+            playerId: currentPlayer.id,
+            diceRoll: diceResult,
+            diceOutcomes: outcomes
+          });
+        } else {
+          console.log('MoveLogicManager: No next space outcome found for this dice roll');
+        }
+      }
     }
   };
   

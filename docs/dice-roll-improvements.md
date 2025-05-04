@@ -11,6 +11,8 @@ See completed-tasks.md for a detailed list of completed dice roll system enhance
 The most recent improvements include:
 1. A strict data-driven approach that ensures dice outcomes are only shown when explicitly defined in the CSV data - see dice-roll-data-adhereence.md for detailed information about this enhancement.
 2. A fully data-driven approach for determining when to show dice roll buttons, with all hardcoded exclusions removed (May 1, 2025).
+3. Complete removal of special case handling for specific spaces, including ARCH-INITIATION, PM-DECISION-CHECK, and REG-FDNY-FEE-REVIEW (May 4, 2025).
+4. Integration of DiceRollLogic utilities for consistent handling of dice roll outcomes (May 4, 2025).
 
 ## Technical Implementation Details
 
@@ -33,31 +35,49 @@ The most recent improvements include:
    - Improved conditional requirement extraction and handling
    - Enhanced the `hasDiceRollSpace()` method to be more robust and transparent
 
-3. **BoardRenderer.js** (Updated May 1, 2025)
+3. **MoveLogicBase.js** (Updated May 4, 2025)
+   - Removed hardcoded `decisionTreeSpaces` array
+   - Modified `getAvailableMoves` to always use standard move logic for all spaces
+   - Updated `hasSpecialCaseLogic` to check for dice roll requirements using DiceRollLogic
+   - Deprecated `handleSpecialCaseSpace` with a warning
+
+4. **MoveLogicManager.js** (Updated May 4, 2025)
+   - Completely rewrote the `handleDiceRolledEvent` method to use DiceRollLogic consistently
+   - Removed special case handling, particularly for ARCH-INITIATION
+   - Implemented data-driven approach using DiceRollLogic utilities
+
+5. **MoveLogicSpaceTypes.js** (Updated May 4, 2025)
+   - Updated decision tree space detection to use DiceRollLogic instead of hardcoded array
+
+6. **SpaceSelectionManager.js** (Updated May 4, 2025)
+   - Added explicit support for data-driven move selection
+   - Enhanced event handling for dice roll outcomes
+
+7. **BoardRenderer.js** (Updated May 1, 2025)
    - Modified to properly evaluate dice roll requirements at render time
    - Updated to conditionally pass the onRollDice prop based on data-driven decision
    - Added more detailed logging for debugging dice roll button decisions
 
-4. **SpaceExplorer.js**
+8. **SpaceExplorer.js**
    - Updated to only show dice outcomes for spaces with explicit CSV data entries
    - Modified to require exact matching on both space name AND visit type
    - Improved error handling and logging for dice data
    - Enhanced dice roll indicator to only show for spaces with valid dice data
 
-5. **GameBoard.js**
+9. **GameBoard.js**
    - Added new state variables to manage dice outcomes
    - Implemented handler functions to pass dice data to SpaceInfo
    - Modified component communication for better data flow
    - Added button state control based on space dice requirements
 
-6. **SpaceInfo.js**
+10. **SpaceInfo.js**
    - Added dice outcome display functionality
    - Implemented categorized outcome presentation
    - Created visual styling for outcome display
    - Integrated with existing space information display
    - Updated to handle dice roll button display based on data-driven decision (May 1, 2025)
 
-7. **CSS Files**
+11. **CSS Files**
    - Added new styles for 3D dice presentation
    - Created responsive layout for outcomes display
    - Implemented animation keyframes for dice rolling
@@ -84,6 +104,24 @@ The decision to show a dice roll button is now completely data-driven, with the 
 4. **No Hardcoded Exclusions** - All special cases have been removed
 
 This approach ensures that game rule changes only require CSV updates, not code changes, aligning with the project's goal of having a fully data-driven game system.
+
+### Data-Driven Move Selection (May 4, 2025)
+Building on the previous improvements, the move selection system is now fully data-driven:
+
+1. **Removed All Hardcoded Special Cases**
+   - Eliminated the hardcoded `decisionTreeSpaces` array in MoveLogicBase.js
+   - Removed special handling for ARCH-INITIATION in MoveLogicManager.js
+   - Updated MoveLogicSpaceTypes.js to detect decision tree spaces using CSV data
+
+2. **Consistent Use of DiceRollLogic**
+   - All dice roll outcomes are now handled through DiceRollLogic
+   - The handleDiceRolledEvent method in MoveLogicManager.js consistently uses DiceRollLogic.handleDiceRoll and DiceRollLogic.findSpacesFromOutcome
+   - This ensures all spaces follow the same pattern and are handled consistently
+
+3. **Complete CSV-Based Decision Making**
+   - All decisions about dice rolls, available moves, and space behavior now come from CSV data
+   - No more hardcoded behavior for specific spaces
+   - This makes the game much more maintainable and easier to extend
 
 ## Future Enhancements
 
@@ -118,4 +156,4 @@ The updated implementation maintains the existing architecture while adding new 
 
 ---
 
-*Last Updated: May 1, 2025*
+*Last Updated: May 4, 2025*

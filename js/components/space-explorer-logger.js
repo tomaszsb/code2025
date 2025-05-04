@@ -270,7 +270,8 @@ class SpaceExplorerLoggerManager {
             if (!element) return;
             
             try {
-              if (!element.classList.contains(className)) {
+              // Only add the class if it's not empty and the element doesn't already have it
+              if (className && className.trim() !== '' && !element.classList.contains(className)) {
                 element.classList.add(className);
                 count++;
               }
@@ -305,7 +306,7 @@ class SpaceExplorerLoggerManager {
       });
       
       // Process outcome spans with safer approach
-      elementsProcessed += addClassSafely('.dice-outcome div', '', div => {
+      elementsProcessed += addClassSafely('.dice-outcome div', 'dice-outcome-element', div => {
         // Skip if already processed
         if (div.dataset && div.dataset.processed) {
           return;

@@ -105,17 +105,28 @@ class TurnManager {
    */
   handleEndTurn = () => {
     console.log('TurnManager: Ending current turn');
-    const { selectedMove } = this.gameBoard.state;
+    const { selectedMove, availableMoves, hasSelectedMove } = this.gameBoard.state;
     const currentPlayer = this.getCurrentPlayer();
     
-    // If a move was selected, execute it now when ending the turn
-    if (selectedMove && currentPlayer) {
+    // If a move was selected and the hasSelectedMove flag is true, execute it now when ending the turn
+    if (selectedMove && hasSelectedMove && currentPlayer) {
       console.log('TurnManager: Executing selected move:', selectedMove);
       
       // Move the player - this will trigger a playerMoved event via GameStateManager
       window.GameStateManager.movePlayer(currentPlayer.id, selectedMove);
     } else {
-      console.log('TurnManager: No move selected for execution');
+      // If there are no available moves, that's okay - the player might have just drawn cards
+      // or performed another action that doesn't involve movement
+      if (availableMoves && availableMoves.length === 0) {
+        console.log('TurnManager: No available moves to execute, turn can end without movement');
+      }
+      // If there are available moves but none selected, inform the player they need to select a move
+      else if (availableMoves && availableMoves.length > 0) {
+        console.log('TurnManager: Moves available but none selected. Player must select a move before ending turn');
+      }
+      else {
+        console.log('TurnManager: No move selected for execution');
+      }
     }
     
     // Move to next player's turn

@@ -77,6 +77,8 @@ The visit tracking system is implemented through several key functions:
 ### `hasPlayerVisitedSpace(player, spaceName)`
 - Checks if a player has visited a specific space before
 - Normalizes space names for consistent comparison
+- Uses a counting approach to accurately determine if a player has visited a space previously, even if they're currently on that space
+- Special handling for the player's current position to ensure correct first/subsequent visit determination
 
 ### `extractSpaceName(displayName)`
 - Extracts the base space name from display names
@@ -98,6 +100,18 @@ From the player's perspective:
 1. When first visiting a space, they see the "first visit" description and options
 2. When returning to a space they've visited before, they see "subsequent visit" content
 3. This creates a more dynamic game experience where prior choices affect future options
+
+## Recent Improvements (May 2, 2025)
+
+The visit tracking system has been enhanced with the following improvements:
+
+1. **Current Space Visit Detection**: Fixed an issue where spaces would incorrectly be considered "first visits" when a player was currently on a space they had visited before.
+
+2. **Visit Count Tracking**: Implemented a more reliable counting approach to verify if a space has been visited previously.
+
+3. **Enhanced Debug Logging**: Added more detailed logging to track visit status for easier debugging.
+
+4. **Consistent Visit Type Resolution**: Updated the logic to ensure consistent identification of first vs. subsequent visits across all components.
 
 ## Future Enhancements
 

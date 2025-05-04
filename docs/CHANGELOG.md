@@ -2,6 +2,26 @@
 
 All notable changes to the Project Management Game will be documented in this file.
 
+## [2025-05-04]
+
+### Changed
+- Refactored MoveLogicBase.js to use a fully data-driven approach from CSV files instead of hardcoded special case handling
+- Removed hardcoded decision tree spaces array for spaces like "ARCH-INITIATION", "PM-DECISION-CHECK", and "REG-FDNY-FEE-REVIEW"
+- Updated `hasSpecialCaseLogic` method to check for dice roll requirements using DiceRollLogic and CSV data
+- Modified `getAvailableMoves` to always use standard move logic for all spaces
+- Deprecated `handleSpecialCaseSpace` with a warning to use the data-driven approach instead
+- Refactored MoveLogicManager.js handleDiceRolledEvent method to consistently use DiceRollLogic utilities for all spaces
+- Removed special case handling for ARCH-INITIATION in handleDiceRolledEvent method
+- Implemented data-driven dice roll outcome handling using DiceRollLogic.handleDiceRoll and DiceRollLogic.findSpacesFromOutcome
+- Updated SpaceSelectionManager.js to support the fully data-driven approach with CSV files
+- Added explicit logging in SpaceSelectionManager.js to document support for data-driven move selection
+- Fixed MoveLogicSpaceTypes.js to use the data-driven approach for decision tree spaces instead of the removed decisionTreeSpaces array
+
+### Added
+- Fully data-driven dice roll system that relies solely on CSV data for decision making
+- Enhanced logging for the dice roll system with detailed information about decisions
+- Integrated DiceRollLogic for all spaces, including previously special-cased ones
+
 ## [Unreleased]
 
 ### Added

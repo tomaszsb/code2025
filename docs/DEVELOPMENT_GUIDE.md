@@ -47,6 +47,7 @@ This guide provides information on the next development steps for the Project Ma
    - ✅ Card effects now properly affect game state during movement (fixed April 30, 2025)
    - ✅ Implemented improved visit type resolution for consistent handling (fixed May 2, 2025)
    - ✅ Implemented fully data-driven approach using CSV files instead of hardcoded special cases (fixed May 4, 2025)
+   - ✅ Added "RETURN TO YOUR SPACE" option for PM-DECISION-CHECK to allow returning to main path (fixed May 4, 2025)
 
 4. **Component Modularity**:
    - ✅ Refactored SpaceInfo.js into smaller, focused modules (SpaceInfoDice.js, SpaceInfoCards.js, SpaceInfoMoves.js, SpaceInfoUtils.js)

@@ -33,8 +33,19 @@ console.log('MoveLogicSpecialCases.js file is beginning to be used');
       'ARCH-INITIATION'
     ];
     
+    // Register for game state events - for space change detection
+    if (window.GameStateManager) {
+      // Store a reference to the bound method for later cleanup
+      this.spaceChangedHandler = this.handleSpaceChangedEvent.bind(this);
+      
+      // Register for space change events
+      window.GameStateManager.addEventListener('spaceChanged', this.spaceChangedHandler);
+      console.log('MoveLogicSpecialCases: Registered for spaceChanged events');
+    }
+    
     console.log('MoveLogicSpecialCases: Updated with improved visit type resolution. [2025-05-02]');
     console.log('MoveLogicSpecialCases: Integrated with space type system. [2025-05-03]');
+    console.log('MoveLogicSpecialCases: Added RETURN TO YOUR SPACE handling for PM-DECISION-CHECK. [2025-05-04]');
     console.log('MoveLogicSpecialCases: Initialized successfully');
   }
   
@@ -373,6 +384,10 @@ console.log('MoveLogicSpecialCases.js file is beginning to be used');
     console.log('MoveLogicSpecialCases: Player position:', player.position);
     console.log('MoveLogicSpecialCases: Visit type:', currentSpace.visitType);
     
+    // Determine if this is first or subsequent visit
+    const isFirstVisit = currentSpace.visitType && currentSpace.visitType.toLowerCase() === 'first';
+    console.log('MoveLogicSpecialCases: Is first visit?', isFirstVisit);
+    
     // Read the next spaces directly from the CSV data stored in the space object
     const rawNextSpaces = [
       currentSpace.rawSpace1, 
@@ -386,19 +401,102 @@ console.log('MoveLogicSpecialCases.js file is beginning to be used');
     
     const availableMoves = [];
     
+    // FIRST VISIT: Store original space info
+    if (isFirstVisit) {
+      // Get the previous space ID (before entering PM-DECISION-CHECK)
+      const previousSpaceId = player.previousPosition || player.lastPosition;
+      console.log('MoveLogicSpecialCases: Previous space ID:', previousSpaceId);
+      
+      if (previousSpaceId) {
+        // Store the previous space ID
+        this.setPlayerGameProperty(gameState, player, 'originalSpaceId', previousSpaceId);
+        
+        // Mark that player is on a side quest
+        this.setPlayerGameProperty(gameState, player, 'isOnPMSideQuest', true);
+        
+        // Reset the CHEAT-BYPASS flag (when starting a new side quest)
+        this.setPlayerGameProperty(gameState, player, 'hasUsedCheatBypass', false);
+        
+        console.log('MoveLogicSpecialCases: Stored original space ID and side quest status');
+      }
+    }
+    
     // Process each raw next space from the CSV
     for (const rawSpaceName of rawNextSpaces) {
-      // Extract the base space name (before any explanatory text)
-      const cleanedSpaceName = gameState.extractSpaceName(rawSpaceName);
-      console.log('MoveLogicSpecialCases: Processing raw space name:', rawSpaceName, '-> cleaned:', cleanedSpaceName);
+      // Special handling for RETURN TO YOUR SPACE option
+      if (rawSpaceName.includes('RETURN TO YOUR SPACE')) {
+        // Only show on subsequent visits if we have stored origin and haven't used cheat
+        const originalSpaceId = this.getPlayerGameProperty(gameState, player, 'originalSpaceId');
+        const isOnSideQuest = this.getPlayerGameProperty(gameState, player, 'isOnPMSideQuest');
+        const hasUsedCheatBypass = this.getPlayerGameProperty(gameState, player, 'hasUsedCheatBypass');
+        
+        if (!isFirstVisit && originalSpaceId && isOnSideQuest && !hasUsedCheatBypass) {
+          // Find the original space
+          const originalSpace = gameState.findSpaceById(originalSpaceId);
+          if (originalSpace) {
+            console.log('MoveLogicSpecialCases: Creating RETURN TO YOUR SPACE option for space:', originalSpace.name);
+            
+            // Create a special move object for the return option
+            const returnOption = {
+              id: 'return-to-your-space',
+              name: rawSpaceName, // Use exact text from CSV
+              type: 'special',
+              isReturnToOriginSpace: true, // Flag to identify this special option
+              originalSpaceId: originalSpaceId // Store the original space ID
+            };
+            
+            // Add to available moves
+            availableMoves.push(returnOption);
+            console.log('MoveLogicSpecialCases: Added RETURN TO YOUR SPACE option');
+          }
+        } else {
+          console.log('MoveLogicSpecialCases: Conditions not met for RETURN TO YOUR SPACE:',
+                     'Subsequent visit?', !isFirstVisit,
+                     'Original space ID?', !!originalSpaceId,
+                     'On side quest?', !!isOnSideQuest,
+                     'Used cheat bypass?', !!hasUsedCheatBypass);
+        }
+        
+        continue; // Skip to next space
+      }
       
-      // Use our helper function to resolve the appropriate space
+      // Special handling for CHEAT-BYPASS
+      const extractedName = gameState.extractSpaceName ? 
+        gameState.extractSpaceName(rawSpaceName) : 
+        rawSpaceName.split(' - ')[0].trim();
+      
+      if (extractedName === 'CHEAT-BYPASS') {
+        // Resolve the space as normal
+        const bypassSpace = this.resolveSpaceForVisitType(gameState, player, extractedName);
+        
+        if (bypassSpace) {
+          // Mark as cheat bypass for selection handling
+          bypassSpace.isCheatBypass = true;
+          
+          // Add to available moves
+          if (!availableMoves.some(move => move.id === bypassSpace.id)) {
+            availableMoves.push(bypassSpace);
+            console.log('MoveLogicSpecialCases: Added CHEAT-BYPASS option:', bypassSpace.name);
+          }
+        }
+        
+        continue; // Skip to next space
+      }
+      
+      // Regular space handling
+      const cleanedSpaceName = gameState.extractSpaceName ? 
+        gameState.extractSpaceName(rawSpaceName) : 
+        rawSpaceName.split(' - ')[0].trim();
+      
+      console.log('MoveLogicSpecialCases: Processing regular space:', cleanedSpaceName);
+      
+      // Use helper function to resolve the appropriate space
       const nextSpace = this.resolveSpaceForVisitType(gameState, player, cleanedSpaceName);
       
       // Add to available moves if not already in the list and if a space was found
       if (nextSpace && !availableMoves.some(move => move.id === nextSpace.id)) {
         availableMoves.push(nextSpace);
-        console.log('MoveLogicSpecialCases: Added PM-DECISION-CHECK move:', nextSpace.name, nextSpace.id);
+        console.log('MoveLogicSpecialCases: Added regular move:', nextSpace.name, nextSpace.id);
       } else if (!nextSpace) {
         console.log('MoveLogicSpecialCases: No space resolved for:', cleanedSpaceName);
       } else {
@@ -556,33 +654,175 @@ console.log('MoveLogicSpecialCases.js file is beginning to be used');
    * @returns {boolean} - The property value or false if not found
    */
   MoveLogicSpecialCases.prototype.getPlayerGameProperty = function(gameState, player, propertyName) {
-    // Try different ways of accessing the property
-    if (player[propertyName] !== undefined) {
-      return player[propertyName];
-    }
-    
-    if (player.properties && player.properties[propertyName] !== undefined) {
-      return player.properties[propertyName];
-    }
-    
-    if (gameState.getPlayerProperty) {
-      return gameState.getPlayerProperty(player.id, propertyName) || false;
-    }
-    
-    // If game state or property checking functions are unavailable,
-    // we'll allow the UI to handle the choice
-    
-    // For debugging, return test values (in a real implementation, we'd ask the player or examine game state)
-    // These test values lead to a variety of paths for testing
-    const testValues = {
-      hasFdnyApproval: Math.random() > 0.5,
-      hasChangedScope: Math.random() > 0.5,
-      sentByDOB: Math.random() > 0.5,
+  // Try different ways of accessing the property
+  if (player[propertyName] !== undefined) {
+  return player[propertyName];
+  }
+  
+  if (player.properties && player.properties[propertyName] !== undefined) {
+  return player.properties[propertyName];
+  }
+  
+  if (gameState.getPlayerProperty) {
+  return gameState.getPlayerProperty(player.id, propertyName) || false;
+  }
+  
+  // If game state or property checking functions are unavailable,
+  // we'll allow the UI to handle the choice
+  
+  // For debugging, return test values (in a real implementation, we'd ask the player or examine game state)
+  // These test values lead to a variety of paths for testing
+  const testValues = {
+  hasFdnyApproval: Math.random() > 0.5,
+  hasChangedScope: Math.random() > 0.5,
+  sentByDOB: Math.random() > 0.5,
       hasFireSystems: Math.random() > 0.5,
       hasDOBApproval: Math.random() > 0.5
     };
     
     return testValues[propertyName] || false;
+  };
+  
+  /**
+   * Set a player game property with fallbacks for different storage methods
+   * @param {Object} gameState - The current game state
+   * @param {Object} player - The player to set property for
+   * @param {string} propertyName - The name of the property to set
+   * @param {any} value - The value to set
+   */
+  MoveLogicSpecialCases.prototype.setPlayerGameProperty = function(gameState, player, propertyName, value) {
+    // Try different ways of storing the property
+    if (player.properties) {
+      // If player has a properties object, use that
+      player.properties[propertyName] = value;
+      console.log(`MoveLogicSpecialCases: Set player.properties.${propertyName} to:`, value);
+    } else if (gameState.setPlayerProperty) {
+      // If gameState has a setter method, use that
+      gameState.setPlayerProperty(player.id, propertyName, value);
+      console.log(`MoveLogicSpecialCases: Used gameState.setPlayerProperty for ${propertyName}:`, value);
+    } else {
+      // Last resort, set directly on player
+      player[propertyName] = value;
+      console.log(`MoveLogicSpecialCases: Set player.${propertyName} directly to:`, value);
+    }
+  };
+  
+  /**
+   * Handle move selection for PM-DECISION-CHECK space
+   * This should be called when a player selects a move from the PM-DECISION-CHECK space
+   * 
+   * @param {Object} gameState - The current game state
+   * @param {Object} player - The player who selected the move
+   * @param {Object} selectedMove - The move that was selected
+   * @returns {Object|Array} - The processed move or available moves for RETURN option
+   */
+  MoveLogicSpecialCases.prototype.handlePmDecisionMoveSelection = function(gameState, player, selectedMove) {
+    console.log('MoveLogicSpecialCases: Handling move selection for PM-DECISION-CHECK');
+    
+    // Handle RETURN TO YOUR SPACE selection
+    if (selectedMove.isReturnToOriginSpace) {
+      console.log('MoveLogicSpecialCases: Processing RETURN TO YOUR SPACE selection');
+      
+      // Get the original space ID
+      const originalSpaceId = selectedMove.originalSpaceId || 
+                            this.getPlayerGameProperty(gameState, player, 'originalSpaceId');
+      
+      if (originalSpaceId) {
+        // Find the original space
+        const originalSpace = gameState.findSpaceById(originalSpaceId);
+        if (originalSpace) {
+          console.log('MoveLogicSpecialCases: Original space found:', originalSpace.name);
+          
+          // Get available moves for the original space directly from CSV
+          const rawNextSpaces = [
+            originalSpace.rawSpace1, 
+            originalSpace.rawSpace2, 
+            originalSpace.rawSpace3, 
+            originalSpace.rawSpace4, 
+            originalSpace.rawSpace5
+          ].filter(space => space && space.trim() !== '' && space !== 'n/a');
+          
+          console.log('MoveLogicSpecialCases: Original space raw next spaces:', rawNextSpaces);
+          
+          // Process these raw spaces to get actual move objects
+          const inheritedMoves = [];
+          for (const rawSpaceName of rawNextSpaces) {
+            const cleanedSpaceName = gameState.extractSpaceName ? 
+              gameState.extractSpaceName(rawSpaceName) : 
+              rawSpaceName.split(' - ')[0].trim();
+            
+            const nextSpace = this.resolveSpaceForVisitType(gameState, player, cleanedSpaceName);
+            if (nextSpace && !inheritedMoves.some(move => move.id === nextSpace.id)) {
+              inheritedMoves.push(nextSpace);
+            }
+          }
+          
+          console.log('MoveLogicSpecialCases: Inherited moves:', inheritedMoves.map(m => m.name).join(', '));
+          
+          // Return the inherited moves - special case object to signal multiple options
+          return {
+            isInheritedMoves: true,
+            moves: inheritedMoves
+          };
+        }
+      }
+      
+      console.warn('MoveLogicSpecialCases: Could not find original space for RETURN TO YOUR SPACE');
+      return selectedMove; // Just return the selected move as fallback
+    }
+    
+    // Handle CHEAT-BYPASS selection
+    if (selectedMove.isCheatBypass) {
+      console.log('MoveLogicSpecialCases: Processing CHEAT-BYPASS selection - point of no return');
+      
+      // Clear stored options (point of no return)
+      this.setPlayerGameProperty(gameState, player, 'originalSpaceId', null);
+      this.setPlayerGameProperty(gameState, player, 'isOnPMSideQuest', false);
+      this.setPlayerGameProperty(gameState, player, 'hasUsedCheatBypass', true);
+    }
+    
+    // For all other moves, just return the selected move unchanged
+    return selectedMove;
+  };
+  
+  /**
+   * Helper method to handle player space changes to manage side quest state
+   * This should be called by GameStateManager whenever a player moves to a new space
+   * 
+   * @param {Object} gameState - The current game state
+   * @param {Object} player - The player who moved
+   * @param {Object} newSpace - The space the player moved to
+   */
+  MoveLogicSpecialCases.prototype.handlePlayerSpaceChange = function(gameState, player, newSpace) {
+    // Check if player is on a side quest
+    const isOnSideQuest = this.getPlayerGameProperty(gameState, player, 'isOnPMSideQuest');
+    
+    if (isOnSideQuest) {
+      // Define side quest spaces based on CSV data pattern
+      const isSideQuestSpace = (spaceName) => {
+        // This should be CSV-driven, but for now identify common patterns
+        // Extract the base name
+        const baseName = spaceName.split(' - ')[0].trim().toUpperCase();
+        
+        // Known side quest spaces
+        return [
+          'PM-DECISION-CHECK',
+          'LEND-SCOPE-CHECK',
+          'BANK-FUND-REVIEW',
+          'INVESTOR-FUND-REVIEW',
+          'CHEAT-BYPASS'
+        ].includes(baseName);
+      };
+      
+      // Check if player has returned to the main path
+      if (!isSideQuestSpace(newSpace.name)) {
+        console.log('MoveLogicSpecialCases: Player returned to main path naturally, clearing side quest state');
+        
+        // Clear side quest state
+        this.setPlayerGameProperty(gameState, player, 'originalSpaceId', null);
+        this.setPlayerGameProperty(gameState, player, 'isOnPMSideQuest', false);
+      }
+    }
   };
   
   // Expose the class to the global scope

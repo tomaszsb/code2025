@@ -4,6 +4,12 @@ All notable changes to the Project Management Game will be documented in this fi
 
 ## [2025-05-04]
 
+### Added
+- Implemented "RETURN TO YOUR SPACE" option for PM-DECISION-CHECK space that allows players to return to the main path after side quests
+- Added side quest tracking system that maintains a player's original path when they visit PM-DECISION-CHECK
+- Added special handling for CHEAT-BYPASS option that implements real-world consequences (can't undo cheating)
+- Added event-based detection of player movement to automatically clear side quest state when returning to main path
+
 ### Changed
 - Refactored MoveLogicBase.js to use a fully data-driven approach from CSV files instead of hardcoded special case handling
 - Removed hardcoded decision tree spaces array for spaces like "ARCH-INITIATION", "PM-DECISION-CHECK", and "REG-FDNY-FEE-REVIEW"

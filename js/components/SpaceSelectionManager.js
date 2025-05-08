@@ -120,6 +120,7 @@ class SpaceSelectionManager {
       allSpaces.forEach(space => {
         space.classList.remove('available-move');
         space.classList.remove('selected-move');
+        space.classList.remove('original-space-move');
         
         // Remove any move indicators
         const existingIndicators = space.querySelectorAll('.move-indicator');
@@ -139,6 +140,11 @@ class SpaceSelectionManager {
           // Add the available-move class for highlighting
           spaceElement.classList.add('available-move');
           
+          // If this is from original space, add a special class
+          if (move.fromOriginalSpace) {
+            spaceElement.classList.add('original-space-move');
+          }
+          
           // Create a visual indicator for the move
           const indicatorElement = document.createElement('div');
           indicatorElement.className = 'move-indicator';
@@ -150,6 +156,14 @@ class SpaceSelectionManager {
             detailsElement.className = 'move-details';
             detailsElement.textContent = move.visitType.charAt(0).toUpperCase() + move.visitType.slice(1) + ' visit';
             indicatorElement.appendChild(detailsElement);
+          }
+          
+          // Add note about original space if this move comes from there
+          if (move.fromOriginalSpace && move.originalSpaceName) {
+            const originElement = document.createElement('div');
+            originElement.className = 'move-origin';
+            originElement.textContent = `From: ${move.originalSpaceName}`;
+            indicatorElement.appendChild(originElement);
           }
           
           // Add the indicator to the space
@@ -176,7 +190,7 @@ class SpaceSelectionManager {
         }
       }
       
-      console.log('SpaceSelectionManager: Visual cues updated for available moves');
+      console.log('SpaceSelectionManager: Visual cues updated for available moves:', availableMoves.length);
     }, 100); // Short delay to ensure React has finished rendering
   }
   
@@ -185,7 +199,8 @@ class SpaceSelectionManager {
    * @param {string} spaceId - ID of the clicked space
    */
   handleSpaceClick = (spaceId) => {
-    // Check if this space is a valid move
+    
+    // Standard space click handling - Check if this space is a valid move
     const { availableMoves, spaces } = this.gameBoard.state;
     const isValidMove = availableMoves.some(space => space.id === spaceId);
     
@@ -202,30 +217,8 @@ class SpaceSelectionManager {
     }
     
     if (isValidMove) {
-      // Dispatch space selection event instead of directly updating state
-      window.GameStateManager.dispatchEvent('spaceSelected', {
-        spaceId: spaceId,
-        spaceData: clickedSpace,
-        isValidMove: true,
-        selectedForMove: true
-      });
-      
-      // Temporary compatibility: Still update GameBoard state until all components are refactored
-      this.gameBoard.setState({
-        // No longer change selectedSpace - keep it as the current player's position
-        selectedMove: spaceId,   // Store the destination space
-        hasSelectedMove: true,   // Mark that player has selected their move
-        exploredSpace: exploredSpaceData // Set the explored space for the space explorer panel
-      }, () => {
-        // After state update, update visual cues to show selected move
-        this.updateAvailableMoveVisuals();
-        console.log('SpaceSelectionManager: Selected move updated:', this.gameBoard.state.selectedMove);
-      });
-      
-      console.log('SpaceSelectionManager: Move selected:', spaceId, '- Will be executed on End Turn');
-      
-      // Provide visual feedback for the selection
-      this.provideSelectionFeedback(spaceId);
+      // Use the helper method to handle valid move selection
+      this._handleValidSpaceSelection(spaceId, clickedSpace);
     } else {
       // For non-move spaces, dispatch space selection event for exploration
       window.GameStateManager.dispatchEvent('spaceSelected', {
@@ -265,12 +258,42 @@ class SpaceSelectionManager {
   }
   
   /**
+   * Helper method to handle valid space selection
+   * @param {string} spaceId - ID of the selected space
+   * @param {Object} spaceData - Data for the selected space
+   */
+  _handleValidSpaceSelection = (spaceId, spaceData) => {
+    // Dispatch space selection event for valid move
+    window.GameStateManager.dispatchEvent('spaceSelected', {
+      spaceId: spaceId,
+      spaceData: spaceData,
+      isValidMove: true,
+      selectedForMove: true
+    });
+    
+    // Update GameBoard state with selected move
+    this.gameBoard.setState({
+      selectedMove: spaceId,
+      hasSelectedMove: true,
+      exploredSpace: spaceData
+    }, () => {
+      // After state update, update visual cues to show selected move
+      this.updateAvailableMoveVisuals();
+      console.log('SpaceSelectionManager: Selected move updated:', this.gameBoard.state.selectedMove);
+    });
+    
+    console.log('SpaceSelectionManager: Move selected:', spaceId, '- Will be executed on End Turn');
+    
+    // Provide visual feedback for the selection
+    this.provideSelectionFeedback(spaceId);
+  }
+  
+  /**
    * Animate transitions between different sets of available moves
    * Called when available moves change
    */
   animateAvailableMoveTransition = () => {
-    // This would ideally be called when moves change, such as after dice rolls
-    // Using existing CSS animations, we just need to update the classes
+    // Use existing CSS animations, we just need to update the classes
     this.updateAvailableMoveVisuals();
   }
   
@@ -490,3 +513,4 @@ class SpaceSelectionManager {
 window.SpaceSelectionManager = SpaceSelectionManager;
 
 console.log('SpaceSelectionManager.js code execution finished');
+console.log('SpaceSelectionManager.js updated with PM-DECISION-CHECK direct original space move options [2025-05-06]');

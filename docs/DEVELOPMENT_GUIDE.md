@@ -47,7 +47,17 @@ This guide provides information on the next development steps for the Project Ma
    - ✅ Card effects now properly affect game state during movement (fixed April 30, 2025)
    - ✅ Implemented improved visit type resolution for consistent handling (fixed May 2, 2025)
    - ✅ Implemented fully data-driven approach using CSV files instead of hardcoded special cases (fixed May 4, 2025)
-   - ✅ Added "RETURN TO YOUR SPACE" option for PM-DECISION-CHECK to allow returning to main path (fixed May 4, 2025)
+   - ✅ Added original space moves to PM-DECISION-CHECK to allow returning to main path (fixed May 4, 2025)
+   - ✅ Enhanced PM-DECISION-CHECK UI to show original space moves directly in Available Moves section (fixed May 6, 2025)
+   - ✅ Fixed original space move selection handling to properly process return to main path (fixed May 6, 2025)
+   - ✅ Merged MoveLogicDirectFix.js into MoveLogicPmDecisionCheck.js (fixed May 7, 2025)
+   - ✅ Removed MoveLogicDirectFix.js from loading sequence to eliminate initialization issues (fixed May 7, 2025)
+   - ✅ Refactored MoveLogicPmDecisionCheck.js to follow closed system principles (fixed May 7, 2025)
+   - ✅ Implemented deterministic initialization pattern with proper error reporting (fixed May 7, 2025)
+   - ✅ Fixed critical initialization order issues between MoveLogic components (fixed May 8, 2025)
+   - ✅ Implemented event-based dependency management with proper initialization sequence (fixed May 8, 2025)
+   - ✅ Added method overwrite protection with property descriptors for critical methods (fixed May 9, 2025)
+   - ✅ Implemented self-healing GameStateManager detection with MutationObserver (fixed May 9, 2025)
 
 4. **Component Modularity**:
    - ✅ Refactored SpaceInfo.js into smaller, focused modules (SpaceInfoDice.js, SpaceInfoCards.js, SpaceInfoMoves.js, SpaceInfoUtils.js)
@@ -103,4 +113,4 @@ Update the following for each change:
 2. Component documentation within the file itself
 3. Any relevant player-facing documentation
 
-*Last Updated: May 4, 2025*
+*Last Updated: May 9, 2025*

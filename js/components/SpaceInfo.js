@@ -204,6 +204,9 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
         {/* OWNER-FUND-INITIATION button - from SpaceInfoMoves */}
         {this.renderOwnerFundInitiationButton()}
         
+        {/* RETURN TO YOUR SPACE button - from SpaceInfoMoves */}
+        {this.renderReturnToYourSpaceButton()}
+        
         {/* Display dice outcomes if available - from SpaceInfoDice */}
         {this.renderDiceOutcomes()}
         

@@ -90,7 +90,22 @@ window.SpaceInfoMoves = {
         </button>
       </div>
     );
+  },
+  
+  /**
+   * Renders the RETURN TO YOUR SPACE button for PM-DECISION-CHECK subsequent visits
+   * This method is now disabled as original space moves are directly added to
+   * the availableMoves array in MoveLogicPmDecisionCheck.js
+   * @returns {null} Always returns null as this feature is now handled differently
+   */
+  renderReturnToYourSpaceButton: function() {
+    // Original space moves are now directly included in the availableMoves array
+    // This button is no longer needed as it has been replaced with a more intuitive approach
+    // that shows the original space moves directly in the Available Moves section
+    console.log('SpaceInfoMoves: RETURN TO YOUR SPACE button is disabled - original space moves are in availableMoves');
+    return null;
   }
 };
 
 console.log('SpaceInfoMoves.js code execution finished');
+console.log('SpaceInfoMoves.js updated to disable RETURN TO YOUR SPACE button [2025-05-06]');

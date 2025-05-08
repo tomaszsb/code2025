@@ -6,6 +6,9 @@ console.log('MoveLogicBackwardCompatibility.js file is beginning to be used');
  * 
  * This module maintains the window.MoveLogic global object that was used in legacy code
  * and forwards the calls to the new MoveLogicManager implementation.
+ * 
+ * FIXED: Implemented getAvailableMoves method to use a data-driven approach (2025-05-08)
+ * FIXED: Made sure backward compatibility works with the new manager pattern (2025-05-08)
  */
 (function() {
   // Define the MoveLogicBackwardCompatibility class
@@ -15,8 +18,89 @@ console.log('MoveLogicBackwardCompatibility.js file is beginning to be used');
     
     // Create legacy compatibility object that forwards to the manager
     window.MoveLogic = {
-      getAvailableMoves: (gameState, player) => 
-        this.manager.getAvailableMoves(gameState, player),
+      // Implement getAvailableMoves directly using data-driven approach
+      // rather than trying to delegate to a method that doesn't exist
+      getAvailableMoves: (gameState, player) => {
+        console.log('MoveLogicBackwardCompatibility: getAvailableMoves method is being used');
+        
+        // Get the player's current space
+        const currentSpace = gameState.findSpaceById(player.position);
+        if (!currentSpace) {
+          console.log('MoveLogicBackwardCompatibility: Player position not found, no moves available');
+          return [];
+        }
+        
+        console.log(`MoveLogicBackwardCompatibility: Player is on space ${currentSpace.name}, checking nextSpaces from CSV`);
+        
+        // Get available moves from the nextSpaces array (derived from CSV)
+        const availableMoves = [];
+        
+        // Process each potential next space from the space's nextSpaces property (from CSV)
+        for (const nextSpaceName of currentSpace.nextSpaces || []) {
+          // Skip empty space names or special patterns
+          if (!nextSpaceName || nextSpaceName.trim() === '') continue;
+          if (nextSpaceName.includes('Outcome from rolled dice')) continue;
+          if (nextSpaceName.includes('Option from first visit')) continue;
+          if (nextSpaceName.toLowerCase().includes('negotiate')) continue;
+          
+          console.log(`MoveLogicBackwardCompatibility: Processing potential next space: ${nextSpaceName}`);
+          
+          // Get base name
+          const cleanedSpaceName = gameState.extractSpaceName(nextSpaceName);
+          
+          // Find corresponding space objects
+          const matchingSpaces = gameState.spaces.filter(s => 
+            gameState.extractSpaceName(s.name) === cleanedSpaceName);
+          
+          // If we found matching spaces
+          if (matchingSpaces.length > 0) {
+            console.log(`MoveLogicBackwardCompatibility: Found ${matchingSpaces.length} matching spaces for ${cleanedSpaceName}`);
+            
+            // Determine if player has visited this space before
+            const hasVisited = gameState.hasPlayerVisitedSpace(player, cleanedSpaceName);
+            const visitType = hasVisited ? 'subsequent' : 'first';
+            
+            // Try to find the exact match for visit type
+            let nextSpace = matchingSpaces.find(s => 
+              s.visitType && s.visitType.toLowerCase() === visitType.toLowerCase());
+            
+            // If no exact match, use any available space with this name
+            if (!nextSpace && matchingSpaces.length > 0) {
+              nextSpace = matchingSpaces[0];
+            }
+            
+            // Add to available moves if not already in the list
+            if (nextSpace && !availableMoves.some(move => move.id === nextSpace.id)) {
+              console.log(`MoveLogicBackwardCompatibility: Adding ${nextSpace.name} to available moves`);
+              availableMoves.push(nextSpace);
+            }
+          }
+        }
+        
+        // Check for special case handling
+        if (this.manager.hasSpecialCaseLogic && this.manager.hasSpecialCaseLogic(currentSpace.name)) {
+          console.log(`MoveLogicBackwardCompatibility: Detected special case for space ${currentSpace.name}, forwarding to manager`);
+          
+          // Forward to special case handler if it exists
+          if (this.manager.handleSpecialCaseSpace) {
+            const specialMoves = this.manager.handleSpecialCaseSpace(gameState, player, currentSpace);
+            if (specialMoves && specialMoves.length > 0) {
+              console.log(`MoveLogicBackwardCompatibility: Adding ${specialMoves.length} special case moves`);
+              
+              // Add all special moves not already in the list
+              specialMoves.forEach(specialMove => {
+                if (!availableMoves.some(move => move.id === specialMove.id)) {
+                  availableMoves.push(specialMove);
+                }
+              });
+            }
+          }
+        }
+        
+        console.log(`MoveLogicBackwardCompatibility: Returning ${availableMoves.length} available moves`);
+        console.log('MoveLogicBackwardCompatibility: getAvailableMoves method completed');
+        return availableMoves;
+      },
       hasSpecialCaseLogic: (spaceName) => 
         this.manager.hasSpecialCaseLogic(spaceName),
       handleSpecialCaseSpace: (gameState, player, currentSpace) => 
@@ -40,4 +124,4 @@ console.log('MoveLogicBackwardCompatibility.js file is beginning to be used');
   window.MoveLogicBackwardCompatibility = MoveLogicBackwardCompatibility;
 })();
 
-console.log('MoveLogicBackwardCompatibility.js code execution finished');
+console.log('MoveLogicBackwardCompatibility.js code execution finished - Fixed getAvailableMoves implementation');

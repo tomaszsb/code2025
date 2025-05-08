@@ -38,13 +38,38 @@
     <script type="text/babel" src="js/utils/csv-parser.js"></script>
     
     <!-- Load MoveLogic modules in correct dependency order -->
+    <!-- Base classes first -->
     <script type="text/babel" src="js/utils/move-logic/MoveLogicBase.js"></script>
     <script type="text/babel" src="js/utils/move-logic/MoveLogicSpaceTypes.js"></script>
     <script type="text/babel" src="js/utils/move-logic/MoveLogicVisitTypes.js"></script>
     <script type="text/babel" src="js/utils/move-logic/MoveLogicCardEffects.js"></script>
     <script type="text/babel" src="js/utils/move-logic/MoveLogicSpaceHandlers.js"></script>
     <script type="text/babel" src="js/utils/move-logic/MoveLogicSpecialCases.js"></script>
+    <!-- Special case handlers next -->
+    <script type="text/babel" src="js/utils/move-logic/MoveLogicPmDecisionCheck.js"></script>
+    <!-- UI Updates next - critical to fix file load order problems -->
     <script type="text/babel" src="js/utils/move-logic/MoveLogicUIUpdates.js"></script>
+    <!-- Create event to signal that dependencies are ready -->
+    <script type="text/babel">
+      // Wait for initialization to complete properly
+      setTimeout(() => {
+        // Create event to signal that dependencies are ready
+        window.moveLogicDependenciesReady = true;
+        try {
+          const dependenciesEvent = new CustomEvent('moveLogicDependenciesReady', {
+            detail: {
+              specialCasesInitialized: window.MoveLogicSpecialCasesInitialized || false,
+              pmDecisionCheckInitialized: window.MoveLogicPmDecisionCheckInitialized || false,
+              managerInitialized: window.MoveLogicManagerInitialized || false
+            }
+          });
+          window.dispatchEvent(dependenciesEvent);
+          console.log('MoveLogic dependencies initialized');
+        } catch (e) {
+          console.error('Error dispatching moveLogicDependenciesReady event:', e);
+        }
+      }, 50); // Small delay to allow scripts to load
+    </script>
     <script type="text/babel" src="js/utils/move-logic/MoveLogicManager.js"></script>
     <script type="text/babel" src="js/utils/move-logic/MoveLogicBackwardCompatibility.js"></script>
     <script type="text/babel" src="js/utils/MoveLogicManager.js"></script>
@@ -69,7 +94,7 @@
     <script type="text/babel" src="js/components/SpaceSelectionManager.js"></script>
     <script type="text/babel" src="js/components/SpaceExplorerManager.js"></script>
     <script type="text/babel" src="js/components/managers/SpaceInfoManager.js"></script>
-    <script type="text/babel" src="js/components/utils/SpaceInfoUtils.js"></script>
+    <script type="text/babel" src="js/components/SpaceInfoUtils.js"></script>
     <script type="text/babel" src="js/components/SpaceInfoDice.js"></script>
     <script type="text/babel" src="js/components/SpaceInfoCards.js"></script>
     <script type="text/babel" src="js/components/SpaceInfoMoves.js"></script>
@@ -99,5 +124,203 @@
     
     <!-- Load main script last -->
     <script type="text/babel" src="js/main.js"></script>
+    
+    <!-- Ensure PM-DECISION-CHECK handler is loaded -->
+    <script type="text/babel">
+      // Wait for everything to initialize
+      setTimeout(() => {
+        console.log('%c Verifying PM-DECISION-CHECK handler is loaded...', 'background: #9C27B0; color: white; padding: 2px;');
+        
+        if (window.MoveLogicSpecialCases) {
+          if (typeof window.MoveLogicSpecialCases.handlePmDecisionCheck !== 'function') {
+            console.warn('%c PM-DECISION-CHECK handler is still missing! Attempting to load it now...', 'background: red; color: white; padding: 2px;');
+            
+            // Add the handler directly
+            try {
+              // Load the MoveLogicPmDecisionCheck.js file again (MoveLogicDirectFix.js has been removed)
+              var script = document.createElement('script');
+              script.src = 'js/utils/move-logic/MoveLogicPmDecisionCheck.js';
+              script.type = 'text/babel';
+              document.head.appendChild(script);
+              
+              console.log('%c Loaded MoveLogicPmDecisionCheck.js manually', 'background: #9C27B0; color: white; padding: 2px;');
+            } catch (e) {
+              console.error('Error loading PM-DECISION-CHECK handler:', e);
+            }
+          } else {
+            console.log('%c PM-DECISION-CHECK handler is present in MoveLogicSpecialCases', 'background: green; color: white; padding: 2px;');
+          }
+        } else {
+          console.warn('%c MoveLogicSpecialCases not found!', 'background: red; color: white; padding: 2px;');
+        }
+      }, 2000); // Wait 2 seconds for everything to initialize
+    </script>
+    
+    <!-- Method validation check script for PM-DECISION-CHECK issue -->
+    <script type="text/babel">
+      // Wait for everything to be fully loaded
+      setTimeout(function() {
+        console.log('%c DEBUG [methodCheck]: Checking PM-DECISION-CHECK methods', 'background: #4CAF50; color: white; padding: 2px;');
+        
+        if (window.MoveLogicSpecialCases) {
+          console.log('%c DEBUG [methodCheck]: MoveLogicSpecialCases exists', 'background: #4CAF50; color: white; padding: 2px;');
+          console.log('%c DEBUG [methodCheck]: specialCaseSpaces array:', 'background: #4CAF50; color: white; padding: 2px;', 
+                      window.MoveLogicSpecialCases.specialCaseSpaces);
+                      
+          console.log('%c DEBUG [methodCheck]: hasSpecialCaseLogic method exists:', 'background: #4CAF50; color: white; padding: 2px;', 
+                      typeof window.MoveLogicSpecialCases.hasSpecialCaseLogic === 'function');
+                      
+          console.log('%c DEBUG [methodCheck]: handleSpecialCaseSpace method exists:', 'background: #4CAF50; color: white; padding: 2px;', 
+                      typeof window.MoveLogicSpecialCases.handleSpecialCaseSpace === 'function');
+                      
+          console.log('%c DEBUG [methodCheck]: handlePmDecisionCheck method exists:', 'background: #4CAF50; color: white; padding: 2px;', 
+                      typeof window.MoveLogicSpecialCases.handlePmDecisionCheck === 'function');
+                      
+          // Test if PM-DECISION-CHECK is recognized as a special case
+          console.log('%c DEBUG [methodCheck]: Is PM-DECISION-CHECK a special case?', 'background: #4CAF50; color: white; padding: 2px;', 
+                      window.MoveLogicSpecialCases.hasSpecialCaseLogic('PM-DECISION-CHECK'));
+        } else {
+          console.log('%c DEBUG [methodCheck]: MoveLogicSpecialCases NOT found!', 'background: red; color: white; padding: 2px;');
+        }
+        
+        // Try to print method definitions to inspect them
+        try {
+          if (window.MoveLogicSpecialCases && window.MoveLogicSpecialCases.handleSpecialCaseSpace) {
+            console.log('%c DEBUG [methodCheck]: handleSpecialCaseSpace Method code:', 'background: #4CAF50; color: white; padding: 2px;');
+            console.log(window.MoveLogicSpecialCases.handleSpecialCaseSpace.toString().substring(0, 500) + '...');
+          }
+        } catch (e) {
+          console.error('Error printing method code:', e);
+        }
+      }, 2000);
+      
+      // Add specific test for the currently occupied space
+      try {
+        setTimeout(function() {
+          if (window.GameStateManager && window.MoveLogicSpecialCases) {
+            const currentPlayer = window.GameStateManager.getCurrentPlayer();
+            if (currentPlayer && currentPlayer.position) {
+              const currentSpace = window.GameStateManager.findSpaceById(currentPlayer.position);
+              if (currentSpace) {
+                console.log('%c DEBUG [spaceTest]: Current space:', 'background: blue; color: white; padding: 2px;', currentSpace.name);
+                console.log('%c DEBUG [spaceTest]: Is current space a special case?', 'background: blue; color: white; padding: 2px;', 
+                          window.MoveLogicSpecialCases.hasSpecialCaseLogic(currentSpace.name));
+                          
+                // If it's PM-DECISION-CHECK, try executing the handler directly
+                if (currentSpace.name === 'PM-DECISION-CHECK' || currentSpace.name.includes('PM-DECISION-CHECK')) {
+                  console.log('%c DEBUG [spaceTest]: Forcibly executing handlePmDecisionCheck for testing', 'background: blue; color: white; padding: 2px;');
+                  try {
+                    // First check if method exists
+                    if (typeof window.MoveLogicSpecialCases.handlePmDecisionCheck !== 'function') {
+                      console.error('%c DEBUG [spaceTest]: handlePmDecisionCheck method is missing! Attempting emergency fix...', 'background: red; color: white; padding: 4px;');
+                      
+                      // Note: MoveLogicDirectFix.js has been removed, so we use MoveLogicPmDecisionCheckReference instead
+                      
+                      // Create emergency implementation directly
+                      window.MoveLogicSpecialCases.handlePmDecisionCheck = function(gameState, player, currentSpace) {
+                        console.log('%c EMERGENCY: Using inline handlePmDecisionCheck implementation', 'background: red; color: white; padding: 2px;');
+                        
+                        // Get base moves from current space
+                        const availableMoves = [];
+                        
+                        // Get raw next spaces from CSV data
+                        const rawNextSpaces = [
+                          currentSpace.rawSpace1, 
+                          currentSpace.rawSpace2, 
+                          currentSpace.rawSpace3, 
+                          currentSpace.rawSpace4, 
+                          currentSpace.rawSpace5
+                        ].filter(space => space && space.trim() !== '' && space !== 'n/a');
+                        
+                        // Process each raw space
+                        for (const rawSpaceName of rawNextSpaces) {
+                          const cleanName = gameState.extractSpaceName ? 
+                            gameState.extractSpaceName(rawSpaceName) : 
+                            rawSpaceName.split(' - ')[0].trim();
+                          
+                          // Use helper to find the space
+                          let nextSpace;
+                          if (typeof this.resolveSpaceForVisitType === 'function') {
+                            nextSpace = this.resolveSpaceForVisitType(gameState, player, cleanName);
+                          } else {
+                            // Fallback if helper not available
+                            nextSpace = gameState.spaces.find(s => 
+                              gameState.extractSpaceName(s.name) === cleanName);
+                          }
+                          
+                          // Add to available moves if found
+                          if (nextSpace && !availableMoves.some(move => move.id === nextSpace.id)) {
+                            availableMoves.push(nextSpace);
+                          }
+                        }
+                        
+                        // Try to get previous space as well
+                        if (player.positionHistory && player.positionHistory.length > 1) {
+                          const prevSpaceId = player.positionHistory[player.positionHistory.length - 2];
+                          const previousSpace = gameState.findSpaceById(prevSpaceId);
+                          
+                          if (previousSpace) {
+                            console.log('%c EMERGENCY: Added moves from previous space: ' + previousSpace.name, 'background: red; color: white; padding: 2px;');
+                            
+                            // Also add raw next spaces from previous space
+                            const prevRawNextSpaces = [
+                              previousSpace.rawSpace1, 
+                              previousSpace.rawSpace2, 
+                              previousSpace.rawSpace3, 
+                              previousSpace.rawSpace4, 
+                              previousSpace.rawSpace5
+                            ].filter(space => space && space.trim() !== '' && space !== 'n/a');
+                            
+                            for (const rawSpaceName of prevRawNextSpaces) {
+                              const cleanName = gameState.extractSpaceName ? 
+                                gameState.extractSpaceName(rawSpaceName) : 
+                                rawSpaceName.split(' - ')[0].trim();
+                              
+                              // Skip PM-DECISION-CHECK to avoid loop
+                              if (cleanName === 'PM-DECISION-CHECK') continue;
+                              
+                              let nextSpace;
+                              if (typeof this.resolveSpaceForVisitType === 'function') {
+                                nextSpace = this.resolveSpaceForVisitType(gameState, player, cleanName);
+                              } else {
+                                nextSpace = gameState.spaces.find(s => 
+                                  gameState.extractSpaceName(s.name) === cleanName);
+                              }
+                              
+                              if (nextSpace && !availableMoves.some(move => move.id === nextSpace.id)) {
+                                // Mark as from original space
+                                nextSpace.fromOriginalSpace = true;
+                                nextSpace.originalSpaceName = previousSpace.name;
+                                
+                                // Update name to indicate source
+                                nextSpace.name = `${nextSpace.name} (from ${previousSpace.name})`;
+                                
+                                availableMoves.push(nextSpace);
+                              }
+                            }
+                          }
+                        }
+                        
+                        return availableMoves;
+                      };
+                      
+                      console.log('%c DEBUG [spaceTest]: Emergency handlePmDecisionCheck implementation added', 'background: green; color: white; padding: 2px;');
+                    }
+                    
+                    // Now try to execute the handler
+                    const testMoves = window.MoveLogicSpecialCases.handlePmDecisionCheck(window.GameStateManager, currentPlayer, currentSpace);
+                    console.log('%c DEBUG [spaceTest]: handlePmDecisionCheck test result:', 'background: blue; color: white; padding: 2px;', testMoves);
+                  } catch (e) {
+                    console.error('DEBUG [spaceTest]: Error executing handlePmDecisionCheck:', e);
+                  }
+                }
+              }
+            }
+          }
+        }, 3000); // Give a bit more time after the other checks
+      } catch (e) {
+        console.error('DEBUG [spaceTest]: Error in space test:', e);
+      }
+    </script>
 </body>
 </html>

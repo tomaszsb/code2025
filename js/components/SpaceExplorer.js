@@ -38,10 +38,12 @@ class SpaceExplorer extends React.Component {
     // Track performance metrics for debugging
     this.renderCount = 0;
     this.lastRenderTime = 0;
+    this.isProcessingData = false; // Flag to prevent concurrent processing
     
     // Bind methods to ensure proper this context
     this.handleGameStateChange = this.handleGameStateChange.bind(this);
     this.handleCloseExplorer = this.handleCloseExplorer.bind(this);
+    this.processDiceDataFromProps = this.processDiceDataFromProps.bind(this);
     
     console.log('SpaceExplorer: Constructor completed');
   }
@@ -86,19 +88,30 @@ class SpaceExplorer extends React.Component {
       try {
         // Process dice data and update state
         const processedData = this.processDiceData(space, diceRollData, visitType);
-        this.setState({ 
-          processedDiceData: processedData,
-          diceDataProcessed: true
-        });
+        
+        // Only update state if data has actually changed
+        const dataHasChanged = JSON.stringify(processedData) !== JSON.stringify(this.state.processedDiceData);
+        
+        if (dataHasChanged || !this.state.diceDataProcessed) {
+          this.setState({ 
+            processedDiceData: processedData,
+            diceDataProcessed: true
+          });
+        }
       } catch (error) {
         console.error('SpaceExplorer: Error processing dice data:', error.message);
-        this.setState({ 
-          processedDiceData: null,
-          diceDataProcessed: true
-        });
+        
+        // Only update state if necessary
+        if (this.state.processedDiceData !== null || !this.state.diceDataProcessed) {
+          this.setState({ 
+            processedDiceData: null,
+            diceDataProcessed: true
+          });
+        }
       }
-    } else {
+    } else if (this.state.processedDiceData !== null || !this.state.diceDataProcessed) {
       // Clear processed data if space or diceRollData is not available
+      // Only update state if it's changing
       this.setState({ 
         processedDiceData: null,
         diceDataProcessed: true
@@ -112,15 +125,23 @@ class SpaceExplorer extends React.Component {
   componentDidUpdate(prevProps, prevState) {
     console.log('SpaceExplorer: componentDidUpdate method is being used');
     
-    // Only reprocess dice data if relevant props have changed
+    // Only reprocess dice data if relevant props have changed AND we're not already processing
     if (
-      this.props.space !== prevProps.space || 
-      this.props.diceRollData !== prevProps.diceRollData ||
-      this.props.visitType !== prevProps.visitType ||
-      !this.state.diceDataProcessed
+      !this.isProcessingData && (
+        this.props.space !== prevProps.space || 
+        this.props.diceRollData !== prevProps.diceRollData ||
+        this.props.visitType !== prevProps.visitType ||
+        (!this.state.diceDataProcessed && prevState.diceDataProcessed !== this.state.diceDataProcessed)
+      )
     ) {
       console.log('SpaceExplorer: Relevant props changed, reprocessing dice data');
-      this.processDiceDataFromProps();
+      this.isProcessingData = true;
+      
+      // Use setTimeout to break the potential render cycle
+      setTimeout(() => {
+        this.processDiceDataFromProps();
+        this.isProcessingData = false;
+      }, 0);
     }
     
     // Performance tracking for debugging

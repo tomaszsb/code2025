@@ -223,7 +223,8 @@ class DiceManager {
       return;
     }
     
-    // Update the diceOutcomes and lastDiceRoll state for SpaceInfo component
+    // First update the hasRolledDice flag in both GameStateManager and GameBoard state
+    // This is critical to ensure MovementCore.spaceRequiresDiceRoll doesn't request another roll
     this.gameBoard.setState({
       diceOutcomes: outcomes,
       lastDiceRoll: result,
@@ -232,24 +233,93 @@ class DiceManager {
       hasRolledDice: true  // Mark that player has rolled dice
     });
     
-    // Handle available moves
+    // Also update GameStateManager's hasRolledDice property for MovementCore to check
+    window.GameStateManager.hasRolledDice = true;
+    console.log('DiceManager: Set hasRolledDice=true in both GameBoard state and GameStateManager');
+    
+    // Wait for state update to complete before getting available moves
+    setTimeout(() => {
+      this.updateAvailableMovesAfterDiceRoll(outcomes, currentPlayer);
+    }, 100);
+    
+    // Process card draws
+    this.processCardDraws(outcomes, currentPlayer);
+  }
+  
+  // Separate method to update available moves after dice roll
+  updateAvailableMovesAfterDiceRoll(outcomes, currentPlayer) {
+    // Skip if gameBoard is not initialized
+    if (!this.gameBoard || !this.gameBoard.state) {
+      console.log('DiceManager: gameBoard or state not initialized in updateAvailableMovesAfterDiceRoll');
+      return;
+    }
+    
+    // For card outcomes, determine which available moves to use
+    let movesToUpdate = [];
+    let moveSource = '';
+    
+    // Case 1: Use moves from dice outcome if available
     if (outcomes.moves && outcomes.moves.length > 0) {
-      console.log('DiceManager: Available moves from dice roll:', outcomes.moves.map(m => m.name).join(', '));
+      moveSource = 'dice outcome';
+      movesToUpdate = outcomes.moves;
+      console.log(`DiceManager: Using ${outcomes.moves.length} moves from dice outcome`);
+    }
+    // Case 2: Get standard moves from MovementLogic via GameStateManager
+    else if (currentPlayer && window.GameStateManager) {
+      // First try to get moves from getAvailableMoves (which should now work since hasRolledDice=true)
+      const standardMoves = window.GameStateManager.getAvailableMoves(currentPlayer);
+      
+      // Check if standardMoves is an array (not a dice roll requirement object)
+      if (Array.isArray(standardMoves) && standardMoves.length > 0) {
+        moveSource = 'standard moves from GameStateManager';
+        movesToUpdate = standardMoves;
+        console.log(`DiceManager: Using ${standardMoves.length} standard moves from GameStateManager after dice roll`);
+      }
+      // Case 3: Last resort - if player is on a space, get moves directly from that space
+      else if (currentPlayer.position) {
+        const currentSpace = window.GameStateManager.findSpaceById(currentPlayer.position);
+        if (currentSpace) {
+          // Look up direct from the space data
+          const spaceBasedMoves = [];
+          // Check all space columns in the CSV data (up to Space 5)
+          for (let i = 1; i <= 5; i++) {
+            const nextSpace = currentSpace[`Space ${i}`];
+            if (nextSpace && nextSpace.trim() !== '') {
+              spaceBasedMoves.push({
+                id: `space-${i}-fallback`, // Temporary ID
+                name: nextSpace,
+                description: nextSpace,
+                visitType: 'First' // Default
+              });
+            }
+          }
+          
+          if (spaceBasedMoves.length > 0) {
+            moveSource = 'direct space data';
+            movesToUpdate = spaceBasedMoves;
+            console.log(`DiceManager: Using ${spaceBasedMoves.length} fallback moves direct from space data`);
+          }
+        }
+      }
+    }
+    
+    // Apply the determined moves
+    if (movesToUpdate.length > 0) {
+      console.log(`DiceManager: Updating available moves after dice roll with ${movesToUpdate.length} moves from ${moveSource}:`, 
+        movesToUpdate.map(m => m.name || 'unnamed').join(', '));
       this.gameBoard.setState({ 
-        availableMoves: outcomes.moves,
-        hasSelectedMove: false,  // Allow player to select a move from dice outcomes
-        selectedMove: null,      // Clear any previously selected move
-        // Keep selectedSpace as the current player's position
-        selectedSpace: currentPosition
+        availableMoves: movesToUpdate,
+        hasSelectedMove: false,  // Allow player to select a move
+        selectedMove: null       // Clear any previously selected move
       });
     } else {
-      // No valid moves from dice roll - but if we already have available moves, keep them
+      // Handle case with no available moves
       if (this.gameBoard.state.availableMoves && this.gameBoard.state.availableMoves.length > 0) {
-        console.log('DiceManager: No moves from dice roll, but keeping existing available moves:', 
-                   this.gameBoard.state.availableMoves.map(m => m.name).join(', '));
-        // Just keep existing available moves and don't reset hasSelectedMove
+        console.log('DiceManager: No moves determined, but keeping existing moves:', 
+                  this.gameBoard.state.availableMoves.map(m => m.name || 'unnamed').join(', '));
+        // Keep existing moves if any
       } else {
-        console.log('DiceManager: No valid moves available from dice roll');
+        console.log('DiceManager: No valid moves available after dice roll');
         this.gameBoard.setState({ 
           availableMoves: [],
           hasSelectedMove: true,   // Force player to end turn since no valid moves
@@ -257,9 +327,6 @@ class DiceManager {
         });
       }
     }
-    
-    // Process card draws
-    this.processCardDraws(outcomes, currentPlayer);
   }
   
   // Handle move selection from dice roll outcomes

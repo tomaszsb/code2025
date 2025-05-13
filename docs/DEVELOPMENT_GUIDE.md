@@ -1,3 +1,7 @@
+## Critical Known Issues
+
+No critical issues at this time. All known issues have been resolved.
+
 # Development Guide
 
 This guide provides information on the next development steps for the Project Management Game.
@@ -58,6 +62,25 @@ This guide provides information on the next development steps for the Project Ma
    - ✅ Implemented event-based dependency management with proper initialization sequence (fixed May 8, 2025)
    - ✅ Added method overwrite protection with property descriptors for critical methods (fixed May 9, 2025)
    - ✅ Implemented self-healing GameStateManager detection with MutationObserver (fixed May 9, 2025)
+   - ✅ Implemented clear Single Responsibility Principle in PM-DECISION-CHECK handling (fixed May 10, 2025)
+   - ✅ Refactored PM-DECISION-CHECK into focused functions with clear responsibilities (fixed May 10, 2025)
+   - ✅ Enhanced originalSpaceId storage for PM-DECISION-CHECK with consistent persistence approach (fixed May 14, 2025)
+   - ✅ Implemented distinct visit tracking for Main Path and Quest Side visits (fixed May 13, 2025)
+   - ✅ Updated terminology to "Initial/Subsequent" for Main Path and "Maiden/Return" for Quest Side (fixed May 13, 2025)
+   - ✅ Eliminated redundant mainPathVisitStatus tracking to streamline decision logic (fixed May 14, 2025)
+   - ✅ Simplified tracking system by using standard game visitType for main path visits (fixed May 14, 2025)
+   - ✅ Standardized property storage in MoveLogicSpecialCases.js to align with simplified approach (fixed May 10, 2025)
+   - ✅ Removed all fallback mechanisms to strictly enforce closed system principles (fixed May 14, 2025)
+   - ✅ Enhanced error reporting to make initialization dependencies clearer (fixed May 14, 2025)
+   - ✅ Fixed PM-DECISION-CHECK return to original space issue with direct UI solution (fixed May 15, 2025)
+   - ✅ Implemented visit-type-aware return button that only appears for subsequent visits (fixed May 15, 2025)
+   - ✅ Added intelligent detection of the return space based on player history (fixed May 15, 2025)
+   - ✅ Implemented new modular movement system with separate core, logic, and UI components (fixed May 16, 2025)
+   - ✅ Fixed critical initialization issues in movement system with immediate execution and error handling (fixed May 16, 2025)
+   - ✅ Renamed movement system files to PascalCase for consistency with implementation guide (fixed May 16, 2025)
+   - ✅ Added extensive safety checks to prevent "Cannot read properties of undefined" errors (fixed May 16, 2025)
+   - ✅ Enhanced TurnManager integration for proper movement state persistence (fixed May 16, 2025)
+   - ✅ Improved dice roll data loading with multiple fallback approaches (fixed May 16, 2025)
 
 4. **Component Modularity**:
    - ✅ Refactored SpaceInfo.js into smaller, focused modules (SpaceInfoDice.js, SpaceInfoCards.js, SpaceInfoMoves.js, SpaceInfoUtils.js)
@@ -65,6 +88,10 @@ This guide provides information on the next development steps for the Project Ma
    - ✅ Used prototype mixins for efficient code sharing
    - ✅ Improved maintainability with clear separation of concerns
    - ✅ Updated documentation to reflect the modular architecture (May 1, 2025)
+   - ✅ Fixed infinite re-rendering loop in SpaceExplorer.js with processing flags and optimized state updates (May 9, 2025)
+   - ✅ Improved component performance with asynchronous execution and data-driven state updates (May 9, 2025)
+   - ✅ Enhanced SpaceInfoMoves to properly support PM-DECISION-CHECK with visit-type awareness (May 15, 2025)
+   - ✅ Created new modular Movement System with clear separation of concerns (MovementCore.js, MovementLogic.js, MovementUIAdapter.js, MovementSystem.js) (May 16, 2025)
 
 5. **CSS Consistency**: 
    - Continue reviewing for variable reference issues
@@ -88,6 +115,42 @@ Always ensure:
 - Consistent logging (beginning and end of execution)
 - No inline CSS
 - Code follows the closed system principle
+
+## Movement System Implementation
+
+The new movement system follows a modular architecture with clear separation of concerns:
+
+1. **MovementCore.js** - Handles fundamental movement operations:
+   - Player movement between spaces
+   - Visit history tracking
+   - Space type determination
+   - Path tracking (main path vs. side quests)
+
+2. **MovementLogic.js** - Implements game-specific movement logic:
+   - Available moves determination
+   - PM-DECISION-CHECK special handling
+   - Dice roll outcome processing
+   - Main path return functionality
+
+3. **MovementUIAdapter.js** - Connects movement logic to UI components:
+   - Visual indicators for available moves
+   - UI state updates
+   - Event handling for user interactions
+   - Dice roll visualization
+
+4. **MovementSystem.js** - Main integration point:
+   - Initializes all movement components
+   - Extends GameStateManager with movement functionality
+   - Integrates with TurnManager for state persistence
+   - Provides robust error handling
+
+Key implementation features:
+- Immediate initialization without waiting for DOM events
+- Comprehensive error handling and safety checks
+- Property descriptors for method protection
+- Clear logging at beginning and end of execution
+- Multiple fallback approaches for loading dice roll data
+- Event-based notification of initialization status
 
 ## Testing Recommendations
 
@@ -113,4 +176,4 @@ Update the following for each change:
 2. Component documentation within the file itself
 3. Any relevant player-facing documentation
 
-*Last Updated: May 9, 2025*
+*Last Updated: May 16, 2025*

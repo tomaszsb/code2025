@@ -15,6 +15,7 @@ This is a board game simulation that teaches project management concepts through
 
 ## Recent Updates
 
+- **New Movement System Implementation:** Replaced the old movement system with a new modular architecture using MovementCore.js, MovementLogic.js, MovementUIAdapter.js, and MovementSystem.js (May 13, 2025).
 - **SpaceInfo Component Modularization:** Broke up SpaceInfo.js into smaller modules (SpaceInfoDice.js, SpaceInfoCards.js, SpaceInfoMoves.js, SpaceInfoUtils.js) for better maintainability (May 1, 2025).
 - **Browser Compatibility Improvements:** Implemented browser-friendly module pattern using window objects and prototype mixins.
 - **SpaceInfo Component Refactoring:** Improved SpaceInfo component to follow the manager pattern, integrating fully with GameStateManager and using proper event handling.
@@ -57,7 +58,11 @@ This is a board game simulation that teaches project management concepts through
 ### Data Management
 
 - **GameStateManager.js:** Manages the overall game state
-- **MoveLogic.js:** Handles the logic for determining available moves
+- **Movement System:** Handles movement logic with a modular architecture
+  - **MovementCore.js:** Core movement operations and data structures
+  - **MovementLogic.js:** Higher-level movement logic including special cases
+  - **MovementUIAdapter.js:** Connection between movement logic and UI
+  - **MovementSystem.js:** Integration with GameStateManager
 - **DiceRollLogic.js:** Manages dice roll outcomes 
 - **CardManager.js:** Handles card-related actions
 
@@ -110,4 +115,4 @@ For complete development standards and guidelines, refer to component-specific d
 
 ---
 
-*Last Updated: May 1, 2025*
+*Last Updated: May 13, 2025*

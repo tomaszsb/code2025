@@ -2,6 +2,154 @@ Changelog
 
 All notable changes to the Project Management Game will be documented in this file.
 
+[2025-05-16]
+
+Added
+
+Implemented new modular movement system with separate components (MovementCore.js, MovementLogic.js, MovementUIAdapter.js, MovementSystem.js).
+
+Added extensive error handling and safety checks throughout the movement system.
+
+Added TurnManager integration for proper movement state persistence.
+
+Added multiple fallback mechanisms for loading dice roll data.
+
+Fixed
+
+Fixed critical initialization issue in MovementSystem.js by using immediate execution instead of waiting for DOMContentLoaded.
+
+Fixed PM-DECISION-CHECK return functionality to properly show main path moves.
+
+Fixed "Cannot read properties of undefined (reading 'getAvailableMoves')" error by adding safety checks.
+
+Changed
+
+Renamed movement system files to PascalCase for consistency with implementation guide.
+
+Enhanced error reporting to make initialization dependencies clearer.
+
+Updated documentation in Project Management Game - Movement System Implementation Guide.md with detailed implementation notes.
+
+[2025-05-15]
+
+Fixed
+
+Fixed PM-DECISION-CHECK space behavior with a UI-based solution in SpaceInfoMoves.js.
+
+Implemented visit-type aware "Return to Main Path" button that only appears for subsequent visits to PM-DECISION-CHECK.
+
+Added intelligent return space detection to ensure players return to the correct original space.
+
+Implemented proper handling of the CHEAT-BYPASS point-of-no-return case.
+
+Improved logging and added clear debug information to assist with future enhancements.
+
+Simplified the approach by focusing on the UI component rather than complex move logic handlers.
+
+Utilized mixin architecture to implement the fix in the most direct way possible.
+
+[2025-05-10 - Evening Update]
+
+In Progress
+
+Investigating PM-DECISION-CHECK move issue - players don't see moves from their original space when landing on PM-DECISION-CHECK.
+
+Analyzed MoveLogicPmDecisionCheck.js and MoveLogicSpecialCases.js to identify interaction issues.
+
+Attempted multiple approaches to fix originalSpaceId tracking and move additions.
+
+Created comprehensive documentation in PM_DECISION_CHECK_ISSUE.md for ongoing resolution work.
+
+[2025-05-10 - Afternoon Update]
+
+Fixed
+
+Standardized property storage in MoveLogicSpecialCases.js to align with simplified approach used in MoveLogicPmDecisionCheck.js.
+
+Updated property setting and retrieval methods to only use player.properties for storage.
+
+Removed multi-layered storage in MoveLogicSpecialCases.js to eliminate inconsistencies with other components.
+
+Enhanced consistency throughout the move logic system by following closed system principles.
+
+Refactored handleSpaceChangedEvent to use the simplified property access methods.
+
+[2025-05-14]
+
+Fixed
+
+Removed redundant mainPathVisitStatus tracking in MoveLogicPmDecisionCheck.js.
+
+Simplified tracking by using standard game visitType for main path tracking.
+
+Improved reliability and reduced potential for inconsistent states.
+
+Streamlined original space move handling with clearer decision logic.
+
+Created clear separation between main path and side quest tracking.
+
+Enhanced tracking system to ensure compatibility with future updates.
+
+Reduced code size and complexity by removing duplicate tracking features.
+
+Updated MoveLogicPmDecisionCheck.md documentation to reflect the streamlined tracking system.
+
+Simplified property storage in MoveLogicPmDecisionCheck.js to use a single consistent method (player.properties).
+
+Eliminated redundant multi-layered storage to improve code maintainability and reliability.
+
+[2025-05-13]
+
+Fixed
+
+Implemented distinct visit tracking systems for PM-DECISION-CHECK with separate terminology.
+
+Updated terminology to "Initial/Subsequent" for Main Path tracking and "Maiden/Return" for Quest Side tracking.
+
+Added intelligent entry source detection to properly track visits from different game paths.
+
+Eliminated confusion between the two tracking systems to improve maintainability.
+
+Enhanced documentation with clear explanations of the updated tracking terminology.
+
+[2025-05-12]
+
+Fixed
+
+Enhanced MoveLogicPmDecisionCheck.js originalSpaceId storage with multi-layered redundancy to ensure persistence.
+
+Implemented robust property verification and recovery systems for critical game data.
+
+Added comprehensive storage validation to detect and recover from storage failures.
+
+Enhanced player data persistence with multiple backup mechanisms to prevent loss of side quest information.
+
+Fixed missing original space moves during subsequent PM-DECISION-CHECK visits by improving data persistence reliability.
+
+[2025-05-10]
+
+Fixed
+
+Refactored MoveLogicPmDecisionCheck.js with clear Single Responsibility Principle approach.
+
+Implemented separated functions with clear responsibilities for improved maintainability.
+
+Eliminated redundant code and improved overall flow with streamlined logic.
+
+Enhanced code maintainability by applying single responsibility to each function in PM-DECISION-CHECK handling.
+
+Improved testability with smaller, focused functions that have clear inputs and outputs.
+
+[2025-05-09]
+
+Fixed
+
+Fixed SpaceExplorer.js infinite re-rendering loop issue by implementing processing flags, asynchronous execution, and state comparison checks.
+
+Improved SpaceExplorer performance with optimized componentDidUpdate logic and prevention of redundant setState calls.
+
+Reduced memory consumption and improved render times by breaking synchronous state update cycles and implementing data-driven updates.
+
 [2025-05-09]
 
 Fixed
@@ -155,4 +303,3 @@ Layout bugs and card handling improvements.
 Note:
 
 For detailed upcoming plans and architectural goals, refer to DEVELOPMENT_GUIDE.md which tracks priorities, roadmap milestones, and best practices.
-

@@ -75,6 +75,28 @@ window.GameBoard = class GameBoard extends React.Component {
       console.log("GameBoard: Captured initial player and space status", playerSnapshot, spaceSnapshot);
     }
     
+    // Connect to movement system
+    if (window.GameStateManager && window.GameStateManager.connectGameBoard) {
+      console.log("GameBoard: Connecting to new movement system...");
+      // Log the movement system components to help with debugging
+      console.log("GameBoard: Movement system components detected:", {
+        movementCore: !!window.GameStateManager.movementCore,
+        movementLogic: !!window.GameStateManager.movementLogic,
+        movementUIAdapter: !!window.GameStateManager.movementUIAdapter,
+        connectGameBoard: !!window.GameStateManager.connectGameBoard
+      });
+      window.GameStateManager.connectGameBoard(this);
+      console.log("GameBoard: Successfully connected to movement system");
+    } else {
+      console.log("GameBoard: New movement system not detected, using legacy movement");
+      // Log available properties on GameStateManager to help with debugging
+      console.log("GameBoard: Available properties on GameStateManager:", 
+        Object.keys(window.GameStateManager).filter(prop => 
+          typeof window.GameStateManager[prop] !== 'function'
+        )
+      );
+    }
+    
     console.log("GameBoard mounted successfully");
     console.log("Space Explorer positioning fixed - now appears on the right side of the game board");
     console.log("Game board correctly resizes when Space Explorer is visible");

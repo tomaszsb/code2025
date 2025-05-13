@@ -1,22 +1,27 @@
-// MoveLogic.js - Legacy compatibility layer for MoveLogicManager
+// MoveLogic.js - Compatibility layer for the new movement system
 console.log('MoveLogic.js file is beginning to be used');
 
 /**
  * This file provides backward compatibility for code that still uses the
  * window.MoveLogic global object. All calls are forwarded to the new
- * MoveLogicManager implementation.
+ * MovementSystem implementation.
  * 
  * Note: This file should not be used directly in new code.
- * Use MoveLogicManager instead.
+ * Use GameStateManager's movement methods instead.
  */
 
-// The actual implementation is set up by MoveLogicBackwardCompatibility.js
-// This file just provides a placeholder until that's loaded
-
-// Initial implementation with proper fallback using space data from CSV
+// Create compatibility layer that forwards calls to the new system
 window.MoveLogic = window.MoveLogic || {
   getAvailableMoves: function(gameState, player) {
-    console.log('MoveLogic: Using data-driven fallback implementation for getAvailableMoves');
+    console.log('MoveLogic: Compatibility layer - forwarding to new movement system');
+    
+    // Forward to the new system's getAvailableMoves method
+    if (gameState && gameState.getAvailableMoves) {
+      return gameState.getAvailableMoves(player);
+    }
+    
+    // Fallback if new system is not available
+    console.warn('MoveLogic: New movement system not available, using fallback');
     
     // Get the player's current space
     const currentSpace = gameState.findSpaceById(player.position);
@@ -25,104 +30,53 @@ window.MoveLogic = window.MoveLogic || {
       return [];
     }
     
-    console.log(`MoveLogic: Player is on space ${currentSpace.name}, checking nextSpaces from CSV`);
-    
-    // Get available moves from the nextSpaces array (derived from CSV)
+    // Process nextSpaces from CSV data (simple fallback implementation)
     const availableMoves = [];
     
-    // Process each potential next space from the space's nextSpaces property (from CSV)
     for (const nextSpaceName of currentSpace.nextSpaces || []) {
-      // Skip empty space names or special patterns
       if (!nextSpaceName || nextSpaceName.trim() === '') continue;
-      if (nextSpaceName.includes('Outcome from rolled dice')) continue;
-      if (nextSpaceName.includes('Option from first visit')) continue;
-      if (nextSpaceName.toLowerCase().includes('negotiate')) continue;
       
-      console.log(`MoveLogic: Processing potential next space: ${nextSpaceName}`);
-      
-      // Get base name
       const cleanedSpaceName = gameState.extractSpaceName(nextSpaceName);
-      
-      // Find corresponding space objects
       const matchingSpaces = gameState.spaces.filter(s => 
         gameState.extractSpaceName(s.name) === cleanedSpaceName);
       
-      // If we found matching spaces
       if (matchingSpaces.length > 0) {
-        console.log(`MoveLogic: Found ${matchingSpaces.length} matching spaces for ${cleanedSpaceName}`);
-        
-        // Determine if player has visited this space before
         const hasVisited = gameState.hasPlayerVisitedSpace(player, cleanedSpaceName);
         const visitType = hasVisited ? 'subsequent' : 'first';
         
-        // Try to find the exact match for visit type
         let nextSpace = matchingSpaces.find(s => 
-          s.visitType && s.visitType.toLowerCase() === visitType.toLowerCase());
+          s.visitType && s.visitType.toLowerCase() === visitType.toLowerCase()) || matchingSpaces[0];
         
-        // If no exact match, use any available space with this name
-        if (!nextSpace && matchingSpaces.length > 0) {
-          nextSpace = matchingSpaces[0];
-        }
-        
-        // Add to available moves if not already in the list
         if (nextSpace && !availableMoves.some(move => move.id === nextSpace.id)) {
-          console.log(`MoveLogic: Adding ${nextSpace.name} to available moves`);
           availableMoves.push(nextSpace);
         }
       }
     }
     
-    // Special case for known problematic spaces
-    // Only fix specific issues that are well-documented
-    if (currentSpace.name.includes('OWNER-SCOPE-INITIATION') && player.cards && player.cards.length > 0) {
-      // Check if OWNER-FUND-INITIATION is already in available moves
-      const hasFundInitiation = availableMoves.some(move => move.name.includes('OWNER-FUND-INITIATION'));
-      
-      // If not already available, try to add it
-      if (!hasFundInitiation) {
-        console.log('MoveLogic: OWNER-FUND-INITIATION should be available after drawing cards');
-        
-        // Try to find OWNER-FUND-INITIATION using the same method as above
-        const fundSpaces = gameState.spaces.filter(s => s.name.includes('OWNER-FUND-INITIATION'));
-        if (fundSpaces.length > 0) {
-          // Use the first visit version if available
-          const fundSpace = fundSpaces.find(s => s.visitType === 'First') || fundSpaces[0];
-          console.log(`MoveLogic: Adding missing OWNER-FUND-INITIATION to available moves: ${fundSpace.name}`);
-          availableMoves.push(fundSpace);
-        }
-      }
-    }
-    
-    console.log(`MoveLogic: Returning ${availableMoves.length} available moves from data-driven fallback`);
     return availableMoves;
   },
+  
+  // Basic stub implementations for other methods
   hasSpecialCaseLogic: function(spaceName) {
-    console.warn('MoveLogic: MoveLogicManager not yet initialized, using fallback implementation');
+    // PM-DECISION-CHECK is handled by the new system
+    if (spaceName === 'PM-DECISION-CHECK') return true;
     return false;
   },
-  handleSpecialCaseSpace: function() {
-    console.warn('MoveLogic: MoveLogicManager not yet initialized, using fallback implementation');
+  
+  handleSpecialCaseSpace: function(gameState, player, currentSpace) {
+    // Forward to new system
+    if (gameState && gameState.getAvailableMoves) {
+      return gameState.getAvailableMoves(player);
+    }
     return [];
   },
-  getSpaceDependentMoves: function() {
-    console.warn('MoveLogic: MoveLogicManager not yet initialized, using fallback implementation');
+  
+  handlePmDecisionCheck: function(gameState, player, currentSpace) {
+    // Forward to new system
+    if (gameState && gameState.getAvailableMoves) {
+      return gameState.getAvailableMoves(player);
+    }
     return [];
-  },
-  handleArchInitiation: function() {
-    console.warn('MoveLogic: MoveLogicManager not yet initialized, using fallback implementation');
-    return [];
-  },
-  handlePmDecisionCheck: function() {
-    console.warn('MoveLogic: MoveLogicManager not yet initialized, using fallback implementation');
-    return [];
-  },
-  handleFdnyFeeReview: function() {
-    console.warn('MoveLogic: MoveLogicManager not yet initialized, using fallback implementation');
-    return [];
-  },
-  getMoveDetails: function() {
-    console.warn('MoveLogic: MoveLogicManager not yet initialized, using fallback implementation');
-    return '';
   }
 };
 

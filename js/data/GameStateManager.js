@@ -479,35 +479,26 @@ class GameStateManager {
     // we need to check if it was visited BEFORE the current visit
     const currentSpace = this.findSpaceById(player.position);
     if (currentSpace && this.extractSpaceName(currentSpace.name) === normalizedSpaceName) {
-    // Count how many occurrences of this space are in the visit history
-    // If count > 0, then this is a subsequent visit
-    let visitCount = 0;
+      // Count how many occurrences of this space are in the visit history
+      // If count > 0, then this is a subsequent visit
+      let visitCount = 0;
 
-    // Count occurrences in visitedSpaces
-    if (player.visitedSpaces.has(normalizedSpaceName)) {
-      visitCount++;
-    }
-
-    // Check if this space was the previous position
-    if (player.previousPosition) {
-      const previousSpace = this.findSpaceById(player.previousPosition);
-      if (previousSpace && this.extractSpaceName(previousSpace.name) === normalizedSpaceName) {
+      // Count occurrences in visitedSpaces
+      if (player.visitedSpaces.has(normalizedSpaceName)) {
         visitCount++;
       }
-    }
 
-    const wasVisitedBefore = visitCount > 0;
-    console.log('GameStateManager: Player is currently on this space. Visit count:', visitCount, 'Previously visited?', wasVisitedBefore);
-    return wasVisitedBefore;
-  }
-    
-    // NEW APPROACH: Check if this space is the player's previous position
-    if (player.previousPosition) {
-      const previousSpace = this.findSpaceById(player.previousPosition);
-      if (previousSpace && this.extractSpaceName(previousSpace.name) === normalizedSpaceName) {
-        console.log('GameStateManager: Player previously occupied this space, treating as visited');
-        return true;
+      // Check if this space was the previous position
+      if (player.previousPosition) {
+        const previousSpace = this.findSpaceById(player.previousPosition);
+        if (previousSpace && this.extractSpaceName(previousSpace.name) === normalizedSpaceName) {
+          visitCount++;
+        }
       }
+
+      const wasVisitedBefore = visitCount > 0;
+      console.log('GameStateManager: Player is currently on this space. Visit count:', visitCount, 'Previously visited?', wasVisitedBefore);
+      return wasVisitedBefore;
     }
     
     // Check if space is in the visitedSpaces Set

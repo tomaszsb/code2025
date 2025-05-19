@@ -2,6 +2,18 @@ Changelog
 
 All notable changes to the Project Management Game will be documented in this file.
 
+[2025-05-18]
+
+Added
+
+Created comprehensive CSV Format Improvement Plan as detailed in CSV_FORMAT_IMPROVEMENTS.md to move game logic from code to data.
+
+Designed phased implementation approach to ensure backward compatibility while improving maintainability.
+
+Added new CSV structure specifications for dice roll outcomes, movement relationships, and card requirements.
+
+Established as first priority in DEVELOPMENT_GUIDE.md to improve game architecture.
+
 [2025-05-16]
 
 Added

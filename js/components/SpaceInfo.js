@@ -184,6 +184,9 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
           <div className="space-description">{descriptionToShow}</div>
         </div>
         
+        {/* Path information section - from SpaceInfoMoves */}
+        {this.renderOriginalSpaceInfo()}
+        
         {/* High priority fields (Action and Outcome) */}
         {highPriorityFields.map(field => {
           // Only show fields that have content

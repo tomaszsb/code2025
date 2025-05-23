@@ -1,5 +1,12 @@
 # Project Management Game Changelog
 
+## May 16, 2025
+- **Added**: New modular architecture development plan to improve code maintainability
+- **Enhanced**: Updated development guide with component interface and dependency injection patterns
+- **Added**: Implementation priority order for modular architecture conversion
+- **Planned**: Card system refactoring following the successful movement system pattern
+- **Planned**: Implementation of core game loop for better orchestration of game flow
+
 ## May 14, 2025
 - **Fixed**: OWNER-DECISION-REVIEW option no longer appears on first visits to PM-DECISION-CHECK
 

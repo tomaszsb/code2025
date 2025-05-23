@@ -15,14 +15,12 @@ This is a board game simulation that teaches project management concepts through
 
 ## Recent Updates
 
+- **New Modular Architecture Plan:** Added comprehensive development plan for converting the entire codebase to a more maintainable modular architecture (May 16, 2025).
 - **New Movement System Implementation:** Replaced the old movement system with a new modular architecture using MovementCore.js, MovementLogic.js, MovementUIAdapter.js, and MovementSystem.js (May 13, 2025).
 - **SpaceInfo Component Modularization:** Broke up SpaceInfo.js into smaller modules (SpaceInfoDice.js, SpaceInfoCards.js, SpaceInfoMoves.js, SpaceInfoUtils.js) for better maintainability (May 1, 2025).
 - **Browser Compatibility Improvements:** Implemented browser-friendly module pattern using window objects and prototype mixins.
 - **SpaceInfo Component Refactoring:** Improved SpaceInfo component to follow the manager pattern, integrating fully with GameStateManager and using proper event handling.
 - **Fixed Move Selection:** Players can now properly select available moves on the game board, specifically addressing issues with the OWNER-FUND-INITIATION space.
-- **Enhanced Button Styling:** Improved visibility and usability of move buttons with new styling.
-- **Added Space Info CSS:** Created dedicated styling for the SpaceInfo component to improve UI clarity.
-- **Improved Logging:** All components now include clear logging statements for better debugging.
 
 ## Documentation
 
@@ -33,6 +31,8 @@ This is a board game simulation that teaches project management concepts through
 - **PLAYER_GUIDE.md**: End-user documentation explaining how to play the game
 - **CHANGELOG.md**: Chronological record of changes and updates to the game
 - **LESSONS_LEARNED.md**: Best practices and optimization recommendations based on development experience
+- **CARD_SYSTEM_GUIDE.md**: Detailed information about the card system architecture and implementation
+- **MOVEMENT_SYSTEM_ARCHITECTURE.md**: Documentation of the new modular movement system
 
 ### What's Where
 
@@ -42,6 +42,15 @@ This is a board game simulation that teaches project management concepts through
 - **Playing the Game**: Instructions for players can be found in PLAYER_GUIDE.md
 
 ## Files and Structure
+
+### Core Architecture (Planned)
+
+- **Core**: Game mechanics (game state, rules, etc.)
+- **Managers**: Manager components that orchestrate functionality
+- **Interfaces**: Public interfaces for cross-component communication
+- **UI**: UI components
+- **Utils**: Utility functions
+- **Config**: Configuration and game data
 
 ### Core Components
 
@@ -110,9 +119,13 @@ When modifying code, please follow these guidelines:
 - The game is a closed system; don't introduce external dependencies
 - Follow the manager pattern for new components as outlined in component documentation
 - Use the event system for component communication
+- Implement the component interface pattern for all manager classes
+- Use dependency injection to reduce direct component references
+- Follow the one-way data flow pattern for predictable state updates
+- Maintain strict component boundaries with interfaces
 
-For complete development standards and guidelines, refer to component-specific documentation.
+For complete development standards and guidelines, refer to the DEVELOPMENT_GUIDE.md.
 
 ---
 
-*Last Updated: May 13, 2025*
+*Last Updated: May 16, 2025*

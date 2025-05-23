@@ -1,5 +1,8 @@
 # Project Management Game Changelog
 
+## May 14, 2025
+- **Fixed**: OWNER-DECISION-REVIEW option no longer appears on first visits to PM-DECISION-CHECK
+
 ## May 13, 2025
 - **Implemented**: Completed the new movement system with modular architecture (MovementCore.js, MovementLogic.js, MovementUIAdapter.js, MovementSystem.js)
 - **Fixed**: Cleaned up redundant files and standardized on camelCase file naming

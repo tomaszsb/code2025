@@ -29,6 +29,22 @@ window.BoardSpaceRenderer = {
     this.logMethodCall('renderSpace');
     const { players, selectedSpace, selectedMove, onSpaceClick, availableMoves, diceRollData } = props;
     
+    // Ensure the space has the right visit type based on player's visit history
+    if (window.GameState && players.length > 0) {
+      const currentPlayer = window.GameState.getCurrentPlayer();
+      if (currentPlayer && space) {
+        const spaceName = window.GameState.extractSpaceName(space.name);
+        const hasVisited = window.GameState.hasPlayerVisitedSpace(currentPlayer, spaceName);
+        
+        // Force the correct visit type based on visit history
+        const correctVisitType = hasVisited ? 'subsequent' : 'first';
+        if (space.visitType !== correctVisitType) {
+          console.log(`BoardSpaceRenderer: Correcting visit type for ${spaceName} from ${space.visitType} to ${correctVisitType}`);
+          space.visitType = correctVisitType;
+        }
+      }
+    }
+    
     // Find players on this space
     const playersOnSpace = players.filter(player => player.position === space.id);
     
@@ -75,8 +91,30 @@ window.BoardSpaceRenderer = {
     if (hasDiceRoll) classes.push('has-dice-roll');
     
     // Format the visit type text
-    const visitTypeText = space.visitType ? 
-      (space.visitType.toLowerCase() === 'first' ? 'First Visit' : 'Subsequent Visit') : '';
+    let visitTypeText = '';
+    if (space.visitType) {
+      // Normalize to lowercase for consistent comparison
+      const visitType = space.visitType.toLowerCase();
+      visitTypeText = visitType === 'first' ? 'First Visit' : 'Subsequent Visit';
+      
+      // Enhanced debugging to track visit type rendering
+      console.log(`BoardSpaceRenderer: Rendering ${space.name} with visit type: ${visitType} -> ${visitTypeText}`);
+      
+      // Check if this space should be marked as visited
+      if (players.length > 0) {
+        const currentPlayer = window.GameState.getCurrentPlayer();
+        if (currentPlayer) {
+          const spaceName = window.GameState.extractSpaceName(space.name);
+          const hasVisited = window.GameState.hasPlayerVisitedSpace(currentPlayer, spaceName);
+          console.log(`BoardSpaceRenderer: Space ${spaceName} visited status check: ${hasVisited}, displayed type: ${visitType}`);
+          
+          // Alert in case of mismatch
+          if ((hasVisited && visitType !== 'subsequent') || (!hasVisited && visitType !== 'first')) {
+            console.warn(`BoardSpaceRenderer: MISMATCH - Visit status ${hasVisited} doesn't match displayed type ${visitType} for ${spaceName}`);
+          }
+        }
+      }
+    }
     
     return (
       <div 
@@ -271,34 +309,73 @@ window.BoardSpaceRenderer = {
       // Special handling for OWNER-SCOPE-INITIATION (starting space)
       // Fixed alignment issue by ensuring only one instance is displayed
       if (spaceName === 'OWNER-SCOPE-INITIATION' || spaceName === 'OWNER SCOPE INITIATION') {
-        // Check if we've already added an Owner Scope Initiation space
-        if (addedSpaceNames.has('OWNER-SCOPE-INITIATION') || addedSpaceNames.has('OWNER SCOPE INITIATION')) {
-          return; // Skip duplicate Owner Scope spaces
-        }
+      // Check if we've already added an Owner Scope Initiation space
+      if (addedSpaceNames.has('OWNER-SCOPE-INITIATION') || addedSpaceNames.has('OWNER SCOPE INITIATION')) {
+      return; // Skip duplicate Owner Scope spaces
+      }
+      
+      // Get all spaces matching this name
+      const matchingSpaces = spaces.filter(s => 
+        window.GameState.extractSpaceName(s.name) === spaceName &&
+        s.type && s.type.toUpperCase() === 'SETUP'
+      );
+      
+      // Check if player has visited this space before
+      const hasVisited = currentPlayer && window.GameState.hasPlayerVisitedSpace(currentPlayer, spaceName);
+      const requiredVisitType = hasVisited ? 'subsequent' : 'first';
+      
+      console.log(`BoardSpaceRenderer: OWNER-SCOPE-INITIATION visit type should be: ${requiredVisitType}`);
+      console.log(`BoardSpaceRenderer: Has visited space? ${hasVisited}`);
+      console.log(`BoardSpaceRenderer: Found ${matchingSpaces.length} matching spaces for ${spaceName}`);
+      
+      // Extra debugging - log all matching spaces
+      matchingSpaces.forEach(s => {
+      console.log(`BoardSpaceRenderer: Found space variant - Name: ${s.name}, Visit Type: ${s.visitType}`);
+      });
         
-        // Always ensure proper alignment by using first visit type for consistency
-        let appropriateSpace = spaces.find(s => 
-          window.GameState.extractSpaceName(s.name) === spaceName &&
-          s.type && s.type.toUpperCase() === 'SETUP' && // Ensure proper type
-          s.visitType && s.visitType.toLowerCase() === 'first' // Always use first visit for alignment
-        );
+      // Look for a space with the appropriate visit type first
+      let appropriateSpace = matchingSpaces.find(s => 
+      s.visitType && s.visitType.toLowerCase() === requiredVisitType
+      );
+      
+      // If appropriate visit type space not found, try to fix it
+      if (!appropriateSpace) {
+        console.log(`BoardSpaceRenderer: Could not find OWNER-SCOPE-INITIATION with ${requiredVisitType} visit type, using fallback`);
         
-        // If no first visit space found, try finding any appropriate space
-        if (!appropriateSpace) {
-          appropriateSpace = spaces.find(s => 
+        // First try to find any variant of this space
+        if (matchingSpaces.length > 0) {
+          // Create a clone of the first matching space and set the correct visit type
+          console.log(`BoardSpaceRenderer: Creating modified space with correct visit type: ${requiredVisitType}`);
+          appropriateSpace = { ...matchingSpaces[0], visitType: requiredVisitType };
+        } else {
+          // Last resort - find any space with this name
+          const anyMatchingSpace = spaces.find(s => 
             window.GameState.extractSpaceName(s.name) === spaceName
           );
-        }
-        
-        if (appropriateSpace) {
-          // Force standardize position properties for consistent alignment
-          const standardizedSpace = { ...appropriateSpace };
           
-          filteredSpaces.push(standardizedSpace);
-          addedSpaceNames.add(spaceName);
+          if (anyMatchingSpace) {
+            // Clone and set the correct visit type
+            appropriateSpace = { ...anyMatchingSpace, visitType: requiredVisitType };
+          }
         }
-        
-        return; // Skip regular processing for this space
+      }
+  
+    if (appropriateSpace) {
+      // Force standardize position properties for consistent alignment
+      const standardizedSpace = { ...appropriateSpace };
+      
+      // Log the visit type that will be displayed
+      console.log(`BoardSpaceRenderer: Using space with visit type: ${standardizedSpace.visitType}`);
+      
+      filteredSpaces.push(standardizedSpace);
+      addedSpaceNames.add(spaceName);
+      
+      console.log(`BoardSpaceRenderer: Added ${spaceName} with visit type: ${standardizedSpace.visitType}`);
+    } else {
+      console.log(`BoardSpaceRenderer: Failed to find any matching space for ${spaceName}`);
+    }
+    
+    return; // Skip regular processing for this space
       }
       
       // If there's a current player, use visit history to filter
@@ -314,12 +391,49 @@ window.BoardSpaceRenderer = {
         const hasVisited = window.GameState.hasPlayerVisitedSpace(currentPlayer, spaceName);
         
         // Determine required visit type
-        const visitType = hasVisited ? 'subsequent' : 'first';
+        const requiredVisitType = hasVisited ? 'subsequent' : 'first';
         
-        // Check if this space matches the required visit type
-        if (space.visitType && space.visitType.toLowerCase() === visitType) {
-          filteredSpaces.push(space);
+        // Log visit type determination for debugging
+        const isCurrentSpace = currentPlayer && space.id === currentPlayer.position;
+        if (!isCurrentSpace) { // Don't log current space to reduce console noise
+          console.log(`BoardSpaceRenderer: Regular space ${spaceName} - has visited: ${hasVisited}, required visit type: ${requiredVisitType}`);
+        }
+        
+        // Get all spaces matching this name
+        const matchingSpaces = spaces.filter(s => 
+        window.GameState.extractSpaceName(s.name) === spaceName
+        );
+        
+        // First, find any variant of this space
+        let appropriateSpace = null;
+        
+        // Look for a space with the required visit type
+        appropriateSpace = matchingSpaces.find(s => 
+          s.visitType && s.visitType.toLowerCase() === requiredVisitType
+        );
+        
+        // If no match found, take the first match and modify its visit type
+        if (!appropriateSpace && matchingSpaces.length > 0) {
+        console.log(`BoardSpaceRenderer: Creating modified space with correct visit type: ${requiredVisitType} for ${spaceName}`);
+        // Create a clone and set the correct visit type
+        appropriateSpace = { ...matchingSpaces[0], visitType: requiredVisitType };
+      }
+        
+        // If we found any match, use it
+        if (appropriateSpace) {
+          filteredSpaces.push(appropriateSpace);
           addedSpaceNames.add(spaceName);
+        } else if (!isCurrentSpace) {
+          // Check if this space matches the required visit type as a fallback
+          if (space.visitType && space.visitType.toLowerCase() === requiredVisitType) {
+            filteredSpaces.push(space);
+            addedSpaceNames.add(spaceName);
+          } else {
+            // Last resort - use the original space but log warning
+            console.log(`BoardSpaceRenderer: Warning - using original space with incorrect visit type for ${spaceName}`);
+            filteredSpaces.push(space);
+            addedSpaceNames.add(spaceName);
+          }
         }
       } else {
         // If no current player, show all first visit spaces
@@ -511,6 +625,23 @@ document.addEventListener('DOMContentLoaded', function() {
   if (hasSpaceExplorer) {
     document.body.classList.add('space-explorer-active');
   }
+  
+  // Add listener for board refresh events
+  window.addEventListener('refreshBoardDisplay', function() {
+    console.log('BoardSpaceRenderer: Received refreshBoardDisplay event, forcing board re-render');
+    
+    // Force re-rendering by refreshing space classes
+    const boardSpaces = document.querySelectorAll('.board-space');
+    boardSpaces.forEach(space => {
+      // Add a temporary class to trigger CSS animations
+      space.classList.add('refreshing');
+      
+      // Remove the class after a short delay to complete the animation
+      setTimeout(() => {
+        space.classList.remove('refreshing');
+      }, 50);
+    });
+  });
   
   console.log('BoardSpaceRenderer: DOM ready, board layout initialized');
 });

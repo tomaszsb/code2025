@@ -10,6 +10,49 @@ console.log('space-info.css file is beginning to be used');
   position: relative;
 }
 
+/* Path information container */
+.space-path-info-container {
+  margin: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Path information section */
+.space-path-info {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  position: relative;
+}
+
+.space-path-info.main-path {
+  background-color: #e6f3ff;
+  border-left: 5px solid #4285f4;
+}
+
+.space-path-info.quest-path {
+  background-color: #fef9e6;
+  border-left: 5px solid #fabb05;
+}
+
+.path-info-label {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.path-info-content {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.path-info-content strong {
+  color: #333;
+  background-color: rgba(255, 255, 255, 0.4);
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.2rem;
+}
+
 /* Space phase styling classes - replaces inline styles */
 .space-phase-default {
   background-color: #f8f9fa;
@@ -127,6 +170,25 @@ console.log('space-info.css file is beginning to be used');
 
 .primary-move-btn:hover {
   background-color: #3367d6;
+}
+
+/* Original space move button styling */
+.from-original-space {
+  background-color: #34a853; /* Green color to distinguish from standard blue moves */
+  border-left: 5px solid #fabb05; /* Yellow accent */
+  position: relative;
+}
+
+.from-original-space:hover {
+  background-color: #2e8f49;
+}
+
+.from-original-space::before {
+  content: '↩';
+  position: absolute;
+  left: 10px;
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 
 /* Selected move button - highly visible */

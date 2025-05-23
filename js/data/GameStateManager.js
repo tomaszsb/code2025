@@ -309,7 +309,7 @@ class GameStateManager {
   
   // Extract the space name from a display name (without visit type)
   extractSpaceName(displayName) {
-    console.log('GameStateManager: extractSpaceName method is being used');
+    console.log(`GameStateManager: extractSpaceName method is being used for: "${displayName}"`);
     let result;
     // For display names that might have explanatory text after a dash
     if (displayName && displayName.includes(' - ')) {
@@ -317,7 +317,15 @@ class GameStateManager {
     } else {
       result = displayName;
     }
-    console.log('GameStateManager: extractSpaceName method completed');
+    
+    // Fix the issue with OWNER-SCOPE-INITIATION vs. OWNER SCOPE INITIATION
+    // This ensures consistent normalization for comparison
+    if (result === 'OWNER SCOPE INITIATION') {
+      result = 'OWNER-SCOPE-INITIATION';
+      console.log('GameStateManager: Normalized "OWNER SCOPE INITIATION" to "OWNER-SCOPE-INITIATION"');
+    }
+    
+    console.log(`GameStateManager: extractSpaceName method completed with result: "${result}"`);
     return result;
   }
   
@@ -366,19 +374,21 @@ class GameStateManager {
     
     // Add the current space to visited spaces if not already there
     if (currentSpace) {
-      const currentSpaceName = this.extractSpaceName(currentSpace.name);
-      
-      // Initialize visitedSpaces as Set if it's still an array (for backward compatibility)
-      if (!player.visitedSpaces || Array.isArray(player.visitedSpaces)) {
-        player.visitedSpaces = new Set(player.visitedSpaces || []);
-      }
-      
-      // Add to visited spaces if not already there
-      if (!player.visitedSpaces.has(currentSpaceName)) {
-        console.log('GameStateManager: Adding current space to visited spaces before moving:', currentSpaceName);
-        player.visitedSpaces.add(currentSpaceName);
-      }
+    const currentSpaceName = this.extractSpaceName(currentSpace.name);
+    
+    // Initialize visitedSpaces as Set if it's still an array (for backward compatibility)
+    if (!player.visitedSpaces || Array.isArray(player.visitedSpaces)) {
+    player.visitedSpaces = new Set(player.visitedSpaces || []);
     }
+    
+    // ALWAYS add to visited spaces - this ensures we mark it as visited when leaving
+    console.log('GameStateManager: Adding current space to visited spaces before moving:', currentSpaceName);
+    player.visitedSpaces.add(currentSpaceName);
+      
+    // Debug: Show all visited spaces after adding this one
+    console.log('GameStateManager: Updated visitedSpaces:', Array.from(player.visitedSpaces));
+    console.log('GameStateManager: After adding, is "OWNER-SCOPE-INITIATION" in visitedSpaces?', player.visitedSpaces.has('OWNER-SCOPE-INITIATION'));
+  }
     
     // Add time to player's time counter when leaving a space
     // Only do this if there is a current space (not for first move of the game)
@@ -438,6 +448,9 @@ class GameStateManager {
       this.gameEnded = true;
     }
     
+    // Update space visit types based on player's visit history
+    this.updateSpaceVisitTypes();
+    
     this.saveState();
     
     // Dispatch event
@@ -454,19 +467,24 @@ class GameStateManager {
   // Check if player has visited a space before - now using Set
   hasPlayerVisitedSpace(player, spaceName) {
     console.log('GameStateManager: hasPlayerVisitedSpace method is being used');
+    console.log('GameStateManager: Checking space:', spaceName, 'Player:', player.name, 'ID:', player.id);
     
     // Handle both Set and Array for backward compatibility
     if (!player.visitedSpaces) {
       player.visitedSpaces = new Set();
+      console.log('GameStateManager: Created new visitedSpaces Set');
     } else if (Array.isArray(player.visitedSpaces)) {
       // Convert array to Set if needed
+      console.log('GameStateManager: Converting visitedSpaces from Array to Set');
       player.visitedSpaces = new Set(player.visitedSpaces);
     }
     
     const normalizedSpaceName = this.extractSpaceName(spaceName);
+    console.log('GameStateManager: Original space name:', spaceName, 'Normalized name:', normalizedSpaceName);
     
     // Debug logging to help diagnose visit type issues
-    console.log('GameStateManager: Checking if player has visited space:', normalizedSpaceName);
+    console.log('GameStateManager: Player position:', player.position, 'Previous position:', player.previousPosition);
+    console.log('GameStateManager: Player visited spaces:', Array.from(player.visitedSpaces));
     
     // Special case: When a player is first placed on a space (like at game start),
     // they haven't really "visited" it yet - they're just starting there
@@ -475,48 +493,40 @@ class GameStateManager {
       return false;
     }
     
-    // Special case: If this is the space the player just moved to (current position),
-    // we need to check if it was visited BEFORE the current visit
-    const currentSpace = this.findSpaceById(player.position);
-    if (currentSpace && this.extractSpaceName(currentSpace.name) === normalizedSpaceName) {
-      // Count how many occurrences of this space are in the visit history
-      // If count > 0, then this is a subsequent visit
-      let visitCount = 0;
-
-      // Count occurrences in visitedSpaces
-      if (player.visitedSpaces.has(normalizedSpaceName)) {
-        visitCount++;
-      }
-
-      // Check if this space was the previous position
-      if (player.previousPosition) {
-        const previousSpace = this.findSpaceById(player.previousPosition);
-        if (previousSpace && this.extractSpaceName(previousSpace.name) === normalizedSpaceName) {
-          visitCount++;
-        }
-      }
-
-      const wasVisitedBefore = visitCount > 0;
-      console.log('GameStateManager: Player is currently on this space. Visit count:', visitCount, 'Previously visited?', wasVisitedBefore);
-      return wasVisitedBefore;
-    }
+    // Check which spaces the player has in their visited set
+    console.log('GameStateManager: Is "OWNER-SCOPE-INITIATION" in visitedSpaces?', player.visitedSpaces.has('OWNER-SCOPE-INITIATION'));
     
-    // Check if space is in the visitedSpaces Set
+    // SIMPLIFIED LOGIC: If the space name is in the visitedSpaces set, the player has visited it
+    // Also check if current position matches this space - that means we're there now and have visited
     const hasVisited = player.visitedSpaces.has(normalizedSpaceName);
-    console.log('GameStateManager: Has visited?', hasVisited);
+    const currentSpace = this.findSpaceById(player.position);
+    const currentSpaceName = currentSpace ? this.extractSpaceName(currentSpace.name) : null;
+    const isCurrentSpace = currentSpaceName === normalizedSpaceName;
     
-    // For ARCH-INITIATION specifically, log extra debug info
-    if (normalizedSpaceName === 'ARCH-INITIATION') {
-      console.log('GameStateManager: SPECIAL CASE - ARCH-INITIATION visit check');
-      
-      // Check if the player's current position is this space
-      if (currentSpace && this.extractSpaceName(currentSpace.name) === normalizedSpaceName) {
-        console.log('GameStateManager: Player is currently on ARCH-INITIATION');
+    // Check if this was the previous space as a special case
+    if (!hasVisited && player.previousPosition) {
+      const previousSpace = this.findSpaceById(player.previousPosition);
+      if (previousSpace && this.extractSpaceName(previousSpace.name) === normalizedSpaceName) {
+        console.log('GameStateManager: This was the player\'s previous space - treating as visited');
+        return true;
       }
     }
     
-    console.log('GameStateManager: hasPlayerVisitedSpace method completed');
-    return hasVisited;
+    // Special case: If OWNER-SCOPE-INITIATION or OWNER-FUND-INITIATION is visited,
+    // we know the player has passed through them at the start of the game
+    if (normalizedSpaceName === 'OWNER-SCOPE-INITIATION' || normalizedSpaceName === 'OWNER-FUND-INITIATION') {
+      if (player.visitedSpaces.size > 0) {
+        console.log('GameStateManager: Special case - player has likely visited starting space');
+        return true;
+      }
+    }
+    
+    console.log('GameStateManager: Space name "' + normalizedSpaceName + '" in visitedSpaces Set?', hasVisited);
+    console.log('GameStateManager: isCurrentSpace?', isCurrentSpace);
+    console.log('GameStateManager: All visitedSpaces:', Array.from(player.visitedSpaces));
+    console.log('GameStateManager: hasPlayerVisitedSpace method completed with result:', hasVisited);
+    
+    return hasVisited || isCurrentSpace;
   }
   
   // Find a space by name - now using cache
@@ -572,6 +582,16 @@ class GameStateManager {
     console.log('GameStateManager: saveState method is being used');
     
     try {
+      // Verify visited spaces before saving
+      if (this.players.length > 0) {
+        const player = this.players[0]; // Check first player for debugging
+        if (player.visitedSpaces) {
+          console.log('GameStateManager: Before saving - Player visitedSpaces:', Array.from(player.visitedSpaces));
+          console.log('GameStateManager: Before saving - Is OWNER-SCOPE-INITIATION visited?', 
+                     player.visitedSpaces.has('OWNER-SCOPE-INITIATION'));
+        }
+      }
+      
       // Create serializable players by converting Sets to arrays
       const serializablePlayers = this.players.map(player => {
         const serialized = {...player};
@@ -597,6 +617,11 @@ class GameStateManager {
         gameStarted: this.gameStarted,
         gameEnded: this.gameEnded
       };
+      
+      // Check serialized data before saving
+      if (serializablePlayers.length > 0) {
+        console.log('GameStateManager: Serialized visitedSpaces:', serializablePlayers[0].visitedSpaces);
+      }
       
       localStorage.setItem('gameState', JSON.stringify(gameState));
       
@@ -625,6 +650,20 @@ class GameStateManager {
       if (savedStateJson) {
         const savedState = JSON.parse(savedStateJson);
         
+        console.log('GameStateManager: Got savedState from localStorage, checking players and visitedSpaces');
+        
+        // Check if state has players and visitedSpaces before loading
+        if (savedState.players && savedState.players.length > 0) {
+          const firstPlayer = savedState.players[0];
+          if (firstPlayer.visitedSpaces) {
+            console.log('GameStateManager: Loaded visitedSpaces array:', firstPlayer.visitedSpaces);
+            console.log('GameStateManager: Includes OWNER-SCOPE-INITIATION?', 
+                       firstPlayer.visitedSpaces.includes('OWNER-SCOPE-INITIATION'));
+          } else {
+            console.log('GameStateManager: No visitedSpaces found in saved state for player');
+          }
+        }
+        
         // Version check for future migrations
         if (savedState.version !== this.VERSION) {
           console.log(`GameStateManager: State version mismatch: ${savedState.version} vs ${this.VERSION}`);
@@ -640,6 +679,11 @@ class GameStateManager {
             // Convert array to Set
             if (Array.isArray(player.visitedSpaces)) {
               restored.visitedSpaces = new Set(player.visitedSpaces);
+              console.log('GameStateManager: Player visitedSpaces converted to Set');
+              console.log('GameStateManager: Items in Set:', Array.from(restored.visitedSpaces));
+            } else {
+              console.log('GameStateManager: Player visitedSpaces was not an array - creating empty Set');
+              restored.visitedSpaces = new Set();
             }
             
             // Add helper methods for backward compatibility
@@ -653,6 +697,15 @@ class GameStateManager {
             
             return restored;
           });
+          
+          // Verify after conversion
+          if (this.players.length > 0) {
+            const player = this.players[0];
+            console.log('GameStateManager: After restoration - visitedSpaces items:', 
+                       Array.from(player.visitedSpaces));
+            console.log('GameStateManager: After restoration - Is OWNER-SCOPE-INITIATION visited?', 
+                       player.visitedSpaces.has('OWNER-SCOPE-INITIATION'));
+          }
         }
         
         this.currentPlayerIndex = savedState.currentPlayerIndex || 0;
@@ -961,6 +1014,76 @@ class GameStateManager {
     }
     
     console.log('GameStateManager: cleanup method completed');
+  }
+  
+  // Update space visit types based on player visit history
+  updateSpaceVisitTypes() {
+    console.log('GameStateManager: updateSpaceVisitTypes method is being used');
+    
+    const currentPlayer = this.getCurrentPlayer();
+    if (!currentPlayer) {
+      console.log('GameStateManager: No current player found, skipping visit type updates');
+      return;
+    }
+    
+    // Log the player's state before updates
+    console.log(`GameStateManager: Updating visit types for player ${currentPlayer.name}`);
+    console.log(`GameStateManager: Player position: ${currentPlayer.position}`);
+    console.log(`GameStateManager: Player visited spaces:`, Array.from(currentPlayer.visitedSpaces || []));
+    
+    // Create a map of normalized space names to their visit types
+    const visitTypeMap = new Map();
+    
+    // First pass: determine the correct visit type for each space name
+    this.spaces.forEach(space => {
+      const normalizedName = this.extractSpaceName(space.name);
+      if (!visitTypeMap.has(normalizedName)) {
+        const hasVisited = this.hasPlayerVisitedSpace(currentPlayer, normalizedName);
+        visitTypeMap.set(normalizedName, hasVisited ? 'subsequent' : 'first');
+        console.log(`GameStateManager: Space ${normalizedName} - hasVisited: ${hasVisited}, visitType: ${hasVisited ? 'subsequent' : 'first'}`);
+      }
+    });
+    
+    // Second pass: update the visitType property of every space
+    let updatedCount = 0;
+    this.spaces.forEach(space => {
+      const normalizedName = this.extractSpaceName(space.name);
+      const correctVisitType = visitTypeMap.get(normalizedName);
+      
+      if (space.visitType !== correctVisitType) {
+        console.log(`GameStateManager: Updating space "${space.name}" (${space.id}) visit type from ${space.visitType} to ${correctVisitType}`);
+        space.visitType = correctVisitType;
+        updatedCount++;
+      }
+    });
+    
+    console.log(`GameStateManager: Updated ${updatedCount} spaces with correct visit types`);
+    console.log('GameStateManager: updateSpaceVisitTypes method completed');
+    
+    // Force a board refresh by dispatching an event
+    if (updatedCount > 0) {
+      console.log('GameStateManager: Triggering board refresh events for visit type updates');
+      
+      // Dispatch a GameStateManager event for components that listen to it
+      this.dispatchEvent('gameStateChanged', {
+        changeType: 'visitTypesUpdated',
+        updatedCount: updatedCount
+      });
+      
+      // Also force a DOM event to ensure legacy components update
+      window.dispatchEvent(new CustomEvent('resetSpaceInfoButtons'));
+      
+      // Trigger specific refresh for board visualization
+      window.dispatchEvent(new CustomEvent('refreshBoardDisplay'));
+    } else {
+      // Always trigger refresh even if no spaces were updated
+      // This ensures the board displays correctly after reload or re-render
+      console.log('GameStateManager: No spaces updated, but still triggering refresh');
+      window.dispatchEvent(new CustomEvent('refreshBoardDisplay'));
+    }
+    
+    // Return true if changes were made
+    return updatedCount > 0;
   }
 }
 

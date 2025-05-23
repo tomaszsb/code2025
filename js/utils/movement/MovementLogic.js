@@ -100,6 +100,12 @@ class MovementLogic {
             continue;
           }
           
+          // Skip "OWNER-DECISION-REVIEW" for first visits to PM-DECISION-CHECK
+          if (spaceName === 'OWNER-DECISION-REVIEW' && visitType === 'First' && space.name === 'PM-DECISION-CHECK') {
+            console.log(`MovementLogic: Filtering out OWNER-DECISION-REVIEW for first visit to ${space.name}`);
+            continue;
+          }
+          
           // Find the space by name
           const nextSpace = this.gameStateManager.findSpaceByName(spaceName);
           if (nextSpace) {

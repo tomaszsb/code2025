@@ -1,16 +1,27 @@
-// SpaceSelectionManager.js file is beginning to be used
+// SpaceSelectionManager.js - Refactored to delegate movement logic to MovementEngine
 console.log('SpaceSelectionManager.js file is beginning to be used');
 
 /**
- * SpaceSelectionManager class for handling space selection and available moves
- * Manages the logic for determining available moves, handling space clicks,
- * checking space visit status, and providing visual cues for available moves
+ * SpaceSelectionManager class - UI controller for space selection and movement visualization
  * 
- * Refactored to use GameStateManager event system
+ * REFACTORED: Now focuses purely on UI responsibilities:
+ * - Visual highlighting and CSS management  
+ * - DOM manipulation for move indicators
+ * - Click event handling and user interaction
+ * - Animation and visual feedback
+ * 
+ * Movement logic is now delegated to MovementEngine for:
+ * - Available move calculation
+ * - Movement validation
+ * - Space type detection  
+ * - Single choice handling
+ * - Logic space processing
+ * 
+ * This creates clean separation between UI concerns and business logic.
  */
 class SpaceSelectionManager {
   constructor(gameBoard) {
-    console.log('SpaceSelectionManager: Initializing with event system integration');
+    console.log('SpaceSelectionManager: Initializing with MovementEngine integration');
     this.gameBoard = gameBoard;
     
     // Track DOM update timers to clear them when needed
@@ -21,14 +32,17 @@ class SpaceSelectionManager {
       playerMoved: this.handlePlayerMovedEvent.bind(this),
       turnChanged: this.handleTurnChangedEvent.bind(this),
       gameStateChanged: this.handleGameStateChangedEvent.bind(this),
-      spaceSelected: this.handleSpaceSelectedEvent.bind(this)
+      spaceSelected: this.handleSpaceSelectedEvent.bind(this),
+      forceMoveSelection: this.handleForceMoveSelection.bind(this)
     };
     
     // Register event listeners with GameStateManager
     this.registerEventListeners();
     
-    console.log('SpaceSelectionManager: Supporting data-driven move selection with CSV-based approach [2025-05-04]');
-    console.log('SpaceSelectionManager: Successfully initialized with event system');
+    // Listen for custom move selection events (for additional move buttons)
+    window.addEventListener('forceMoveSelection', this.eventHandlers.forceMoveSelection);
+    
+    console.log('SpaceSelectionManager: Successfully initialized - now delegates to MovementEngine');
   }
   
   /**
@@ -53,57 +67,142 @@ class SpaceSelectionManager {
   
   /**
    * Update the available moves for the current player
-   * Uses the data-driven approach with CSV files through GameStateManager
+   * REFACTORED: Now delegates to MovementEngine instead of calculating moves directly
    */
   updateAvailableMoves = () => {
-    const result = window.GameStateManager.getAvailableMoves();
+    console.log('SpaceSelectionManager: updateAvailableMoves called');
+    console.log('SpaceSelectionManager: Updating available moves via MovementEngine');
     
-    // Check if the result indicates that a dice roll is needed
-    if (result && typeof result === 'object' && result.requiresDiceRoll) {
+    // Check if MovementEngine is available
+    if (!window.movementEngine || !window.movementEngine.isReady()) {
+      console.warn('SpaceSelectionManager: MovementEngine not ready');
+      console.log('SpaceSelectionManager: MovementEngine exists:', !!window.movementEngine);
+      console.log('SpaceSelectionManager: MovementEngine isReady:', window.movementEngine ? window.movementEngine.isReady() : 'N/A');
+      
+      // Debug MovementEngine initialization status
+      if (window.movementEngine) {
+        console.log('SpaceSelectionManager: MovementEngine initialized:', window.movementEngine.initialized);
+        console.log('SpaceSelectionManager: GameStateManager exists:', !!window.movementEngine.gameStateManager);
+        console.log('SpaceSelectionManager: GameStateManager isProperlyInitialized:', window.movementEngine.gameStateManager ? window.movementEngine.gameStateManager.isProperlyInitialized : 'N/A');
+        console.log('SpaceSelectionManager: Spaces available:', window.movementEngine.gameStateManager ? window.movementEngine.gameStateManager.spaces?.length : 'N/A');
+        
+        // Try to initialize MovementEngine if it's not ready
+        console.log('SpaceSelectionManager: Attempting to initialize MovementEngine...');
+        window.movementEngine.initialize();
+        
+        // Check if it's ready now
+        if (window.movementEngine.isReady()) {
+          console.log('SpaceSelectionManager: MovementEngine successfully initialized!');
+        } else {
+          console.log('SpaceSelectionManager: MovementEngine still not ready after initialization attempt');
+          return;
+        }
+      } else {
+        return;
+      }
+    }
+    
+    // Get current player
+    const currentPlayer = window.GameStateManager.getCurrentPlayer();
+    if (!currentPlayer) {
+      console.warn('SpaceSelectionManager: No current player found');
+      return;
+    }
+    
+    console.log('SpaceSelectionManager: Current player:', currentPlayer.name, 'at position:', currentPlayer.position);
+    console.log('SpaceSelectionManager: Player data:', {
+      id: currentPlayer.id,
+      name: currentPlayer.name,
+      position: currentPlayer.position,
+      visitedSpaces: currentPlayer.visitedSpaces ? Array.from(currentPlayer.visitedSpaces) : 'none'
+    });
+    
+    // Delegate movement calculation to MovementEngine
+    const movementResult = window.movementEngine.getAvailableMovements(currentPlayer);
+    
+    console.log('SpaceSelectionManager: Movement result:', movementResult);
+    console.log('SpaceSelectionManager: Movement result type:', typeof movementResult);
+    console.log('SpaceSelectionManager: Movement result is array:', Array.isArray(movementResult));
+    if (Array.isArray(movementResult)) {
+      console.log('SpaceSelectionManager: Movement result length:', movementResult.length);
+      if (movementResult.length > 0) {
+        console.log('SpaceSelectionManager: First movement option:', movementResult[0]);
+      }
+    }
+    
+    // Handle dice roll requirement
+    if (movementResult && typeof movementResult === 'object' && movementResult.requiresDiceRoll) {
       console.log('SpaceSelectionManager: Dice roll required for this space');
       
-      // Dispatch event for dice roll requirement instead of directly updating state
+      // Dispatch event for dice roll requirement
       window.GameStateManager.dispatchEvent('gameStateChanged', {
         changeType: 'diceRollRequired',
-        spaceName: result.spaceName,
-        visitType: result.visitType,
+        spaceName: movementResult.spaceName,
+        visitType: movementResult.visitType,
         availableMoves: []
       });
       
-      // Temporary compatibility: Still update GameBoard state until all components are refactored
+      // Update GameBoard state for dice roll requirement
       this.gameBoard.setState({ 
         showDiceRoll: true, 
-        diceRollSpace: result.spaceName,
-        diceRollVisitType: result.visitType,
+        diceRollSpace: movementResult.spaceName,
+        diceRollVisitType: movementResult.visitType,
         availableMoves: [],
-        hasRolledDice: false     // Reset dice roll status
-      });
-    } else {
-      // Normal case - array of available moves
-      // Dispatch event for available moves update
-      window.GameStateManager.dispatchEvent('gameStateChanged', {
-        changeType: 'availableMovesUpdated',
-        availableMoves: result
+        hasRolledDice: false
       });
       
-      // Temporary compatibility: Still update GameBoard state until all components are refactored
-      this.gameBoard.setState({ 
-        availableMoves: result, 
-        showDiceRoll: false,
-        diceRollSpace: null,
-        diceRollVisitType: null
-      }, () => {
-        // Apply visual cues for available moves after state update
-        this.updateAvailableMoveVisuals();
-      });
-      
-      console.log('SpaceSelectionManager: Available moves updated:', result ? result.length : 0, 'moves available');
+      return;
     }
+    
+    // Convert MovementEngine format to UI format
+    const uiMovements = this.convertMovementsToUIFormat(movementResult);
+    
+    console.log('SpaceSelectionManager: UI movements:', uiMovements);
+    
+    // Dispatch event for available moves update
+    window.GameStateManager.dispatchEvent('gameStateChanged', {
+      changeType: 'availableMovesUpdated',
+      availableMoves: uiMovements
+    });
+    
+    // Update GameBoard state
+    this.gameBoard.setState({ 
+      availableMoves: uiMovements, 
+      showDiceRoll: false,
+      diceRollSpace: null,
+      diceRollVisitType: null
+    }, () => {
+      // Apply visual cues for available moves after state update
+      this.updateAvailableMoveVisuals();
+    });
+    
+    console.log('SpaceSelectionManager: Available moves updated via MovementEngine:', uiMovements ? uiMovements.length : 0, 'moves available');
+  }
+  
+  /**
+   * Convert MovementEngine movement format to UI format
+   * @param {Array} movements - Movements from MovementEngine
+   * @returns {Array} UI-formatted movements
+   */
+  convertMovementsToUIFormat(movements) {
+    if (!Array.isArray(movements)) {
+      return [];
+    }
+    
+    return movements.map(movement => ({
+      id: movement.id,
+      name: movement.name,
+      type: movement.type,
+      description: movement.description,
+      visitType: movement.visitType,
+      fromOriginalSpace: movement.fromOriginalSpace || false,
+      originalSpaceName: movement.originalSpaceName || null
+    }));
   }
   
   /**
    * Apply visual cues to highlight available moves on the board
-   * Uses CSS classes instead of inline styles
+   * UNCHANGED: Pure UI responsibility - no business logic
    */
   updateAvailableMoveVisuals = () => {
     // Clear any previous visual update timer
@@ -196,31 +295,34 @@ class SpaceSelectionManager {
   
   /**
    * Handle a click on a space
+   * REFACTORED: Simplified to focus on UI coordination, validation delegated to MovementEngine
    * @param {string} spaceId - ID of the clicked space
    */
   handleSpaceClick = (spaceId) => {
+    console.log('SpaceSelectionManager: Space clicked:', spaceId);
     
-    // Standard space click handling - Check if this space is a valid move
+    // Get current state
     const { availableMoves, spaces } = this.gameBoard.state;
-    const isValidMove = availableMoves.some(space => space.id === spaceId);
     
-    // Find the space that was clicked
+    // Find the clicked space
     const clickedSpace = spaces.find(space => space.id === spaceId);
     
-    // Always update exploredSpace to the clicked space
-    // This ensures we show the correct space info in the always-visible explorer
+    // Always update exploredSpace to the clicked space for space explorer
     const exploredSpaceData = clickedSpace;
     
-    // Log space explorer update (if function exists)
+    // Log space explorer update
     if (window.logSpaceExplorerToggle && typeof window.logSpaceExplorerToggle === 'function') {
       window.logSpaceExplorerToggle(true, clickedSpace ? clickedSpace.name : 'unknown');
     }
     
+    // Check if this space is a valid move (simple array check - no complex validation needed)
+    const isValidMove = availableMoves && availableMoves.some(space => space.id === spaceId);
+    
     if (isValidMove) {
-      // Use the helper method to handle valid move selection
+      // Handle valid move selection
       this._handleValidSpaceSelection(spaceId, clickedSpace);
     } else {
-      // For non-move spaces, dispatch space selection event for exploration
+      // Handle space exploration (non-move clicks)
       window.GameStateManager.dispatchEvent('spaceSelected', {
         spaceId: spaceId,
         spaceData: clickedSpace,
@@ -228,9 +330,9 @@ class SpaceSelectionManager {
         selectedForExploration: true
       });
       
-      // Temporary compatibility: Still update GameBoard state until all components are refactored
+      // Update GameBoard state for exploration
       this.gameBoard.setState({
-        exploredSpace: exploredSpaceData // Set the explored space for the space explorer panel
+        exploredSpace: exploredSpaceData
       });
       
       console.log('SpaceSelectionManager: Space clicked for exploration:', spaceId);
@@ -239,7 +341,7 @@ class SpaceSelectionManager {
   
   /**
    * Provide visual feedback when a move is selected
-   * Uses CSS classes for animation effects
+   * UNCHANGED: Pure UI responsibility
    * @param {string} spaceId - ID of the selected space
    */
   provideSelectionFeedback = (spaceId) => {
@@ -259,10 +361,13 @@ class SpaceSelectionManager {
   
   /**
    * Helper method to handle valid space selection
+   * SIMPLIFIED: Removed complex validation logic, now trusts MovementEngine
    * @param {string} spaceId - ID of the selected space
    * @param {Object} spaceData - Data for the selected space
    */
   _handleValidSpaceSelection = (spaceId, spaceData) => {
+    console.log('SpaceSelectionManager: Valid move selected:', spaceId);
+    
     // Dispatch space selection event for valid move
     window.GameStateManager.dispatchEvent('spaceSelected', {
       spaceId: spaceId,
@@ -290,7 +395,7 @@ class SpaceSelectionManager {
   
   /**
    * Animate transitions between different sets of available moves
-   * Called when available moves change
+   * UNCHANGED: Pure UI responsibility
    */
   animateAvailableMoveTransition = () => {
     // Use existing CSS animations, we just need to update the classes
@@ -299,6 +404,7 @@ class SpaceSelectionManager {
   
   /**
    * Get the currently selected space
+   * UNCHANGED: Simple state accessor
    * @returns {Object} Selected space object
    */
   getSelectedSpace = () => {
@@ -310,21 +416,27 @@ class SpaceSelectionManager {
   
   /**
    * Check if the current player is visiting the selected space for the first time
+   * REFACTORED: Now delegates to MovementEngine for visit type logic
    * @returns {boolean} True if first visit, false otherwise
    */
   isVisitingFirstTime = () => {
+    if (!window.movementEngine) {
+      console.warn('SpaceSelectionManager: MovementEngine not available for visit check');
+      return true;
+    }
+    
     const currentPlayer = window.GameStateManager.getCurrentPlayer();
     const selectedSpace = this.getSelectedSpace();
     
     if (!currentPlayer || !selectedSpace) return true;
     
-    // Use GameStateManager's function to check if player has visited this space before
-    const hasVisited = window.GameStateManager.hasPlayerVisitedSpace(currentPlayer, selectedSpace.name);
-    return !hasVisited;
+    // Use MovementEngine's visit checking logic
+    return !window.movementEngine.hasPlayerVisitedSpace(currentPlayer, selectedSpace.name);
   }
   
   /**
    * Load instructions data from the START space
+   * UNCHANGED: UI-specific functionality for instructions panel
    */
   loadInstructionsData = () => {
     const { spaces } = this.gameBoard.state;
@@ -376,7 +488,7 @@ class SpaceSelectionManager {
         }
       });
       
-      // Temporary compatibility: Still update GameBoard state until all components are refactored
+      // Update GameBoard state for backward compatibility
       this.gameBoard.setState({
         instructionsData: {
           first: processInstructionSpace(firstVisitInstructionsSpace),
@@ -388,6 +500,7 @@ class SpaceSelectionManager {
   
   /**
    * Toggle instructions panel visibility
+   * UNCHANGED: Pure UI functionality
    */
   toggleInstructions = () => {
     // Dispatch event for instructions panel toggle
@@ -395,11 +508,15 @@ class SpaceSelectionManager {
       changeType: 'instructionsToggled'
     });
     
-    // Temporary compatibility: Still update GameBoard state until all components are refactored
+    // Update GameBoard state
     this.gameBoard.setState(prevState => ({
       showInstructions: !prevState.showInstructions
     }));
   }
+  
+  // ============================================================================
+  // EVENT HANDLERS - Simplified to focus on UI updates
+  // ============================================================================
   
   /**
    * Event handler for playerMoved event
@@ -420,7 +537,7 @@ class SpaceSelectionManager {
   }
   
   /**
-   * Event handler for turnChanged event
+   * Event handler for turnChanged event  
    */
   handleTurnChangedEvent(event) {
     console.log('SpaceSelectionManager: Turn changed event received', event.data);
@@ -459,7 +576,12 @@ class SpaceSelectionManager {
           
         case 'diceRollCompleted':
           // Update available moves after dice roll
-          // This will now use the fully data-driven approach with DiceRollLogic outcomes
+          this.updateAvailableMoves();
+          break;
+          
+        case 'spaceActionCompleted':
+          // Update available moves after space actions are completed
+          console.log('SpaceSelectionManager: Space action completed, updating available moves');
           this.updateAvailableMoves();
           break;
           
@@ -467,8 +589,6 @@ class SpaceSelectionManager {
           // Update visual cues for available moves
           this.updateAvailableMoveVisuals();
           break;
-          
-        // Add other change types as needed
       }
     }
   }
@@ -480,7 +600,6 @@ class SpaceSelectionManager {
     console.log('SpaceSelectionManager: Space selected event received', event.data);
     
     // Only process events from other components
-    // Skip events that we dispatched ourselves
     if (!event.data) return;
     
     // Update visual cues if space was selected for move
@@ -489,8 +608,27 @@ class SpaceSelectionManager {
     }
   }
   
+  // ============================================================================
+  // CLEANUP AND UTILITIES
+  // ============================================================================
+  
+  /**
+   * Handle force move selection events (from additional move buttons)
+   * @param {CustomEvent} event - The custom event
+   */
+  handleForceMoveSelection = (event) => {
+    if (!event.detail) return;
+    
+    const { spaceId, spaceData, source } = event.detail;
+    console.log(`SpaceSelectionManager: Handling force move selection from ${source}:`, spaceId);
+    
+    // Call the same logic as valid space selection to ensure proper state management
+    this._handleValidSpaceSelection(spaceId, spaceData);
+  }
+  
   /**
    * Clean up any resources when component is unmounted
+   * UPDATED: Added cleanup for custom event listener
    */
   cleanup = () => {
     // Clear any pending timers
@@ -505,6 +643,9 @@ class SpaceSelectionManager {
     window.GameStateManager.removeEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
     window.GameStateManager.removeEventListener('spaceSelected', this.eventHandlers.spaceSelected);
     
+    // Remove custom event listener
+    window.removeEventListener('forceMoveSelection', this.eventHandlers.forceMoveSelection);
+    
     console.log('SpaceSelectionManager: Cleaned up resources');
   }
 }
@@ -513,4 +654,4 @@ class SpaceSelectionManager {
 window.SpaceSelectionManager = SpaceSelectionManager;
 
 console.log('SpaceSelectionManager.js code execution finished');
-console.log('SpaceSelectionManager.js updated with PM-DECISION-CHECK direct original space move options [2025-05-06]');
+console.log('SpaceSelectionManager.js REFACTORED: Now delegates movement logic to MovementEngine, focuses on UI [2025-05-26]');

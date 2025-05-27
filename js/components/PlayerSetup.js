@@ -28,6 +28,14 @@ window.PlayerSetup = class PlayerSetup extends React.Component {
   // Check if a saved game exists
   checkForSavedGame = () => {
     try {
+      // Use the new consolidated format first
+      const savedStateJson = localStorage.getItem('gameState');
+      if (savedStateJson) {
+        const savedState = JSON.parse(savedStateJson);
+        return savedState.players && savedState.players.length > 0 && savedState.gameStarted === true;
+      }
+      
+      // Fallback to legacy format
       const savedPlayers = localStorage.getItem('game_players');
       const savedStatus = localStorage.getItem('game_status');
       
@@ -51,13 +59,18 @@ window.PlayerSetup = class PlayerSetup extends React.Component {
     console.log('Continuing saved game');
     this.setState({ animationPhase: 'starting' });
     
-    // No need to modify GameState, it already loaded the saved state
-    // But we need to ensure gameStarted is true
-    if (!GameState.gameStarted) {
-      // This shouldn't happen normally, but just in case
-      console.log('Game started flag was false, setting to true');
-      GameState.gameStarted = true;
-      GameState.saveState();
+    // Check if GameStateManager is properly initialized before accessing gameStarted
+    if (window.GameStateManager && window.GameStateManager.isProperlyInitialized) {
+      // No need to modify GameState, it already loaded the saved state
+      // But we need to ensure gameStarted is true
+      if (!window.GameStateManager.gameStarted) {
+        // This shouldn't happen normally, but just in case
+        console.log('Game started flag was false, setting to true');
+        window.GameStateManager.gameStarted = true;
+        window.GameStateManager.saveState();
+      }
+    } else {
+      console.log('GameStateManager not yet initialized, setting gameStarted will be handled later');
     }
     
     // Add slight delay for animation
@@ -73,7 +86,9 @@ window.PlayerSetup = class PlayerSetup extends React.Component {
   handleStartNewGame = () => {
     console.log('Starting new game');
     // Clear saved game data and show the setup form
-    GameState.startNewGame();
+    if (window.GameStateManager) {
+      window.GameStateManager.startNewGame();
+    }
     this.setState({ 
       hasSavedGame: false,
       showSetupForm: true,
@@ -139,7 +154,9 @@ window.PlayerSetup = class PlayerSetup extends React.Component {
     
     // Create players - startNewGame() was already called when choosing "Start New Game"
     this.state.playerNames.forEach((name, index) => {
-      GameState.addPlayer(name, this.state.playerColors[index]);
+      if (window.GameStateManager) {
+        window.GameStateManager.addPlayer(name, this.state.playerColors[index]);
+      }
     });
     
     // Add slight delay for animation

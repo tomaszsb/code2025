@@ -132,6 +132,48 @@ window.SpaceInfoCards = {
         
         // Force refresh to show button as used
         this.setState(prevState => ({ renderKey: prevState.renderKey + 1 }));
+        
+        // Trigger update of available moves after action completion
+        // Method 1: Try GameBoard reference
+        const gameBoard = window.currentGameBoard || window.gameBoard;
+        if (gameBoard && gameBoard.spaceSelectionManager) {
+          console.log('SpaceInfoCards: Triggering available moves update after card draw via GameBoard');
+          console.log('SpaceInfoCards: GameBoard found:', !!gameBoard);
+          console.log('SpaceInfoCards: SpaceSelectionManager found:', !!gameBoard.spaceSelectionManager);
+          console.log('SpaceInfoCards: updateAvailableMoves method found:', typeof gameBoard.spaceSelectionManager.updateAvailableMoves);
+          setTimeout(() => {
+            try {
+              console.log('SpaceInfoCards: Calling updateAvailableMoves...');
+              gameBoard.spaceSelectionManager.updateAvailableMoves();
+              console.log('SpaceInfoCards: updateAvailableMoves call completed');
+            } catch (error) {
+              console.error('SpaceInfoCards: Error calling updateAvailableMoves:', error);
+            }
+          }, 100);
+        }
+        // Method 2: Try direct event dispatch
+        else if (window.GameStateManager) {
+          console.log('SpaceInfoCards: Triggering available moves update after card draw via event');
+          setTimeout(() => {
+            window.GameStateManager.dispatchEvent('gameStateChanged', {
+              changeType: 'spaceActionCompleted',
+              playerId: playerId,
+              actionType: 'cardDraw',
+              cardType: cardCode,
+              amount: cardAmount
+            });
+          }, 100);
+        }
+        // Method 3: Emergency fallback - force refresh of entire UI
+        else {
+          console.log('SpaceInfoCards: Using emergency fallback - forcing UI refresh');
+          setTimeout(() => {
+            // Trigger a window event that might cause UI updates
+            window.dispatchEvent(new CustomEvent('forceUIRefresh', {
+              detail: { reason: 'cardDrawCompleted', playerId: playerId }
+            }));
+          }, 100);
+        }
       } else if (this.props.onDrawCards) {
         // Fallback to using callback if provided
         console.log('SpaceInfoCards: Drawing cards using onDrawCards callback');

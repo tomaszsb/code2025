@@ -8,6 +8,12 @@
 
 console.log('MovementSystem.js file is beginning to be used');
 
+// VERSION TRACKING for cache-buster
+if (window.LOADED_VERSIONS) {
+  window.LOADED_VERSIONS['MovementSystem'] = '2025-05-25-001';
+  console.log('MovementSystem: Version 2025-05-25-001 loaded');
+}
+
 // Immediate initialization without waiting for DOMContentLoaded
 (function initializeMovementSystem() {
   try {
@@ -116,88 +122,39 @@ console.log('MovementSystem.js file is beginning to be used');
  */
 function loadDiceRollData() {
   try {
-    if (!window.GameStateManager) return;
-    
-    // Make sure diceRollData is at least an empty array
-    if (!window.GameStateManager.diceRollData) {
-      window.GameStateManager.diceRollData = [];
+    if (!window.GameStateManager) {
+      console.error('MovementSystem: GameStateManager not available for dice roll data loading');
+      return;
     }
     
-    // Method 1: Check if the CSV parser is available
-    if (typeof window.csvParser !== 'undefined' && window.csvParser.loadCSV) {
-      console.log("MovementSystem: Attempting to load dice roll data using csvParser");
-      try {
-        window.csvParser.loadCSV('data/DiceRoll Info.csv', function(data) {
-          if (data && Array.isArray(data)) {
-            window.GameStateManager.diceRollData = data;
-            console.log(`MovementSystem: Loaded ${data.length} dice roll outcomes using csvParser`);
-            console.log("MovementSystem: Sample dice data:", data.slice(0, 2));
-            
-            // Verify dice columns are present
-            if (data.length > 0) {
-              const sampleRow = data[0];
-              const hasDiceColumns = ["1", "2", "3", "4", "5", "6"].some(num => num in sampleRow);
-              if (!hasDiceColumns) {
-                console.warn("MovementSystem: Warning - Dice columns (1-6) not found in dice data");
-              } else {
-                console.log("MovementSystem: Dice data verified - dice columns present");
-              }
-            }
-          }
-        });
-        return; // If this worked, return early
-      } catch (error) {
-        console.warn("MovementSystem: Error loading dice roll data with csvParser:", error);
-        // Continue to next method
+    // Check if the CSV parser is available
+    if (typeof window.csvParser === 'undefined' || !window.csvParser.loadCSV) {
+      console.error('MovementSystem: csvParser not available - cannot load dice roll data');
+      return;
+    }
+    
+    console.log("MovementSystem: Loading dice roll data using csvParser");
+    window.csvParser.loadCSV('data/DiceRoll Info.csv', function(data) {
+      if (!data || !Array.isArray(data)) {
+        console.error('MovementSystem: Invalid dice roll data received from csvParser');
+        return;
       }
-    }
-    
-    // Method 2: Use fetch API to load the CSV
-    console.log("MovementSystem: Attempting to load dice roll data using fetch API");
-    fetch('data/DiceRoll Info.csv')
-      .then(response => response.text())
-      .then(csvText => {
-        // Parse CSV (simple parsing)
-        const lines = csvText.split('\n');
-        const headers = lines[0].split(',');
-        
-        // Create array of objects
-        const diceRollData = [];
-        
-        for (let i = 1; i < lines.length; i++) {
-          if (!lines[i].trim()) continue;
-          
-          const values = lines[i].split(',');
-          const rowData = {};
-          
-          for (let j = 0; j < headers.length; j++) {
-            rowData[headers[j].trim()] = values[j] ? values[j].trim() : '';
-          }
-          
-          diceRollData.push(rowData);
+      
+      window.GameStateManager.diceRollData = data;
+      console.log(`MovementSystem: Loaded ${data.length} dice roll outcomes`);
+      console.log("MovementSystem: Sample dice data:", data.slice(0, 2));
+      
+      // Verify dice columns are present
+      if (data.length > 0) {
+        const sampleRow = data[0];
+        const hasDiceColumns = ["1", "2", "3", "4", "5", "6"].some(num => num in sampleRow);
+        if (!hasDiceColumns) {
+          console.error("MovementSystem: Error - Dice columns (1-6) not found in dice data");
+        } else {
+          console.log("MovementSystem: Dice data verified - dice columns present");
         }
-        
-        window.GameStateManager.diceRollData = diceRollData;
-        console.log(`MovementSystem: Loaded ${diceRollData.length} dice roll outcomes using fetch API`);
-        
-        // Verify data integrity
-        if (diceRollData.length > 0) {
-          console.log("MovementSystem: Sample dice data:", diceRollData.slice(0, 2));
-          
-          // Check if required columns exist
-          const sampleRow = diceRollData[0];
-          const hasSpaceName = 'Space Name' in sampleRow;
-          const hasVisitType = 'Visit Type' in sampleRow;
-          const hasDiceColumns = ["1", "2", "3", "4", "5", "6"].some(num => num in sampleRow);
-          
-          if (!hasSpaceName) console.warn("MovementSystem: Warning - 'Space Name' column not found");
-          if (!hasVisitType) console.warn("MovementSystem: Warning - 'Visit Type' column not found");
-          if (!hasDiceColumns) console.warn("MovementSystem: Warning - No dice columns (1-6) found");
-        }
-      })
-      .catch(error => {
-        console.error('MovementSystem: Error loading dice roll data with fetch API:', error);
-      });
+      }
+    });
   } catch (error) {
     console.error('MovementSystem: Critical error in loadDiceRollData:', error);
   }
@@ -280,8 +237,8 @@ function extendGameStateManager() {
               return false;
             }
             
-            // Use movement core to execute the move
-            const result = this.movementCore.movePlayer(actualPlayerId, spaceId);
+            // Use enhanced movement core with choice tracking
+            const result = this.movementCore.movePlayerWithChoiceTracking(actualPlayerId, spaceId);
             
             // If successful, save game state
             if (result) {
@@ -304,13 +261,13 @@ function extendGameStateManager() {
         configurable: false,
         enumerable: true
       });
-      console.log("MovementSystem: Successfully extended executeMove method");
+      console.log("MovementSystem: Successfully extended executeMove method with choice tracking");
     } catch (error) {
       console.error("MovementSystem: Error extending executeMove method:", error);
     }
     
     /**
-     * Find a space by name (case-insensitive)
+     * Find a space by name (exact match only)
      * @param {string} name - Name of the space to find
      * @returns {Object|null} Space object or null if not found
      */
@@ -322,23 +279,8 @@ function extendGameStateManager() {
               return null;
             }
             
-            // Try exact match first
-            let space = this.spaces.find(s => s.name === name);
-            
-            // If not found, try case-insensitive match
-            if (!space) {
-              space = this.spaces.find(s => 
-                s.name && s.name.toLowerCase() === name.toLowerCase()
-              );
-            }
-            
-            // If still not found, try to match with space names with description
-            if (!space) {
-              space = this.spaces.find(s => 
-                s.name && s.name.toLowerCase().includes(name.toLowerCase())
-              );
-            }
-            
+            // Only exact match
+            const space = this.spaces.find(s => s.name === name);
             return space || null;
           } catch (error) {
             console.error('GameStateManager: Error in findSpaceByName:', error);
@@ -389,29 +331,40 @@ function extendGameStateManager() {
      * @returns {boolean} True if player has visited the space
      */
     try {
-      Object.defineProperty(window.GameStateManager, 'hasPlayerVisitedSpace', {
-        value: function(player, spaceName) {
-          try {
-            if (!player || !player.visitHistory || !Array.isArray(player.visitHistory)) {
-              return false;
-            }
-            
-            return player.visitHistory.some(visit => 
-              visit.spaceName === spaceName || 
-              visit.spaceName.toLowerCase() === spaceName.toLowerCase()
-            );
-          } catch (error) {
-            console.error('GameStateManager: Error in hasPlayerVisitedSpace:', error);
+      // DIRECT ASSIGNMENT - this will override the class method
+      window.GameStateManager.hasPlayerVisitedSpace = function(player, spaceName) {
+        console.log('MovementSystem: hasPlayerVisitedSpace OVERRIDE is being used');
+        console.log('MovementSystem: Checking space:', spaceName, 'Player:', player.name);
+        
+        try {
+          // FIXED: Use visitedSpaces instead of visitHistory since that's where the actual data is
+          if (!player || !player.visitedSpaces) {
+            console.log('MovementSystem: No player or visitedSpaces, returning false');
             return false;
           }
-        },
-        writable: false,
-        configurable: false,
-        enumerable: true
-      });
-      console.log("MovementSystem: Successfully extended hasPlayerVisitedSpace method");
+          
+          // Handle both Set and Array for visitedSpaces
+          const visitedSpaces = Array.isArray(player.visitedSpaces) ? 
+            new Set(player.visitedSpaces) : player.visitedSpaces;
+          
+          // Use the same normalization logic as GameStateManager
+          const normalizedSpaceName = this.extractSpaceName(spaceName);
+          const hasVisited = visitedSpaces.has(normalizedSpaceName);
+          
+          console.log(`MovementSystem: Normalized name: ${normalizedSpaceName}`);
+          console.log(`MovementSystem: visitedSpaces has: [${Array.from(visitedSpaces).join(', ')}]`);
+          console.log(`MovementSystem: hasPlayerVisitedSpace result: ${hasVisited}`);
+          
+          return hasVisited;
+        } catch (error) {
+          console.error('MovementSystem: Error in hasPlayerVisitedSpace override:', error);
+          return false;
+        }
+      };
+      
+      console.log("MovementSystem: Successfully OVERRODE hasPlayerVisitedSpace method with direct assignment");
     } catch (error) {
-      console.error("MovementSystem: Error extending hasPlayerVisitedSpace method:", error);
+      console.error("MovementSystem: Error overriding hasPlayerVisitedSpace method:", error);
     }
     
     /**
@@ -446,6 +399,11 @@ function extendGameStateManager() {
                   player.visitHistory = [];
                 }
                 
+                // Ensure singleChoices exists
+                if (!player.singleChoices) {
+                  player.singleChoices = {};
+                }
+                
                 // Ensure previousPosition is set
                 if (!player.previousPosition && player.position) {
                   player.previousPosition = player.position;
@@ -460,6 +418,7 @@ function extendGameStateManager() {
                 player.properties.visitHistory = player.visitHistory;
                 player.properties.previousPosition = player.previousPosition;
                 player.properties.hasUsedCheatBypass = player.hasUsedCheatBypass;
+                player.properties.singleChoices = player.singleChoices;
               });
             }
             
@@ -475,7 +434,7 @@ function extendGameStateManager() {
         configurable: false,
         enumerable: true
       });
-      console.log("MovementSystem: Successfully extended saveState method");
+      console.log("MovementSystem: Successfully extended saveState method with single choice tracking");
     } catch (error) {
       console.error("MovementSystem: Error extending saveState method:", error);
     }

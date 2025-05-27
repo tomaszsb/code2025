@@ -1,15 +1,24 @@
 // GameStateManager.js - Manager for game state and persistence
 console.log('GameStateManager.js file is beginning to be used');
 
+// VERSION TRACKING for cache-buster
+if (window.LOADED_VERSIONS) {
+  window.LOADED_VERSIONS['GameStateManager'] = '2025-05-25-001';
+  console.log('GameStateManager: Version 2025-05-25-001 loaded');
+}
+
 class GameStateManager {
   constructor() {
     // Define a version for state structure
     this.VERSION = '1.0';
     
+    // Add initialization flag to prevent premature access
+    this.isProperlyInitialized = false;
+    
     this.players = [];
     this.currentPlayerIndex = 0;
     this.spaces = [];
-    this.gameStarted = false;
+    this._gameStarted = false;
     this.gameEnded = false;
     
     // Card collections for the game
@@ -40,21 +49,112 @@ class GameStateManager {
     console.log('GameStateManager: Constructor completed');
   }
   
+  // Add getter for gameStarted with initialization guard
+  get gameStarted() {
+    if (!this.isProperlyInitialized) {
+      console.warn('GameStateManager: Accessing gameStarted before proper initialization! Returning false.');
+      return false;
+    }
+    return this._gameStarted;
+  }
+  
+  set gameStarted(value) {
+    this._gameStarted = value;
+  }
+  
   // Initialize the game - Preserving original logic but adding cache
   initialize(spacesData) {
     console.log('GameStateManager: initialize method is being used');
+    console.log('DEBUG: spacesData type:', typeof spacesData);
+    console.log('DEBUG: spacesData length:', spacesData ? spacesData.length : 'null/undefined');
+    console.log('DEBUG: First space:', spacesData && spacesData[0] ? spacesData[0]['Space Name'] : 'no data');
+    console.log('DEBUG: Call stack:', new Error().stack);
+    console.log('DEBUG: Current spaces array length before init:', this.spaces.length);
+    console.log('DEBUG: isProperlyInitialized flag:', this.isProperlyInitialized);
     
-    if (!spacesData || spacesData.length === 0) {
-      throw new Error('No spaces data provided or empty array!');
+    // If already initialized, only re-process if we're explicitly starting fresh
+    if (this.isProperlyInitialized) {
+      console.log('DEBUG: Already initialized, checking if we need to re-process...');
+      
+      if (spacesData && spacesData.length > 0) {
+        console.log('DEBUG: Fresh spacesData provided to already-initialized GameStateManager');
+        console.log('DEBUG: This typically means we\'re starting a new game');
+        
+        // Only clear and re-process if this seems like a new game initialization
+        // We can detect this by checking if we have players (saved game) vs no players (new game)
+        if (this.players.length === 0) {
+          console.log('DEBUG: No players exist, this is likely new game initialization - processing fresh CSV');
+          this.processSpacesData(spacesData);
+          this.buildSpaceCache();
+        } else {
+          console.log('DEBUG: Players exist, keeping current game state and not reprocessing CSV');
+        }
+      } else {
+        console.log('DEBUG: No spacesData provided to already-initialized GameStateManager, ignoring call');
+      }
+      return;
     }
     
+    // First-time initialization logic
+    console.log('DEBUG: First-time initialization');
+    
+    // If we have valid spacesData, use it (new game scenario)
+    if (spacesData && spacesData.length > 0) {
+      console.log('DEBUG: Using provided spacesData for first-time initialization');
+      
+      // Process the fresh CSV data
+      this.processSpacesData(spacesData);
+      
+      // Build cache for fast lookups
+      this.buildSpaceCache();
+      
+      // Don't load saved state when we have fresh CSV data
+      console.log('DEBUG: Skipping saved state loading since we have fresh CSV data');
+      
+      // Mark as properly initialized
+      this.isProperlyInitialized = true;
+      
+      console.log('GameStateManager: initialize method completed with fresh data');
+      return;
+    }
+    
+    // No spacesData provided - this is the saved game scenario
+    console.log('DEBUG: No spacesData provided - checking for saved game');
+    
+    // Try to load saved state first
+    try {
+      this.buildSpaceCache(); // Build cache from any existing spaces
+      this.loadSavedState();
+      
+      // Mark as initialized
+      this.isProperlyInitialized = true;
+      
+      console.log('GameStateManager: initialize method completed with saved state');
+    } catch (error) {
+      console.error('DEBUG: Failed to load saved state:', error);
+      
+      // If loading saved state fails and we have no CSV data, we're in trouble
+      console.error('DEBUG: Cannot initialize - no CSV data and no saved state');
+      
+      // Initialize with empty state as last resort
+      this.resetState();
+      this.isProperlyInitialized = true;
+      
+      console.log('GameStateManager: initialize method completed with empty state (last resort)');
+    }
+  }
+  
+  // Extract spaces data processing into separate method
+  processSpacesData(spacesData) {
+    console.log('GameStateManager: processSpacesData method is being used');
+    
     // Initially set gameStarted to false to ensure the player setup screen is shown
-    this.gameStarted = false;
+    this._gameStarted = false;
     
     // Filter out invalid spaces
     const validSpaces = spacesData.filter(row => row['Space Name'] && row['Space Name'].trim() !== '');
-    
     this.spaces = validSpaces.map((row, index) => {
+      console.log(`DEBUG: Processing space ${index}: "${row['Space Name']}" with Visit Type: "${row['Visit Type']}"`);
       // Get the space name
       const spaceName = row['Space Name'] || `Space ${index}`;
       
@@ -86,7 +186,13 @@ class GameStateManager {
         type: (row['Phase'] || 'Default').toUpperCase(),
         description: row['Event'] || '',
         nextSpaces: nextSpaces,
-        visitType: visitType,
+        visitType: (() => {
+          const visitType = row['Visit Type'] || 'First';
+          if (spaceName === 'PM-DECISION-CHECK') {
+            console.log(`DEBUG: PM-DECISION-CHECK visitType: "${visitType}" from raw: "${row['Visit Type']}"`);
+          }
+          return visitType;
+        })(),
         
         // Store original Space columns for direct reference
         rawSpace1: row['Space 1'] || '',
@@ -95,6 +201,17 @@ class GameStateManager {
         rawSpace4: row['Space 4'] || '',
         rawSpace5: row['Space 5'] || '',
         rawNegotiate: row['Negotiate'] || '',
+        
+        // ALSO preserve with exact CSV column names for MovementEngine
+        'Space 1': row['Space 1'] || '',
+        'Space 2': row['Space 2'] || '',
+        'Space 3': row['Space 3'] || '',
+        'Space 4': row['Space 4'] || '',
+        'Space 5': row['Space 5'] || '',
+        'Negotiate': row['Negotiate'] || '',
+        'RequiresDiceRoll': row['RequiresDiceRoll'] || '',
+        'Path': row['Path'] || '',
+        'Visit Type': row['Visit Type'] || '',
         
         // Preserve all original CSV columns
         action: row['Action'] || '',
@@ -120,12 +237,7 @@ class GameStateManager {
       return spaceObj;
     });
     
-    // Build cache for fast lookups
-    this.buildSpaceCache();
-    
-    this.loadSavedState();
-    
-    console.log('GameStateManager: initialize method completed');
+    console.log('GameStateManager: processSpacesData method completed');
   }
   
   // Build space cache after loading spaces
@@ -220,10 +332,17 @@ class GameStateManager {
       position: startSpaceId,
       visitedSpaces: new Set(), // Use a Set instead of array for O(1) lookups
       previousPosition: null, // Track the previous position
+      singleChoices: {}, // Track permanent single choice decisions
       cards: [], // Initialize empty cards array for card management
       resources: {
         money: 0, // Starting money (players don't get money at beginning)
         time: 0  // Starting time (days)
+      },
+      properties: {
+        singleChoices: {}, // Also store in properties for persistence
+        visitHistory: [],
+        previousPosition: null,
+        hasUsedCheatBypass: false
       }
     });
     
@@ -240,7 +359,7 @@ class GameStateManager {
       return this.visitedSpaces.has(spaceName);
     };
     
-    this.gameStarted = true;
+    this._gameStarted = true;
     this.saveState();
     
     // Dispatch event
@@ -371,6 +490,7 @@ class GameStateManager {
     
     // Record the previous position before updating
     player.previousPosition = player.position;
+    console.log('GameStateManager: Set previousPosition to:', player.previousPosition);
     
     // Add the current space to visited spaces if not already there
     if (currentSpace) {
@@ -381,8 +501,8 @@ class GameStateManager {
     player.visitedSpaces = new Set(player.visitedSpaces || []);
     }
     
-    // ALWAYS add to visited spaces - this ensures we mark it as visited when leaving
-    console.log('GameStateManager: Adding current space to visited spaces before moving:', currentSpaceName);
+    // Add to visited spaces when leaving (this ensures correct visit type detection)
+    console.log('GameStateManager: Adding current space to visited spaces when leaving:', currentSpaceName);
     player.visitedSpaces.add(currentSpaceName);
       
     // Debug: Show all visited spaces after adding this one
@@ -423,24 +543,10 @@ class GameStateManager {
     // Set new position
     player.position = spaceId;
     
-    // Add the space to visited spaces
-    // Extract just the space name, without the visit type
-    const spaceName = this.extractSpaceName(newSpace.name);
-    
-    // Initialize visitedSpaces as Set if it's still an array
-    if (!player.visitedSpaces || Array.isArray(player.visitedSpaces)) {
-      player.visitedSpaces = new Set(player.visitedSpaces || []);
-    }
-    
-    console.log('GameStateManager: Adding', spaceName, 'to visited spaces');
-    
-    // Add to visited spaces if not already there
-    if (!player.visitedSpaces.has(spaceName)) {
-      player.visitedSpaces.add(spaceName);
-      console.log('GameStateManager: Updated visited spaces');
-    } else {
-      console.log('GameStateManager: Space already in visited list, not adding again');
-    }
+    // NOTE: We do NOT add the new space to visitedSpaces here
+    // Spaces are only added to visitedSpaces when LEAVING them (see above)
+    // This ensures correct visit type detection for first vs subsequent visits
+    console.log('GameStateManager: Player moved to', newSpace.name, 'but not adding to visitedSpaces until they leave');
     
     // Check if this is the finish space
     if (newSpace.type === 'END') {
@@ -493,40 +599,31 @@ class GameStateManager {
       return false;
     }
     
-    // Check which spaces the player has in their visited set
-    console.log('GameStateManager: Is "OWNER-SCOPE-INITIATION" in visitedSpaces?', player.visitedSpaces.has('OWNER-SCOPE-INITIATION'));
-    
-    // SIMPLIFIED LOGIC: If the space name is in the visitedSpaces set, the player has visited it
-    // Also check if current position matches this space - that means we're there now and have visited
+    // Simple check: is the normalized space name in visitedSpaces?
     const hasVisited = player.visitedSpaces.has(normalizedSpaceName);
+    
+    console.log('GameStateManager: hasVisited (Set.has):', hasVisited);
+    console.log('GameStateManager: Space name "' + normalizedSpaceName + '" in visitedSpaces Set?', hasVisited);
+    
+    // Get current space info to determine if player is currently on this space
     const currentSpace = this.findSpaceById(player.position);
     const currentSpaceName = currentSpace ? this.extractSpaceName(currentSpace.name) : null;
     const isCurrentSpace = currentSpaceName === normalizedSpaceName;
     
-    // Check if this was the previous space as a special case
-    if (!hasVisited && player.previousPosition) {
-      const previousSpace = this.findSpaceById(player.previousPosition);
-      if (previousSpace && this.extractSpaceName(previousSpace.name) === normalizedSpaceName) {
-        console.log('GameStateManager: This was the player\'s previous space - treating as visited');
-        return true;
-      }
+    console.log('GameStateManager: isCurrentSpace:', isCurrentSpace);
+    
+    // FIXED LOGIC: If the space is in visitedSpaces, they've been there before
+    // regardless of whether they're currently on it or not
+    if (hasVisited) {
+      console.log('GameStateManager: Space is in visitedSpaces - this means subsequent visit');
+      console.log('GameStateManager: hasPlayerVisitedSpace method completed with result: true');
+      return true;
     }
     
-    // Special case: If OWNER-SCOPE-INITIATION or OWNER-FUND-INITIATION is visited,
-    // we know the player has passed through them at the start of the game
-    if (normalizedSpaceName === 'OWNER-SCOPE-INITIATION' || normalizedSpaceName === 'OWNER-FUND-INITIATION') {
-      if (player.visitedSpaces.size > 0) {
-        console.log('GameStateManager: Special case - player has likely visited starting space');
-        return true;
-      }
-    }
-    
-    console.log('GameStateManager: Space name "' + normalizedSpaceName + '" in visitedSpaces Set?', hasVisited);
-    console.log('GameStateManager: isCurrentSpace?', isCurrentSpace);
-    console.log('GameStateManager: All visitedSpaces:', Array.from(player.visitedSpaces));
-    console.log('GameStateManager: hasPlayerVisitedSpace method completed with result:', hasVisited);
-    
-    return hasVisited || isCurrentSpace;
+    // If space is not in visitedSpaces, it's a first visit
+    console.log('GameStateManager: Space not in visitedSpaces - this is a first visit');
+    console.log('GameStateManager: hasPlayerVisitedSpace method completed with result: false');
+    return false;
   }
   
   // Find a space by name - now using cache
@@ -559,23 +656,7 @@ class GameStateManager {
     return match;
   }
   
-  // Get available moves for current player - Using MoveLogic utility
-  getAvailableMoves() {
-    console.log('GameStateManager: getAvailableMoves method is being used');
-    
-    // Step 1: Get the current player
-    const currentPlayer = this.getCurrentPlayer();
-    if (!currentPlayer) {
-      console.log('GameStateManager: No current player found');
-      return [];
-    }
-    
-    // Step 2: Delegate to MoveLogic utility
-    const moves = window.MoveLogic.getAvailableMoves(this, currentPlayer);
-    
-    console.log('GameStateManager: getAvailableMoves method completed');
-    return moves;
-  }
+
   
   // Save state to localStorage with improved format
   saveState() {
@@ -614,7 +695,7 @@ class GameStateManager {
         timestamp: Date.now(),
         players: serializablePlayers,
         currentPlayerIndex: this.currentPlayerIndex,
-        gameStarted: this.gameStarted,
+        gameStarted: this._gameStarted,
         gameEnded: this.gameEnded
       };
       
@@ -629,7 +710,7 @@ class GameStateManager {
       localStorage.setItem('game_players', JSON.stringify(serializablePlayers));
       localStorage.setItem('game_currentPlayer', this.currentPlayerIndex);
       localStorage.setItem('game_status', JSON.stringify({
-        started: this.gameStarted,
+        started: this._gameStarted,
         ended: this.gameEnded
       }));
     } catch (error) {
@@ -686,6 +767,22 @@ class GameStateManager {
               restored.visitedSpaces = new Set();
             }
             
+            // Ensure singleChoices exists
+            if (!restored.singleChoices) {
+              restored.singleChoices = {};
+            }
+            
+            // Ensure properties exists with all needed fields
+            if (!restored.properties) {
+              restored.properties = {};
+            }
+            if (!restored.properties.singleChoices) {
+              restored.properties.singleChoices = restored.singleChoices || {};
+            }
+            if (!restored.properties.visitHistory) {
+              restored.properties.visitHistory = [];
+            }
+            
             // Add helper methods for backward compatibility
             restored.getVisitedSpacesArray = function() {
               return Array.from(this.visitedSpaces);
@@ -709,18 +806,19 @@ class GameStateManager {
         }
         
         this.currentPlayerIndex = savedState.currentPlayerIndex || 0;
-        this.gameStarted = false; // Still let PlayerSetup handle this
+        this._gameStarted = false; // Still let PlayerSetup handle this
         this.gameEnded = savedState.gameEnded || false;
         
         console.log('GameStateManager: Loaded from consolidated storage format');
       } else {
-        // Fall back to legacy format
-        this.loadLegacySavedState();
+        // NO FALLBACK - Force error to see what's happening
+        console.log('DEBUG: No saved state found, NO FALLBACK - should use fresh CSV data');
+        throw new Error('No saved state and no fresh CSV data provided to initialize!');
       }
     } catch (error) {
       console.error('GameStateManager: Error loading saved state:', error);
-      // Fallback to legacy format
-      this.loadLegacySavedState();
+      // NO FALLBACK - Let it fail
+      throw error;
     }
     
     console.log('GameStateManager: loadSavedState method completed');
@@ -764,7 +862,7 @@ class GameStateManager {
       
       if (savedStatus) {
         const status = JSON.parse(savedStatus);
-        this.gameStarted = false; // Let PlayerSetup handle this
+        this._gameStarted = false; // Let PlayerSetup handle this
         this.gameEnded = status.ended || false;
       }
       
@@ -784,7 +882,7 @@ class GameStateManager {
     
     this.players = [];
     this.currentPlayerIndex = 0;
-    this.gameStarted = false;
+    this._gameStarted = false;
     this.gameEnded = false;
     
     console.log('GameStateManager: resetState method completed');
@@ -992,9 +1090,13 @@ class GameStateManager {
     
     this.players = [];
     this.currentPlayerIndex = 0;
-    this.gameStarted = false;
+    this._gameStarted = false;
     this.gameEnded = false;
     this.clearSavedState();
+    
+    // Reset the initialization flag so that initialize() can be called again with fresh CSV data
+    this.isProperlyInitialized = false;
+    console.log('DEBUG: Reset isProperlyInitialized to false for new game');
     
     // Dispatch event
     this.dispatchEvent('gameStateChanged', {

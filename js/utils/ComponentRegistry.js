@@ -67,23 +67,23 @@ window.ComponentRegistry = (function() {
     /**
      * Register a component interface
      * @param {string} name - Component name
-     * @param {object} interface - Public interface object
+     * @param {object} componentInterface - Public interface object
      * @param {string} [version] - Optional version string
      * @returns {boolean} True if registration was successful
      */
-    register: function(name, interface, version = '1.0') {
+    register: function(name, interfaceObj, version = '1.0') {
       if (!name || typeof name !== 'string') {
         console.error('ComponentRegistry: Invalid component name');
         return false;
       }
       
-      if (!interface || typeof interface !== 'object') {
+      if (!interfaceObj || typeof interfaceObj !== 'object') {
         console.error(`ComponentRegistry: Invalid interface for ${name}`);
         return false;
       }
       
       // Store the interface
-      _components[name] = interface;
+      _components[name] = interfaceObj;
       _versions[name] = version;
       
       _log(`Registered component ${name} v${version}`);

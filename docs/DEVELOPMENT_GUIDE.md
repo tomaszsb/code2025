@@ -2,6 +2,11 @@
 
 No critical issues at this time. All known issues have been resolved.
 
+**RECENTLY FIXED** (May 23, 2025):
+- ✅ PM-DECISION-CHECK Movement Bugs - Fixed original space tracking logic in MovementCore.js
+- ✅ All three reported bugs (wrong original space, quest detection, missing moves) resolved with single fix
+- ✅ Changed player.position to player.previousPosition in _updateVisitHistory method
+
 # Development Guide
 
 This guide provides information on the next development steps for the Project Management Game.

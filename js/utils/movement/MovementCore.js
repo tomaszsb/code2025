@@ -8,6 +8,12 @@
 
 console.log('MovementCore.js file is beginning to be used');
 
+// VERSION TRACKING for cache-buster
+if (window.LOADED_VERSIONS) {
+  window.LOADED_VERSIONS['MovementCore'] = '2025-05-25-001';
+  console.log('MovementCore: Version 2025-05-25-001 loaded');
+}
+
 class MovementCore {
   constructor(gameStateManager) {
     this.gameStateManager = gameStateManager;
@@ -132,13 +138,27 @@ class MovementCore {
       player.properties.visitHistory = [];
     }
     
-    // Create visit record
+    // Create visit record with path type
     const visitRecord = {
       spaceId: space.id,
       spaceName: space.name,
+      spacePath: space.Path || 'unknown',
       timestamp: Date.now(),
       visitType: this.determineVisitType(player, space)
     };
+    
+    // If moving FROM a main path space TO PM-DECISION-CHECK, store the original space
+    if (player.previousPosition && space.name === 'PM-DECISION-CHECK') {
+      const previousSpace = this.gameStateManager.findSpaceById(player.previousPosition);
+      if (previousSpace && previousSpace.Path && previousSpace.Path.toLowerCase() === 'main') {
+        // Only store if not already stored (first time leaving main path)
+        if (!player.properties.originalSpaceId) {
+          console.log(`MovementCore: Storing original main path space: ${previousSpace.name}`);
+          player.properties.originalSpaceId = previousSpace.id;
+          player.properties.originalSpaceName = previousSpace.name;
+        }
+      }
+    }
     
     // Add to both places for redundancy
     player.visitHistory.push(visitRecord);
@@ -152,16 +172,20 @@ class MovementCore {
    * @returns {string} "First" or "Subsequent"
    */
   determineVisitType(player, space) {
-    // If player has no visit history, it's a first visit
-    if (!player.visitHistory || !Array.isArray(player.visitHistory)) {
+    // FIXED: Use visitedSpaces instead of visitHistory since that's where the data actually is
+    if (!player.visitedSpaces) {
       return 'First';
     }
     
-    // Check if player has visited this space before
-    const hasVisited = player.visitHistory.some(visit => 
-      visit.spaceName === space.name || 
-      (visit.spaceId && visit.spaceId === space.id)
-    );
+    // Handle both Set and Array for visitedSpaces
+    const visitedSpaces = Array.isArray(player.visitedSpaces) ? 
+      new Set(player.visitedSpaces) : player.visitedSpaces;
+    
+    // Check if player has visited this space before using the same logic as GameStateManager
+    const normalizedSpaceName = this.gameStateManager.extractSpaceName(space.name);
+    const hasVisited = visitedSpaces.has(normalizedSpaceName);
+    
+    console.log(`MovementCore: determineVisitType for ${space.name}: hasVisited=${hasVisited}`);
     
     return hasVisited ? 'Subsequent' : 'First';
   }
@@ -177,13 +201,17 @@ class MovementCore {
       return [];
     }
     
-    // Define side quest spaces to filter out
-    const sideQuestSpaces = ['PM-DECISION-CHECK', 'CHEAT-BYPASS', 'OWNER-DECISION-REVIEW'];
-    
-    // Return filtered history
-    return player.visitHistory.filter(visit => 
-      !sideQuestSpaces.includes(visit.spaceName)
-    );
+    // Filter based on Path type from CSV data
+    return player.visitHistory.filter(visit => {
+      // Find the space to check its path
+      const space = this.gameStateManager.findSpaceById(visit.spaceId) || 
+                    this.gameStateManager.findSpaceByName(visit.spaceName);
+      
+      if (!space) return false;
+      
+      // Include only Main path spaces
+      return space.Path && space.Path.toLowerCase() === 'main';
+    });
   }
   
   /**
@@ -237,6 +265,137 @@ class MovementCore {
   }
   
   /**
+   * Check if a space is a "single choice" space
+   * @param {string} spaceName - Name of space to check
+   * @returns {boolean} True if this is a single choice space
+   */
+  isSingleChoiceSpace(spaceName) {
+    if (!this.gameStateManager.spaces) return false;
+    const spaceData = this.gameStateManager.spaces.find(s => s.name === spaceName);
+    return spaceData && spaceData.Path === "Single choice";
+  }
+  
+  /**
+   * Record a permanent single choice decision
+   * @param {Object} player - Player making the choice
+   * @param {string} spaceName - Name of the single choice space
+   * @param {string} chosenDestination - Destination they chose
+   */
+  recordSingleChoice(player, spaceName, chosenDestination) {
+    // Initialize singleChoices if it doesn't exist
+    if (!player.singleChoices) {
+      player.singleChoices = {};
+    }
+    
+    // Store in properties for persistence
+    if (!player.properties) {
+      player.properties = {};
+    }
+    if (!player.properties.singleChoices) {
+      player.properties.singleChoices = {};
+    }
+    
+    // Record the choice in both places
+    player.singleChoices[spaceName] = chosenDestination;
+    player.properties.singleChoices[spaceName] = chosenDestination;
+    
+    console.log(`MovementCore: Recorded permanent choice at ${spaceName}: ${chosenDestination}`);
+  }
+  
+  /**
+   * Get previous single choice for a space
+   * @param {Object} player - Player to check
+   * @param {string} spaceName - Name of single choice space
+   * @returns {string|null} Previously chosen destination or null
+   */
+  getPreviousSingleChoice(player, spaceName) {
+    // Check both locations for the choice
+    if (player.singleChoices && player.singleChoices[spaceName]) {
+      return player.singleChoices[spaceName];
+    }
+    
+    if (player.properties && player.properties.singleChoices && player.properties.singleChoices[spaceName]) {
+      return player.properties.singleChoices[spaceName];
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Check if a destination conflicts with previous single choice decisions
+   * @param {Object} player - Player to check
+   * @param {string} destination - Destination to validate
+   * @returns {boolean} True if this destination conflicts with a previous choice
+   */
+  conflictsWithSingleChoice(player, destination) {
+    if (!this.gameStateManager.spaces) return false;
+    
+    // Get all single choice spaces and their destinations
+    const singleChoiceSpaces = this.gameStateManager.spaces.filter(space => space.Path === "Single choice");
+    
+    for (let space of singleChoiceSpaces) {
+      const spaceName = space.name;
+      const chosenDestination = this.getPreviousSingleChoice(player, spaceName);
+      
+      if (chosenDestination) {
+        // Get all possible destinations from this single choice space
+        const possibleDestinations = [
+          space["Space 1"],
+          space["Space 2"], 
+          space["Space 3"],
+          space["Space 4"],
+          space["Space 5"]
+        ].filter(dest => dest && dest.toString().trim() !== "" && dest !== "null")
+         .map(dest => {
+            // Extract space name (part before " - " if it exists)
+            let destName = dest.toString();
+            if (destName.includes(" - ")) {
+              destName = destName.split(" - ")[0].trim();
+            }
+            return destName;
+        });
+        
+        // If the current destination was an option but wasn't chosen, it conflicts
+        if (possibleDestinations.includes(destination) && destination !== chosenDestination) {
+          console.log(`MovementCore: Filtering out ${destination} - conflicts with choice ${chosenDestination} made at ${spaceName}`);
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Enhanced movePlayer that handles single choice recording
+   * @param {string} playerId - ID of the player to move
+   * @param {string} spaceId - ID of the space to move to
+   * @returns {boolean} True if movement was successful
+   */
+  movePlayerWithChoiceTracking(playerId, spaceId) {
+    const player = this.gameStateManager.findPlayerById(playerId);
+    const currentSpace = this.gameStateManager.findSpaceById(player.position);
+    const targetSpace = this.gameStateManager.findSpaceById(spaceId);
+    
+    if (!player || !currentSpace || !targetSpace) {
+      return false;
+    }
+    
+    // If leaving a single choice space, record the choice
+    if (this.isSingleChoiceSpace(currentSpace.name)) {
+      const previousChoice = this.getPreviousSingleChoice(player, currentSpace.name);
+      
+      // Only record if this is a new choice (not already recorded)
+      if (!previousChoice) {
+        this.recordSingleChoice(player, currentSpace.name, targetSpace.name);
+      }
+    }
+    
+    // Use the existing movePlayer logic
+    return this.movePlayer(playerId, spaceId);
+  }
+  
+  /**
    * Check if a space requires a dice roll
    * @param {Object} space - Space to check
    * @param {Object} player - Player to check (for visit type)
@@ -258,7 +417,7 @@ class MovementCore {
     
     // Check if the game state manager has dice roll data loaded
     if (!this.gameStateManager.diceRollData || !Array.isArray(this.gameStateManager.diceRollData)) {
-      console.log(`MovementCore: Dice roll data not loaded yet, assuming space ${space.name} does not require dice`);
+      console.error(`MovementCore: Dice roll data not loaded - cannot determine if space ${space.name} requires dice`);
       return false;
     }
     

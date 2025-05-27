@@ -1,0 +1,91 @@
+SpaceName,VisitType,DiceValue,OutcomeType,OutcomeValue,Description
+OWNER-SCOPE-INITIATION,First,1,DrawCards,W:1,Draw 1 W card
+OWNER-SCOPE-INITIATION,First,2,DrawCards,W:1,Draw 1 W card
+OWNER-SCOPE-INITIATION,First,3,DrawCards,W:2,Draw 2 W cards
+OWNER-SCOPE-INITIATION,First,4,DrawCards,W:2,Draw 2 W cards
+OWNER-SCOPE-INITIATION,First,5,DrawCards,W:3,Draw 3 W cards
+OWNER-SCOPE-INITIATION,First,6,DrawCards,W:3,Draw 3 W cards
+OWNER-SCOPE-INITIATION,Subsequent,1,DrawCards,W:1,Draw 1 W card
+OWNER-SCOPE-INITIATION,Subsequent,2,DrawCards,W:1,Draw 1 W card
+OWNER-SCOPE-INITIATION,Subsequent,3,DrawCards,W:2,Draw 2 W cards
+OWNER-SCOPE-INITIATION,Subsequent,4,DrawCards,W:2,Draw 2 W cards
+OWNER-SCOPE-INITIATION,Subsequent,5,DrawCards,W:3,Draw 3 W cards
+OWNER-SCOPE-INITIATION,Subsequent,6,DrawCards,W:3,Draw 3 W cards
+ARCH-FEE-REVIEW,First,1,Fee,8%,8% fee
+ARCH-FEE-REVIEW,First,2,Fee,8%,8% fee
+ARCH-FEE-REVIEW,First,3,Fee,10%,10% fee
+ARCH-FEE-REVIEW,First,4,Fee,10%,10% fee
+ARCH-FEE-REVIEW,First,5,Fee,12%,12% fee
+ARCH-FEE-REVIEW,First,6,Fee,12%,12% fee
+ARCH-FEE-REVIEW,Subsequent,1,Fee,0%,0% fee
+ARCH-FEE-REVIEW,Subsequent,2,Fee,0%,0% fee
+ARCH-FEE-REVIEW,Subsequent,3,Fee,1%,1% fee
+ARCH-FEE-REVIEW,Subsequent,4,Fee,1%,1% fee
+ARCH-FEE-REVIEW,Subsequent,5,Fee,2%,2% fee
+ARCH-FEE-REVIEW,Subsequent,6,Fee,2%,2% fee
+ARCH-INITIATION,Subsequent,1,MoveToChoice,ENG-INITIATION|PM-DECISION-CHECK,Move to either ENG-INITIATION or PM-DECISION-CHECK - No review needed
+ARCH-INITIATION,Subsequent,2,MoveToChoice,ENG-INITIATION|PM-DECISION-CHECK,Move to either ENG-INITIATION or PM-DECISION-CHECK - No review needed
+ARCH-INITIATION,Subsequent,3,MoveToChoice,ENG-INITIATION|PM-DECISION-CHECK,Move to either ENG-INITIATION or PM-DECISION-CHECK - No review needed
+ARCH-INITIATION,Subsequent,4,MoveToSpace,ARCH-FEE-REVIEW,Move to ARCH-FEE-REVIEW - Review needed
+ARCH-INITIATION,Subsequent,5,MoveToSpace,ARCH-FEE-REVIEW,Move to ARCH-FEE-REVIEW - Review needed
+ARCH-INITIATION,Subsequent,6,MoveToSpace,ARCH-FEE-REVIEW,Move to ARCH-FEE-REVIEW - Review needed
+ARCH-SCOPE-CHECK,First,1,CardAction,W:Remove:1,Remove 1 W card
+ARCH-SCOPE-CHECK,First,2,CardAction,W:Draw:1,Draw 1 W card
+ARCH-SCOPE-CHECK,First,3,CardAction,W:Replace:1,Replace 1 W card
+ARCH-SCOPE-CHECK,First,4,CardAction,W:NoChange,No change to W cards
+ARCH-SCOPE-CHECK,First,5,CardAction,W:NoChange,No change to W cards
+ARCH-SCOPE-CHECK,First,6,CardAction,W:NoChange,No change to W cards
+ARCH-SCOPE-CHECK,Subsequent,1,CardAction,W:Remove:1,Remove 1 W card
+ARCH-SCOPE-CHECK,Subsequent,2,CardAction,W:Draw:1,Draw 1 W card
+ARCH-SCOPE-CHECK,Subsequent,3,CardAction,W:Replace:1,Replace 1 W card
+ARCH-SCOPE-CHECK,Subsequent,4,CardAction,W:NoChange,No change to W cards
+ARCH-SCOPE-CHECK,Subsequent,5,CardAction,W:NoChange,No change to W cards
+ARCH-SCOPE-CHECK,Subsequent,6,CardAction,W:NoChange,No change to W cards
+CHEAT-BYPASS,First,1,Time,1,1 day
+CHEAT-BYPASS,First,2,Time,2,2 days
+CHEAT-BYPASS,First,3,Time,3,3 days
+CHEAT-BYPASS,First,4,Time,4,4 days
+CHEAT-BYPASS,First,5,Time,60,60 days
+CHEAT-BYPASS,First,6,Time,365,365 days
+CHEAT-BYPASS,Subsequent,1,Time,1,1 day
+CHEAT-BYPASS,Subsequent,2,Time,2,2 days
+CHEAT-BYPASS,Subsequent,3,Time,3,3 days
+CHEAT-BYPASS,Subsequent,4,Time,4,4 days
+CHEAT-BYPASS,Subsequent,5,Time,60,60 days
+CHEAT-BYPASS,Subsequent,6,Time,365,365 days
+CHEAT-BYPASS,First,1,MoveToSpace,ENG-INITIATION,Move to ENG-INITIATION
+CHEAT-BYPASS,First,2,MoveToSpace,REG-DOB-FEE-REVIEW,Move to REG-DOB-FEE-REVIEW
+CHEAT-BYPASS,First,3,MoveToSpace,REG-FDNY-FEE-REVIEW,Move to REG-FDNY-FEE-REVIEW
+CHEAT-BYPASS,First,4,MoveToSpace,CON-INITIATION,Move to CON-INITIATION
+CHEAT-BYPASS,First,5,MoveToSpace,PM-DECISION-CHECK,Move to PM-DECISION-CHECK - Caught
+CHEAT-BYPASS,First,6,MoveToSpace,PM-DECISION-CHECK,Move to PM-DECISION-CHECK - Went to jail
+CHEAT-BYPASS,Subsequent,1,MoveToSpace,ENG-INITIATION,Move to ENG-INITIATION
+CHEAT-BYPASS,Subsequent,2,MoveToSpace,REG-DOB-FEE-REVIEW,Move to REG-DOB-FEE-REVIEW
+CHEAT-BYPASS,Subsequent,3,MoveToSpace,REG-FDNY-FEE-REVIEW,Move to REG-FDNY-FEE-REVIEW
+CHEAT-BYPASS,Subsequent,4,MoveToSpace,CON-INITIATION,Move to CON-INITIATION
+CHEAT-BYPASS,Subsequent,5,MoveToSpace,PM-DECISION-CHECK,Move to PM-DECISION-CHECK - Caught
+CHEAT-BYPASS,Subsequent,6,MoveToSpace,PM-DECISION-CHECK,Move to PM-DECISION-CHECK - Went to jail
+CON-INITIATION,First,1,Quality,HIGH,High quality contractor
+CON-INITIATION,First,2,Quality,HIGH,High quality contractor
+CON-INITIATION,First,3,Quality,MED,Medium quality contractor
+CON-INITIATION,First,4,Quality,MED,Medium quality contractor
+CON-INITIATION,First,5,Quality,LOW,Low quality contractor
+CON-INITIATION,First,6,Quality,LOW,Low quality contractor
+CON-INITIATION,First,1,Multiplier,1,Multiplier x1
+CON-INITIATION,First,2,Multiplier,2,Multiplier x2
+CON-INITIATION,First,3,Multiplier,3,Multiplier x3
+CON-INITIATION,First,4,Multiplier,4,Multiplier x4
+CON-INITIATION,First,5,Multiplier,5,Multiplier x5
+CON-INITIATION,First,6,Multiplier,6,Multiplier x6
+CON-INITIATION,Subsequent,1,Time,5,5 days
+CON-INITIATION,Subsequent,2,Time,10,10 days
+CON-INITIATION,Subsequent,3,Time,15,15 days
+CON-INITIATION,Subsequent,4,Time,20,20 days
+CON-INITIATION,Subsequent,5,Time,25,25 days
+CON-INITIATION,Subsequent,6,Time,30,30 days
+CON-INITIATION,Subsequent,1,Fee,0%,0% fee
+CON-INITIATION,Subsequent,2,Fee,2%,2% fee
+CON-INITIATION,Subsequent,3,Fee,4%,4% fee
+CON-INITIATION,Subsequent,4,Fee,6%,6% fee
+CON-INITIATION,Subsequent,5,Fee,8%,8% fee
+CON-INITIATION,Subsequent,6,Fee,10%,10% fee

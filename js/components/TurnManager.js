@@ -102,6 +102,7 @@ class TurnManager {
   
   /**
    * Handle ending the current turn and transitioning to the next player
+   * PHASE 4: Now uses MovementEngine for complete turn completion logic
    */
   handleEndTurn = () => {
     console.log('TurnManager: Ending current turn');
@@ -110,10 +111,33 @@ class TurnManager {
     
     // If a move was selected and the hasSelectedMove flag is true, execute it now when ending the turn
     if (selectedMove && hasSelectedMove && currentPlayer) {
-      console.log('TurnManager: Executing selected move:', selectedMove);
+      console.log('TurnManager: Executing selected move via MovementEngine:', selectedMove);
       
-      // Move the player - this will trigger a playerMoved event via GameStateManager
-      window.GameStateManager.movePlayer(currentPlayer.id, selectedMove);
+      // PHASE 4: Use MovementEngine for complete turn completion with all effects
+      if (window.movementEngine && window.movementEngine.isReady()) {
+        const moveResult = window.movementEngine.executePlayerMove(currentPlayer, selectedMove);
+        
+        if (moveResult.success) {
+          console.log(`TurnManager: Move executed successfully from ${moveResult.fromSpace} to ${moveResult.toSpace}`);
+          
+          // Trigger playerMoved event via GameStateManager for UI updates
+          window.GameStateManager.dispatchEvent('playerMoved', {
+            playerId: currentPlayer.id,
+            player: currentPlayer,
+            fromSpace: moveResult.fromSpace,
+            toSpace: moveResult.toSpace,
+            spaceData: moveResult.spaceData
+          });
+        } else {
+          console.error('TurnManager: Move execution failed:', moveResult.error);
+          // Fallback to old method if MovementEngine fails
+          window.GameStateManager.movePlayer(currentPlayer.id, selectedMove);
+        }
+      } else {
+        console.warn('TurnManager: MovementEngine not ready, using fallback method');
+        // Fallback to old method if MovementEngine not available
+        window.GameStateManager.movePlayer(currentPlayer.id, selectedMove);
+      }
     } else {
       // If there are no available moves, that's okay - the player might have just drawn cards
       // or performed another action that doesn't involve movement
@@ -133,6 +157,45 @@ class TurnManager {
     this.nextPlayerTurn();
     
     console.log('TurnManager: Turn ended, next player:', window.GameStateManager.currentPlayerIndex);
+  }
+  
+  /**
+   * Handle negotiation (player chooses to stay and skip turn)
+   * PHASE 4: Integrated with MovementEngine negotiation logic
+   */
+  handleNegotiation = () => {
+    console.log('TurnManager: Handling negotiation');
+    const currentPlayer = this.getCurrentPlayer();
+    
+    if (!currentPlayer) {
+      console.error('TurnManager: No current player for negotiation');
+      return;
+    }
+    
+    // PHASE 4: Use MovementEngine for negotiation logic
+    if (window.movementEngine && window.movementEngine.isReady()) {
+      const negotiationResult = window.movementEngine.handleNegotiation(currentPlayer);
+      
+      if (negotiationResult.success) {
+        console.log('TurnManager: Negotiation successful:', negotiationResult.message);
+        
+        // Dispatch event for negotiation
+        window.GameStateManager.dispatchEvent('gameStateChanged', {
+          changeType: 'playerNegotiated',
+          playerId: currentPlayer.id,
+          player: currentPlayer,
+          timePenalty: negotiationResult.timePenalty,
+          message: negotiationResult.message
+        });
+        
+        // Move to next player's turn since negotiation skips current player
+        this.nextPlayerTurn();
+      } else {
+        console.error('TurnManager: Negotiation failed:', negotiationResult.error);
+      }
+    } else {
+      console.warn('TurnManager: MovementEngine not ready for negotiation');
+    }
   }
   
   /**
@@ -246,9 +309,27 @@ class TurnManager {
       ...player,
       resources: player.resources ? { ...player.resources } : {},
       cards: player.cards ? [...player.cards] : [],
+      // Handle visitedSpaces properly for both Set and Array formats
+      visitedSpaces: player.visitedSpaces ? 
+        (Array.isArray(player.visitedSpaces) ? [...player.visitedSpaces] : Array.from(player.visitedSpaces)) : [],
       // Force the color to be the player's color for consistent UI
       color: player.color
     };
+  }
+  
+  /**
+   * Check if the current player can negotiate (stay and skip turn)
+   * PHASE 4: Uses MovementEngine to check negotiation eligibility
+   * @returns {boolean} True if negotiation is allowed
+   */
+  canNegotiate = () => {
+    const currentPlayer = this.getCurrentPlayer();
+    
+    if (!currentPlayer || !window.movementEngine || !window.movementEngine.isReady()) {
+      return false;
+    }
+    
+    return window.movementEngine.canNegotiate(currentPlayer);
   }
   
   /**
@@ -385,7 +466,9 @@ window.TurnManager = TurnManager;
 window.TURN_EVENTS = {
   TURN_CHANGED: 'turnChanged',
   ACTIVE_PLAYER_CHANGED: 'activePlayerChanged',
-  PLAYER_POSITION_CHANGED: 'playerPositionChanged'
+  PLAYER_POSITION_CHANGED: 'playerPositionChanged',
+  PLAYER_NEGOTIATED: 'playerNegotiated'
 };
 
 console.log('TurnManager.js code execution finished');
+console.log('TurnManager.js PHASE 4: Integrated with MovementEngine for complete turn completion [2025-05-27]');

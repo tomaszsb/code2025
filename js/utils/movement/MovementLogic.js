@@ -8,6 +8,12 @@
 
 console.log('MovementLogic.js file is beginning to be used');
 
+// VERSION TRACKING for cache-buster
+if (window.LOADED_VERSIONS) {
+  window.LOADED_VERSIONS['MovementLogic'] = '2025-05-25-001';
+  console.log('MovementLogic: Version 2025-05-25-001 loaded');
+}
+
 class MovementLogic {
   constructor(gameStateManager, movementCore) {
     this.gameStateManager = gameStateManager;
@@ -31,6 +37,163 @@ class MovementLogic {
   }
   
   /**
+   * Check if a space is a logic space
+   * @param {string} spaceName - Name of the space to check
+   * @returns {boolean} True if this is a logic space
+   */
+  isLogicSpace(spaceName) {
+    if (!spaceName || !this.gameStateManager.spaces) return false;
+    const spaceData = this.gameStateManager.spaces.find(s => s.name === spaceName);
+    console.log(`Checking if ${spaceName} is logic space:`, spaceData ? spaceData.Path : 'space not found');
+    return spaceData && spaceData.Path === "LOGIC";
+  }
+  
+  /**
+   * Parse logic question from space column text
+   * @param {string} questionText - Text containing the logic question
+   * @returns {Object|null} Parsed question object or null
+   */
+  parseLogicQuestion(questionText) {
+    if (!questionText) return null;
+    
+    // Format: "Question? YES - destination NO - destination"
+    const parts = questionText.split('?');
+    if (parts.length < 2) return null;
+    
+    const question = parts[0].trim() + '?';
+    const answersText = parts[1].trim();
+    
+    // Look for YES and NO patterns
+    const yesIndex = answersText.indexOf('YES -');
+    let noIndex = answersText.indexOf(' NO -');
+    
+    // If " NO -" not found, try "NO -" at start or after space
+    if (noIndex === -1) {
+      noIndex = answersText.indexOf('NO -');
+      if (noIndex > 0 && answersText[noIndex - 1] !== ' ') {
+        noIndex = -1; // Only accept if it's at start or after space
+      }
+    }
+    
+    if (yesIndex === -1 || noIndex === -1) {
+      console.log('Parse failed - yesIndex:', yesIndex, 'noIndex:', noIndex);
+      return null;
+    }
+    
+    const yesDestination = answersText.substring(yesIndex + 5, noIndex).trim();
+    let noDestination = answersText.substring(noIndex + 4).trim(); // +4 for "NO -"
+    
+    // Resolve "Space X" references to actual column values
+    if (noDestination.startsWith('Space ')) {
+      const spaceData = this.getCurrentSpaceData();
+      if (spaceData && spaceData[noDestination]) {
+        noDestination = spaceData[noDestination];
+      }
+    }
+    
+    return {
+      question: question,
+      yes: yesDestination,
+      no: noDestination
+    };
+  }
+  
+  /**
+   * Get current space data for the current player
+   * @returns {Object|null} Current space data or null
+   */
+  getCurrentSpaceData() {
+    const currentPlayer = this.gameStateManager.getCurrentPlayer();
+    if (!currentPlayer) return null;
+    
+    return this.gameStateManager.findSpaceById(currentPlayer.position);
+  }
+  
+  /**
+   * Get logic space moves (for UI integration)
+   * @param {Object} player - Current player
+   * @param {Object} space - Logic space data
+   * @returns {Object} Logic space move data
+   */
+  getLogicSpaceMoves(player, space) {
+    // Return special object indicating this needs logic space UI
+    return {
+      requiresLogicSpace: true,
+      spaceName: space.name,
+      visitType: this.movementCore.determineVisitType(player, space),
+      currentQuestion: 1 // Start at question 1
+    };
+  }
+  
+  /**
+   * Process logic space question answer
+   * @param {Object} player - Current player  
+   * @param {string} spaceName - Name of logic space
+   * @param {number} questionNumber - Current question number
+   * @param {string} answer - "YES" or "NO"
+   * @returns {Object} Result of the choice
+   */
+  processLogicChoice(player, spaceName, questionNumber, answer) {
+    const spaceData = this.gameStateManager.spaces.find(s => s.name === spaceName);
+    if (!spaceData) {
+      return { error: 'Space not found' };
+    }
+    
+    const spaceColumn = `Space ${questionNumber}`;
+    const questionText = spaceData[spaceColumn];
+    
+    if (!questionText) {
+      return { error: 'Question not found' };
+    }
+    
+    const questionData = this.parseLogicQuestion(questionText);
+    if (!questionData) {
+      return { error: 'Could not parse question' };
+    }
+    
+    const destination = answer === 'YES' ? questionData.yes : questionData.no;
+    
+    // Check if destination is another question or final destination
+    if (destination.includes('Space ')) {
+      const spaceNumber = destination.match(/Space (\d+)/);
+      if (spaceNumber) {
+        return {
+          type: 'nextQuestion',
+          nextQuestion: parseInt(spaceNumber[1])
+        };
+      }
+    }
+    
+    // Handle multiple destinations (separated by " or ")
+    if (destination.includes(' or ')) {
+      const destinations = destination.split(' or ').map(d => d.trim());
+      return {
+        type: 'multipleDestinations',
+        destinations: destinations.map(dest => ({
+          id: this.gameStateManager.findSpaceByName(dest.trim())?.id,
+          name: dest.trim(),
+          description: dest
+        })).filter(d => d.id)
+      };
+    }
+    
+    // Single final destination
+    const targetSpace = this.gameStateManager.findSpaceByName(destination);
+    if (targetSpace) {
+      return {
+        type: 'finalDestination',
+        destination: {
+          id: targetSpace.id,
+          name: targetSpace.name,
+          description: destination
+        }
+      };
+    }
+    
+    return { error: 'Invalid destination' };
+  }
+  
+  /**
    * Get available moves for a player
    * @param {Object} player - Player to get moves for
    * @returns {Array|Object} Array of available moves or dice roll requirement object
@@ -41,14 +204,12 @@ class MovementLogic {
       return [];
     }
     
-    // Get current space
     const currentSpaceId = player.position;
     if (!currentSpaceId) {
       console.error('MovementLogic: Player has no position');
       return [];
     }
     
-    // Get the current space data
     const currentSpace = this.gameStateManager.findSpaceById(currentSpaceId);
     if (!currentSpace) {
       console.error(`MovementLogic: Could not find space with id ${currentSpaceId}`);
@@ -57,13 +218,9 @@ class MovementLogic {
     
     console.log(`MovementLogic: Getting available moves for ${player.name} at ${currentSpace.name}`);
     
-    // Check if this is the PM-DECISION-CHECK space
-    if (currentSpace.name === 'PM-DECISION-CHECK') {
-      return this.getMovesForPMDecisionCheck(player, currentSpace);
-    }
-    
-    // Check if dice roll is needed for this space
+    // PHASE 1: Check dice roll requirement first
     if (this.movementCore.spaceRequiresDiceRoll(currentSpace, player)) {
+      console.log(`MovementLogic: Space ${currentSpace.name} requires dice roll`);
       return {
         requiresDiceRoll: true,
         spaceName: currentSpace.name,
@@ -71,28 +228,80 @@ class MovementLogic {
       };
     }
     
-    // Standard case - get moves from space data
-    return this.getStandardMoves(player, currentSpace);
+    // PHASE 2: Check for logic spaces
+    if (this.isLogicSpace(currentSpace.name)) {
+      console.log(`MovementLogic: Handling logic space ${currentSpace.name}`);
+      return this.getLogicSpaceMoves(player, currentSpace);
+    }
+    
+    // PHASE 3: Check for single choice spaces
+    if (this.movementCore.isSingleChoiceSpace(currentSpace.name)) {
+      const previousChoice = this.movementCore.getPreviousSingleChoice(player, currentSpace.name);
+      
+      if (previousChoice) {
+        // Player has been here before, only show their previous choice
+        const targetSpace = this.gameStateManager.findSpaceByName(previousChoice);
+        if (targetSpace) {
+          return [{
+            id: targetSpace.id,
+            name: targetSpace.name,
+            description: `Your chosen path: ${previousChoice}`,
+            visitType: this.movementCore.determineVisitType(player, targetSpace),
+            isRepeatedChoice: true
+          }];
+        }
+      }
+      // If no previous choice, fall through to standard moves but mark as single choice
+    }
+    
+    // PHASE 4: Check if this is the PM-DECISION-CHECK space
+    if (currentSpace.name === 'PM-DECISION-CHECK') {
+      console.log(`MovementLogic: Handling special case for PM-DECISION-CHECK`);
+      return this.getMovesForPMDecisionCheck(player, currentSpace);
+    }
+    
+    // PHASE 5: Standard moves with filtering
+    return this.getStandardMovesWithFiltering(player, currentSpace);
   }
   
   /**
-   * Get standard moves from a space
+   * Get standard moves with improved filtering
    * @param {Object} player - Player to get moves for
    * @param {Object} space - Space to get moves from
-   * @returns {Array} Available moves
+   * @returns {Array} Filtered available moves
    */
-  getStandardMoves(player, space) {
+  getStandardMovesWithFiltering(player, space) {
     const availableMoves = [];
-    
-    // Determine visit type (First or Subsequent)
     const visitType = this.movementCore.determineVisitType(player, space);
+    const isSingleChoice = this.movementCore.isSingleChoiceSpace(space.name);
     
-    // Check all numbered space columns in the CSV data
+    console.log(`MovementLogic: Getting standard moves for ${space.name}, visitType: ${visitType}, singleChoice: ${isSingleChoice}`);
+    
+    // Check all numbered space columns
     for (let i = 1; i <= 5; i++) {
-      // First try the raw properties, then fall back to the Space properties for compatibility
-      const nextSpaceData = space[`rawSpace${i}`] || space[`Space ${i}`];
+      const nextSpaceData = space[`rawSpace${i}`];
       if (nextSpaceData && nextSpaceData.trim() !== '') {
-        // Extract the space name from the data
+        
+        // Handle {ORIGINAL_SPACE} placeholder
+        if (nextSpaceData.includes('{ORIGINAL_SPACE}')) {
+          if (visitType === 'Subsequent' && player.properties && player.properties.originalSpaceId) {
+            const originalSpace = this.gameStateManager.findSpaceById(player.properties.originalSpaceId);
+            if (originalSpace) {
+              console.log(`MovementLogic: Processing {ORIGINAL_SPACE} reference to ${originalSpace.name}`);
+              const originalMoves = this.getStandardMovesWithFiltering(player, originalSpace);
+              
+              originalMoves.forEach(move => {
+                move.fromOriginalSpace = true;
+                move.originalSpaceId = originalSpace.id;
+                move.description = `Return to main path: ${move.name}`;
+                availableMoves.push(move);
+              });
+            }
+          }
+          continue;
+        }
+        
+        // Extract space name and validate
         const spaceName = this.movementCore.extractSpaceName(nextSpaceData);
         if (spaceName) {
           // Skip "RETURN TO YOUR SPACE" for first visits
@@ -100,11 +309,97 @@ class MovementLogic {
             continue;
           }
           
-          // Skip "OWNER-DECISION-REVIEW" for first visits to PM-DECISION-CHECK
-          if (spaceName === 'OWNER-DECISION-REVIEW' && visitType === 'First' && space.name === 'PM-DECISION-CHECK') {
-            console.log(`MovementLogic: Filtering out OWNER-DECISION-REVIEW for first visit to ${space.name}`);
+          // Apply single choice conflict filtering
+          if (this.movementCore.conflictsWithSingleChoice(player, spaceName)) {
+            console.log(`MovementLogic: Skipping ${spaceName} due to single choice conflict`);
             continue;
           }
+          
+          // Find the space and add to moves
+          const nextSpace = this.gameStateManager.findSpaceByName(spaceName);
+          if (nextSpace) {
+            availableMoves.push({
+              id: nextSpace.id,
+              name: nextSpace.name,
+              description: nextSpaceData,
+              visitType: this.movementCore.determineVisitType(player, nextSpace),
+              isSingleChoice: isSingleChoice,
+              isFirstChoice: isSingleChoice && !this.movementCore.getPreviousSingleChoice(player, space.name)
+            });
+          }
+        }
+      }
+    }
+    
+    console.log(`MovementLogic: Found ${availableMoves.length} filtered moves for ${space.name}`);
+    return availableMoves;
+  }
+  
+  /**
+   * Get standard moves from a space (LEGACY VERSION for compatibility)
+   * @param {Object} player - Player to get moves for
+   * @param {Object} space - Space to get moves from
+   * @returns {Array} Available moves
+   */
+  getStandardMoves(player, space) {
+    const availableMoves = [];
+    
+    // Determine visit type (First or Subsequent) with enhanced logic for PM-DECISION-CHECK
+    const visitType = this.determineVisitTypeForSpace(player, space);
+    console.log(`MovementLogic: Visit type for ${space.name}: ${visitType}`);
+    
+    // CRITICAL FIX: For PM-DECISION-CHECK, get the correct space version based on visit type
+    if (space.name === 'PM-DECISION-CHECK') {
+      const correctSpace = this.gameStateManager.spaces.find(s => 
+        s.name === 'PM-DECISION-CHECK' && s.visitType === visitType
+      );
+      if (correctSpace) {
+        space = correctSpace;
+        console.log(`MovementLogic: Using ${visitType} version of PM-DECISION-CHECK`);
+      } else {
+        console.warn(`MovementLogic: Could not find ${visitType} version of PM-DECISION-CHECK`);
+      }
+    }
+    
+    // Check all numbered space columns in the CSV data
+    for (let i = 1; i <= 5; i++) {
+      // Use only rawSpace properties
+      const nextSpaceData = space[`rawSpace${i}`];
+      if (nextSpaceData && nextSpaceData.trim() !== '') {
+        // Check for {ORIGINAL_SPACE} placeholder
+        if (nextSpaceData.includes('{ORIGINAL_SPACE}')) {
+          console.log('MovementLogic: Found {ORIGINAL_SPACE} placeholder');
+          
+          // Only process for subsequent visits
+          if (visitType === 'Subsequent' && player.properties && player.properties.originalSpaceId) {
+            const originalSpace = this.gameStateManager.findSpaceById(player.properties.originalSpaceId);
+            if (originalSpace) {
+              console.log(`MovementLogic: Replacing {ORIGINAL_SPACE} with moves from ${originalSpace.name}`);
+              
+              // Get moves from the original space
+              const originalMoves = this.getStandardMoves(player, originalSpace);
+              
+              // Add them with special marking
+              originalMoves.forEach(move => {
+                move.fromOriginalSpace = true;
+                move.originalSpaceId = originalSpace.id;
+                move.description = `Return to main path: ${move.name}`;
+                availableMoves.push(move);
+              });
+            }
+          }
+          continue; // Skip normal processing for this placeholder
+        }
+        
+        // Extract the space name from the data
+        const spaceName = this.movementCore.extractSpaceName(nextSpaceData);
+        if (spaceName) {
+          // Skip "RETURN TO YOUR SPACE" for first visits (legacy support)
+          if (spaceName === 'RETURN TO YOUR SPACE' && visitType !== 'Subsequent') {
+            continue;
+          }
+          
+          // Note: OWNER-DECISION-REVIEW and ENG-INITIATION should be available on both first and subsequent visits
           
           // Find the space by name
           const nextSpace = this.gameStateManager.findSpaceByName(spaceName);
@@ -236,6 +531,17 @@ class MovementLogic {
    */
   isReturnOption(spaceName) {
     return spaceName.startsWith('RETURN TO');
+  }
+  
+  /**
+   * Determine visit type for a space using standard logic
+   * @param {Object} player - Player to check
+   * @param {Object} space - Space to check
+   * @returns {string} "First" or "Subsequent"
+   */
+  determineVisitTypeForSpace(player, space) {
+    // Use the standard logic from MovementCore
+    return this.movementCore.determineVisitType(player, space);
   }
   
   /**
@@ -391,4 +697,4 @@ class MovementLogic {
 // Export for use in other modules
 window.MovementLogic = MovementLogic;
 
-console.log('MovementLogic.js code execution finished');
+console.log('MovementLogic.js code execution finished - Enhanced with improved PM-DECISION-CHECK visit type detection');

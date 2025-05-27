@@ -13,14 +13,29 @@ This is a board game simulation that teaches project management concepts through
 - Player movement across the game board 
 - Negotiation options at key decision points
 
-## Recent Updates
+## Recent Updates (December 2024)
 
-- **New Modular Architecture Plan:** Added comprehensive development plan for converting the entire codebase to a more maintainable modular architecture (May 16, 2025).
-- **New Movement System Implementation:** Replaced the old movement system with a new modular architecture using MovementCore.js, MovementLogic.js, MovementUIAdapter.js, and MovementSystem.js (May 13, 2025).
-- **SpaceInfo Component Modularization:** Broke up SpaceInfo.js into smaller modules (SpaceInfoDice.js, SpaceInfoCards.js, SpaceInfoMoves.js, SpaceInfoUtils.js) for better maintainability (May 1, 2025).
-- **Browser Compatibility Improvements:** Implemented browser-friendly module pattern using window objects and prototype mixins.
-- **SpaceInfo Component Refactoring:** Improved SpaceInfo component to follow the manager pattern, integrating fully with GameStateManager and using proper event handling.
-- **Fixed Move Selection:** Players can now properly select available moves on the game board, specifically addressing issues with the OWNER-FUND-INITIATION space.
+- **CSV Format Improvements - Phase 1 In Progress:** 
+  - Added `Path` column to Spaces.csv to categorize spaces (Main, Special, Side quests)
+  - Added `RequiresDiceRoll` column to replace hardcoded logic
+  - Replaced "RETURN TO YOUR SPACE" with `{ORIGINAL_SPACE}` placeholder
+  - Updated movement system to use data-driven approach
+  
+- **Documentation Reality Check:** 
+  - Discovered and corrected false claims about completed features
+  - Updated all documentation to reflect actual implementation state
+  - Created CURRENT_STATE_SUMMARY.md for accurate project status
+
+- **File Structure Reorganization Plan:**
+  - Created plan to simplify confusing util folder structure
+  - Phased approach to reorganize files by system
+  - See FILE_STRUCTURE_REORGANIZATION.md for details
+
+## Previous Updates
+
+- **Movement System Implementation:** Modular architecture using MovementCore.js, MovementLogic.js, MovementUIAdapter.js, and MovementSystem.js
+- **SpaceInfo Component Modularization:** Broke up into smaller modules for better maintainability
+- **Browser Compatibility:** Using window objects and prototype mixins
 
 ## Documentation
 

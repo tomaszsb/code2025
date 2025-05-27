@@ -1,12 +1,16 @@
 // DiceRollLogic.js - Utility for handling dice roll outcomes
+// Phase 2 Enhancement: Now uses DiceOutcomeParser
 console.log('DiceRollLogic.js file is being processed');
 
 window.DiceRollLogic = {
   // Load dice roll data from CSV
   diceRollData: [],
   
+  // Phase 2: Add DiceOutcomeParser integration
+  outcomeParser: null,
+  
   // Initialize with data from CSV
-  initialize(diceRollData) {
+  initialize(diceRollData, structuredDiceData = null) {
     if (!diceRollData || diceRollData.length === 0) {
       console.error('DiceRollLogic: No dice roll data provided!');
       return;
@@ -14,6 +18,17 @@ window.DiceRollLogic = {
     
     this.diceRollData = diceRollData;
     console.log('DiceRollLogic: Initialized with', diceRollData.length, 'dice roll outcomes');
+    
+    // Phase 2: Initialize DiceOutcomeParser with both formats
+    if (window.DiceOutcomeParser) {
+      this.outcomeParser = new window.DiceOutcomeParser();
+      this.outcomeParser.loadDiceData(structuredDiceData, diceRollData);
+      
+      const stats = this.outcomeParser.getDataStats();
+      console.log('DiceRollLogic: Phase 2 parser initialized with', stats);
+    } else {
+      console.warn('DiceRollLogic: DiceOutcomeParser not available, using legacy mode only');
+    }
   },
   
   // Get outcomes for a specific space and visit type
@@ -91,6 +106,73 @@ window.DiceRollLogic = {
   handleDiceRoll(spaceName, visitType, dieRoll) {
     console.log('DiceRollLogic: Handling dice roll', dieRoll, 'for', spaceName, visitType);
     
+    // Phase 2: Try structured parser first
+    if (this.outcomeParser) {
+      const structuredOutcomes = this.outcomeParser.parseOutcomes(spaceName, visitType, dieRoll);
+      if (structuredOutcomes.length > 0) {
+        console.log('DiceRollLogic: Using Phase 2 structured outcomes');
+        return this._processStructuredOutcomes(structuredOutcomes);
+      }
+    }
+    
+    // Fallback to legacy processing
+    console.log('DiceRollLogic: Using legacy outcome processing');
+    return this._handleLegacyDiceRoll(spaceName, visitType, dieRoll);
+  },
+  
+  // Phase 2: Process structured outcomes
+  _processStructuredOutcomes(outcomes) {
+    const result = {};
+    
+    for (const outcome of outcomes) {
+      switch (outcome.type) {
+        case 'cards':
+          if (outcome.action === 'drawCards') {
+            result.cardDraws = outcome.cards;
+          } else if (outcome.action === 'removeCards') {
+            result.cardRemovals = { [outcome.cardType]: outcome.amount };
+          } else if (outcome.action === 'replaceCards') {
+            result.cardReplacements = { [outcome.cardType]: outcome.amount };
+          }
+          break;
+          
+        case 'movement':
+          if (outcome.action === 'moveToSpace') {
+            result.nextSpace = outcome.destination;
+          } else if (outcome.action === 'moveToChoice') {
+            result.spaceChoices = outcome.destinations;
+          }
+          break;
+          
+        case 'time':
+          result.timeOutcome = outcome.value + ' days';
+          break;
+          
+        case 'fee':
+          result.feeOutcome = outcome.value;
+          break;
+          
+        case 'quality':
+          result.qualityOutcome = outcome.value;
+          break;
+          
+        case 'multiplier':
+          result.multiplierOutcome = outcome.value;
+          break;
+          
+        case 'raw':
+          // Handle unstructured outcomes that need manual processing
+          result.rawOutcome = outcome.text;
+          break;
+      }
+    }
+    
+    console.log('DiceRollLogic: Processed structured outcomes:', result);
+    return result;
+  },
+  
+  // Legacy dice roll handling (preserved for backward compatibility)
+  _handleLegacyDiceRoll(spaceName, visitType, dieRoll) {
     // Check all possible outcome types for this space and visit type
     const outcomes = this.getOutcomes(spaceName, visitType);
     if (!outcomes) return {};
@@ -141,7 +223,7 @@ window.DiceRollLogic = {
       result.multiplierOutcome = this.processRoll(spaceName, visitType, dieRoll, 'Multiplier');
     }
     
-    console.log('DiceRollLogic: Processed outcomes:', result);
+    console.log('DiceRollLogic: Processed legacy outcomes:', result);
     
     return result;
   },

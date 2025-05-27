@@ -167,10 +167,10 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
               <div className="player-control-buttons">
                 {/* Negotiate button */}
                 <button 
-                  onClick={gameBoard.negotiationManager.handleNegotiate}
+                  onClick={gameBoard.turnManager.handleNegotiation}
                   className="negotiate-btn"
-                  title={gameBoard.negotiationManager.getNegotiateButtonTooltip()}
-                  disabled={!currentPlayer || !gameBoard.negotiationManager.isNegotiationAllowed()}
+                  title={gameBoard.turnManager.canNegotiate() ? "Stay and skip turn (adds 1 day penalty)" : "Negotiation not available"}
+                  disabled={!currentPlayer || !gameBoard.turnManager.canNegotiate()}
                 >
                   Negotiate
                 </button>

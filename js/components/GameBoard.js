@@ -10,10 +10,9 @@ window.GameBoard = class GameBoard extends React.Component {
     this.diceRollRef = React.createRef();
     this.cardDisplayRef = React.createRef();
     
-    // Initialize Managers - new managers added
+    // Initialize Managers - Phase 4: Negotiation functionality moved to TurnManager
     this.cardManager = new window.CardManager(this);
     this.diceManager = new window.DiceManager(this);
-    this.negotiationManager = new window.NegotiationManager(this);
     this.turnManager = new window.TurnManager(this);
     this.spaceSelectionManager = new window.SpaceSelectionManager(this);
     this.spaceExplorerManager = new window.SpaceExplorerManager(this);
@@ -47,6 +46,10 @@ window.GameBoard = class GameBoard extends React.Component {
   }
        
   componentDidMount() {
+    // Store global reference to this GameBoard instance
+    window.currentGameBoard = this;
+    console.log('GameBoard: Global reference established');
+    
     // Update available moves using SpaceSelectionManager
     this.spaceSelectionManager.updateAvailableMoves();
     
@@ -106,6 +109,12 @@ window.GameBoard = class GameBoard extends React.Component {
   componentWillUnmount() {
     console.log('GameBoard: Cleaning up resources on unmount');
     
+    // Clear global reference
+    if (window.currentGameBoard === this) {
+      window.currentGameBoard = null;
+      console.log('GameBoard: Global reference cleared');
+    }
+    
     // Clear any pending animation timeouts
     this.setState({
       cardDrawAnimation: false,
@@ -118,7 +127,7 @@ window.GameBoard = class GameBoard extends React.Component {
       this.spaceSelectionManager.cleanup();
     }
     
-    // Clean up TurnManager resources
+    // Clean up TurnManager resources (includes negotiation functionality)
     if (this.turnManager && typeof this.turnManager.cleanup === 'function') {
       this.turnManager.cleanup();
     }

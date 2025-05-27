@@ -15,10 +15,16 @@
     <link rel="stylesheet" href="css/static-player-status.css">
     <link rel="stylesheet" href="css/card-components.css">
     <link rel="stylesheet" href="css/player-setup.css">
+    <link rel="stylesheet" href="css/logic-space-components.css">
     <!-- Logging CSS loading -->
     <script>
         console.log('Loading consolidated CSS files');
+        // Initialize version tracking for cache-buster
+        window.LOADED_VERSIONS = {};
     </script>
+    
+    <!-- Cache buster system - load early to monitor other scripts -->
+    <script src="js/utils/cache-buster.js"></script>
     
     <!-- React from CDN -->
     <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
@@ -40,6 +46,9 @@
     <!-- Component Registry (new) -->
     <script type="text/babel" src="js/utils/ComponentRegistry.js"></script>
     
+    <!-- Phase 2: Structured Dice Outcome Parser -->
+    <script type="text/babel" src="js/utils/DiceOutcomeParser.js"></script>
+    
     <!-- Core Data Management -->
     <script type="text/babel" src="js/utils/DiceRollLogic.js"></script>
     <script type="text/babel" src="js/utils/CardDrawUtil.js"></script>
@@ -50,11 +59,9 @@
     <!-- Component Interfaces (new) -->
     <script type="text/babel" src="js/interfaces/CardManagerInterface.js"></script>
     
-    <!-- Movement System -->
-    <script type="text/babel" src="js/utils/movement/MovementCore.js"></script>
-    <script type="text/babel" src="js/utils/movement/MovementLogic.js"></script>
-    <script type="text/babel" src="js/utils/movement/MovementUIAdapter.js"></script>
-    <script type="text/babel" src="js/utils/movement/MovementSystem.js"></script>
+    <!-- Consolidated Movement System -->
+    <script type="text/babel" src="js/utils/movement/MovementEngine.js"></script>
+    <script type="text/babel" src="js/utils/movement/MovementSystemSimplified.js"></script>
     
     <!-- Load all manager components first -->
     <script type="text/babel" src="js/components/managers/InitializationManager.js"></script>
@@ -62,7 +69,6 @@
     <script type="text/babel" src="js/components/CardActions.js"></script>
     <script type="text/babel" src="js/components/CardManager.js"></script>
     <script type="text/babel" src="js/components/DiceManager.js"></script>
-    <script type="text/babel" src="js/components/NegotiationManager.js"></script>
     <script type="text/babel" src="js/components/TurnManager.js"></script>
     <script type="text/babel" src="js/components/SpaceSelectionManager.js"></script>
     <script type="text/babel" src="js/components/SpaceExplorerManager.js"></script>
@@ -80,6 +86,7 @@
     <script type="text/babel" src="js/components/SpaceExplorer.js"></script>
     
     <!-- Load main components -->
+    <script type="text/babel" src="js/components/LogicSpaceManager.js"></script>
     <script type="text/babel" src="js/components/PlayerInfo.js"></script>
     <script type="text/babel" src="js/components/SpaceInfo.js"></script>
     <!-- Load Board Components -->
@@ -97,9 +104,5 @@
     
     <!-- Load main script last -->
     <script type="text/babel" src="js/main.js"></script>
-    
-    <!-- PM-DECISION-CHECK handler is now handled by the new movement system -->
-    
-    <!-- Method validation checks for PM-DECISION-CHECK are no longer needed with the new movement system -->
 </body>
 </html>

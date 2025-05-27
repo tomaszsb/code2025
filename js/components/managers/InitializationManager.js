@@ -194,11 +194,14 @@ class InitializationManager {
     this.log('info', 'InitializationManager: Loading core data');
     
     try {
-      // Load core CSV files concurrently
-      const [spacesResponse, diceRollResponse] = await Promise.all([
+      // Phase 2: Load both legacy and structured dice roll files
+      const fetchPromises = [
         fetch(this.config.dataFiles.spaces),
-        fetch(this.config.dataFiles.diceRoll)
-      ]);
+        fetch(this.config.dataFiles.diceRoll),
+        fetch('data/DiceRoll_Structured.csv') // Phase 2: Try to load structured format
+      ];
+      
+      const [spacesResponse, diceRollResponse, structuredDiceResponse] = await Promise.all(fetchPromises);
       
       // Check response for spaces data
       if (!spacesResponse.ok) {
@@ -226,9 +229,25 @@ class InitializationManager {
         throw new Error('No valid dice roll data found in CSV file');
       }
       
+      // Phase 2: Try to load structured dice data
+      let structuredDiceData = null;
+      if (structuredDiceResponse.ok) {
+        try {
+          const structuredDiceCsvText = await structuredDiceResponse.text();
+          structuredDiceData = window.parseCSV(structuredDiceCsvText, 'generic');
+          this.log('info', `InitializationManager: Loaded ${structuredDiceData.length} structured dice outcomes`);
+        } catch (structuredError) {
+          this.log('warn', 'InitializationManager: Structured dice data failed to parse, using legacy only:', structuredError);
+          structuredDiceData = null;
+        }
+      } else {
+        this.log('info', 'InitializationManager: No structured dice data found, using legacy format only');
+      }
+      
       // Store data
       this.loadedData.spaces = spacesData;
       this.loadedData.diceRoll = diceRollData;
+      this.loadedData.structuredDiceRoll = structuredDiceData; // Phase 2: Store structured data
       
       this.log('info', `InitializationManager: Loaded ${spacesData.length} spaces and ${diceRollData.length} dice roll outcomes`);
       
@@ -236,7 +255,9 @@ class InitializationManager {
       this.stageResults.loadCoreData = {
         success: true,
         spacesCount: spacesData.length,
-        diceRollCount: diceRollData.length
+        diceRollCount: diceRollData.length,
+        structuredDiceCount: structuredDiceData ? structuredDiceData.length : 0,
+        phase2Enabled: structuredDiceData !== null
       };
     } catch (error) {
       // Store result
@@ -379,13 +400,18 @@ class InitializationManager {
     
     try {
       // Initialize game state with spaces data
+      console.log('DEBUG: About to call GameState.initialize with:', typeof this.loadedData.spaces);
+      console.log('DEBUG: Spaces data length:', this.loadedData.spaces ? this.loadedData.spaces.length : 'null/undefined');
+      console.log('DEBUG: First space:', this.loadedData.spaces && this.loadedData.spaces[0] ? this.loadedData.spaces[0]['Space Name'] : 'no data');
+      
       window.GameState.initialize(this.loadedData.spaces);
       
       // Initialize dice roll logic if available
       if (window.DiceRollLogic) {
-        window.DiceRollLogic.initialize(this.loadedData.diceRoll);
+        // Phase 2: Initialize with both legacy and structured data
+        window.DiceRollLogic.initialize(this.loadedData.diceRoll, this.loadedData.structuredDiceRoll);
         window.diceRollData = this.loadedData.diceRoll; // For component access
-        this.log('info', 'InitializationManager: Dice roll logic initialized');
+        this.log('info', 'InitializationManager: Dice roll logic initialized with Phase 2 support');
       } else {
         this.log('warn', 'InitializationManager: DiceRollLogic not found. Dice roll functionality will not be available.');
       }

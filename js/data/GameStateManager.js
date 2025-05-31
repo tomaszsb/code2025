@@ -18,6 +18,7 @@ class GameStateManager {
     this.players = [];
     this.currentPlayerIndex = 0;
     this.spaces = [];
+    this.diceRollData = []; // Store dice roll data for MovementEngine
     this._gameStarted = false;
     this.gameEnded = false;
     
@@ -141,6 +142,12 @@ class GameStateManager {
       this.isProperlyInitialized = true;
       
       console.log('GameStateManager: initialize method completed with empty state (last resort)');
+      
+      // Ensure we have at least an empty spaces array for components to work with
+      if (!this.spaces || this.spaces.length === 0) {
+        this.spaces = [];
+        this.buildSpaceCache();
+      }
     }
   }
   
@@ -150,6 +157,9 @@ class GameStateManager {
     
     // Initially set gameStarted to false to ensure the player setup screen is shown
     this._gameStarted = false;
+    
+    // Mark as properly initialized early to prevent premature getCurrentPlayer calls
+    this.isProperlyInitialized = true;
     
     // Filter out invalid spaces
     const validSpaces = spacesData.filter(row => row['Space Name'] && row['Space Name'].trim() !== '');
@@ -189,7 +199,7 @@ class GameStateManager {
         visitType: (() => {
           const visitType = row['Visit Type'] || 'First';
           if (spaceName === 'PM-DECISION-CHECK') {
-            console.log(`DEBUG: PM-DECISION-CHECK visitType: "${visitType}" from raw: "${row['Visit Type']}"`);
+            console.log(`DEBUG: PM-DECISION-CHECK visitType: "${visitType}" from raw: "${row['Visit Type']}"`);  
           }
           return visitType;
         })(),
@@ -404,6 +414,25 @@ class GameStateManager {
   // Get current player
   getCurrentPlayer() {
     console.log('GameStateManager: getCurrentPlayer method is being used');
+    
+    // Add guard against uninitialized state
+    if (!this.isProperlyInitialized) {
+      console.warn('GameStateManager: getCurrentPlayer called before proper initialization!');
+      return null;
+    }
+    
+    // Add guard against empty players array
+    if (!this.players || this.players.length === 0) {
+      console.warn('GameStateManager: No players available in getCurrentPlayer()');
+      return null;
+    }
+    
+    // Add guard against invalid currentPlayerIndex
+    if (this.currentPlayerIndex < 0 || this.currentPlayerIndex >= this.players.length) {
+      console.warn('GameStateManager: Invalid currentPlayerIndex:', this.currentPlayerIndex);
+      return null;
+    }
+    
     const player = this.players[this.currentPlayerIndex];
     console.log('GameStateManager: getCurrentPlayer method completed');
     return player;
@@ -426,16 +455,24 @@ class GameStateManager {
     console.log('GameStateManager: nextPlayerTurn method completed');
   }
   
-  // Extract the space name from a display name (without visit type)
+  // Extract the space name from a display name (without visit type) - FIXED VERSION
   extractSpaceName(displayName) {
     console.log(`GameStateManager: extractSpaceName method is being used for: "${displayName}"`);
-    let result;
+    
+    if (!displayName) return '';
+    
+    let result = displayName;
+    
     // For display names that might have explanatory text after a dash
-    if (displayName && displayName.includes(' - ')) {
-      result = displayName.split(' - ')[0].trim();
-    } else {
-      result = displayName;
+    if (result.includes(' - ')) {
+      result = result.split(' - ')[0].trim();
     }
+    
+    // CRITICAL FIX: Remove visit type suffixes (-first, -subsequent) from space IDs
+    result = result.replace(/-(?:first|subsequent)$/i, '');
+    
+    // CRITICAL FIX: Convert to uppercase to match CSV space names
+    result = result.toUpperCase();
     
     // Fix the issue with OWNER-SCOPE-INITIATION vs. OWNER SCOPE INITIATION
     // This ensures consistent normalization for comparison
@@ -490,10 +527,20 @@ class GameStateManager {
     
     // Record the previous position before updating
     player.previousPosition = player.position;
+    
+    // CRITICAL FIX: Always set previousSpace to the current space NAME for MovementEngine compatibility
+    if (currentSpace) {
+      player.previousSpace = currentSpace.name;
+      console.log('GameStateManager: Set previousSpace to:', player.previousSpace);
+    } else {
+      console.log('GameStateManager: Could not find current space for previousSpace setting');
+    }
+    
     console.log('GameStateManager: Set previousPosition to:', player.previousPosition);
     
     // Add the current space to visited spaces if not already there
     if (currentSpace) {
+    // CRITICAL FIX: Use extractSpaceName to properly normalize the space name
     const currentSpaceName = this.extractSpaceName(currentSpace.name);
     
     // Initialize visitedSpaces as Set if it's still an array (for backward compatibility)
@@ -507,7 +554,7 @@ class GameStateManager {
       
     // Debug: Show all visited spaces after adding this one
     console.log('GameStateManager: Updated visitedSpaces:', Array.from(player.visitedSpaces));
-    console.log('GameStateManager: After adding, is "OWNER-SCOPE-INITIATION" in visitedSpaces?', player.visitedSpaces.has('OWNER-SCOPE-INITIATION'));
+    console.log('GameStateManager: After adding, normalized space name should be in visitedSpaces:', player.visitedSpaces.has(currentSpaceName));
   }
     
     // Add time to player's time counter when leaving a space
@@ -542,6 +589,16 @@ class GameStateManager {
     
     // Set new position
     player.position = spaceId;
+    
+    // SIMPLE FIX: If moving to a space that's been visited before, use the subsequent version
+    if (newSpace && player.visitedSpaces && player.visitedSpaces.has(this.extractSpaceName(newSpace.name))) {
+      const subsequentSpaceId = spaceId.replace('-first', '-subsequent');
+      const subsequentSpace = this.findSpaceById(subsequentSpaceId);
+      if (subsequentSpace) {
+        console.log(`GameStateManager: Player has visited ${newSpace.name} before, moving to subsequent version:`, subsequentSpaceId);
+        player.position = subsequentSpaceId;
+      }
+    }
     
     // NOTE: We do NOT add the new space to visitedSpaces here
     // Spaces are only added to visitedSpaces when LEAVING them (see above)
@@ -591,6 +648,9 @@ class GameStateManager {
     // Debug logging to help diagnose visit type issues
     console.log('GameStateManager: Player position:', player.position, 'Previous position:', player.previousPosition);
     console.log('GameStateManager: Player visited spaces:', Array.from(player.visitedSpaces));
+    console.log('GameStateManager: Detailed visitedSpaces contents:', JSON.stringify(Array.from(player.visitedSpaces)));
+    console.log('GameStateManager: Looking for space name:', normalizedSpaceName);
+    console.log('GameStateManager: visitedSpaces Set contents:', Array.from(player.visitedSpaces));
     
     // Special case: When a player is first placed on a space (like at game start),
     // they haven't really "visited" it yet - they're just starting there
@@ -656,7 +716,24 @@ class GameStateManager {
     return match;
   }
   
-
+  // Get available moves for a player
+  getAvailableMoves(player) {
+    console.log('GameStateManager: getAvailableMoves method is being used');
+    
+    if (!player) {
+      console.warn('GameStateManager: No player provided to getAvailableMoves');
+      return [];
+    }
+    
+    if (!window.movementEngine?.isReady?.()) {
+      console.warn('GameStateManager: MovementEngine not ready for getAvailableMoves');
+      return [];
+    }
+    
+    const movements = window.movementEngine.getAvailableMovements(player);
+    console.log('GameStateManager: getAvailableMoves method completed');
+    return movements;
+  }
   
   // Save state to localStorage with improved format
   saveState() {
@@ -918,6 +995,22 @@ class GameStateManager {
     console.log(`GameStateManager: Loaded ${cardData.length} ${cardType} cards`);
     
     console.log('GameStateManager: loadCardData method completed');
+  }
+  
+  // Load dice roll data from CSV
+  loadDiceRollData(diceRollData) {
+    console.log('GameStateManager: loadDiceRollData method is being used');
+    
+    if (!diceRollData || diceRollData.length === 0) {
+      console.error('GameStateManager: No dice roll data provided!');
+      return;
+    }
+    
+    // Store dice roll data for MovementEngine access
+    this.diceRollData = diceRollData;
+    console.log(`GameStateManager: Loaded ${diceRollData.length} dice roll outcomes`);
+    
+    console.log('GameStateManager: loadDiceRollData method completed');
   }
   
   // Draw a card of the specified type

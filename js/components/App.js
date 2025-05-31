@@ -40,7 +40,8 @@ window.App = class App extends React.Component {
         }
         
         // Check if the game should start or show setup
-        if (GameState.gameStarted) {
+        // Add null check for GameState and proper initialization check
+        if (GameState && GameState.isProperlyInitialized && GameState.gameStarted) {
             return <GameBoard />;
         } else {
             // Show PlayerSetup which will handle saved games

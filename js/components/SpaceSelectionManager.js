@@ -360,6 +360,43 @@ class SpaceSelectionManager {
   }
   
   /**
+   * Direct move selection handler - mirrors the simple logic from knowledge file
+   * This is called directly from move buttons, bypassing space click validation
+   * @param {string} moveId - ID of the selected move
+   */
+  handleMoveSelection = (moveId) => {
+    console.log('SpaceSelectionManager: Direct move selection:', moveId);
+    
+    // Find the space data for the selected move
+    const spaceData = this.gameBoard.state.spaces.find(space => space.id === moveId);
+    
+    // Update GameBoard state with selected move - mirrors knowledge file logic
+    this.gameBoard.setState({
+      selectedMove: moveId,
+      hasSelectedMove: true,  // This enables the End Turn button
+      exploredSpace: spaceData
+    }, () => {
+      // After state update, update visual cues to show selected move
+      this.updateAvailableMoveVisuals();
+      console.log('SpaceSelectionManager: Move selected - End Turn button should now be enabled');
+    });
+    
+    // Dispatch event for tracking
+    window.GameStateManager.dispatchEvent('spaceSelected', {
+      spaceId: moveId,
+      spaceData: spaceData,
+      isValidMove: true,
+      selectedForMove: true,
+      source: 'directMoveSelection'
+    });
+    
+    // Provide visual feedback for the selection
+    this.provideSelectionFeedback(moveId);
+    
+    console.log('SpaceSelectionManager: Move selection completed - ready for End Turn');
+  }
+  
+  /**
    * Helper method to handle valid space selection
    * SIMPLIFIED: Removed complex validation logic, now trusts MovementEngine
    * @param {string} spaceId - ID of the selected space

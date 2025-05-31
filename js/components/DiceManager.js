@@ -61,6 +61,12 @@ class DiceManager {
     console.log('DiceManager: Outcomes:', outcomes);
     console.log('DiceManager: Detailed outcomes:', JSON.stringify(outcomes));
     
+    // CRITICAL FIX: Update MovementEngine dice state immediately
+    if (window.setMovementEngineDiceResult) {
+      window.setMovementEngineDiceResult(result);
+      console.log('DiceManager: Updated MovementEngine dice state with result:', result);
+    }
+    
     // Get current player - using GameStateManager instead of TurnManager
     const currentPlayer = window.GameStateManager.getCurrentPlayer();
     const currentPosition = currentPlayer ? currentPlayer.position : null;

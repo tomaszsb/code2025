@@ -122,6 +122,9 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     console.log('SpaceInfo render - diceRoll:', diceRoll, 'diceOutcomes:', diceOutcomes);
     console.log('SpaceInfo render - availableMoves:', availableMoves?.length || 0, 'onMoveSelect:', !!onMoveSelect);
     
+    // Expose current props globally for MovementEngine synchronization
+    window.currentSpaceInfoProps = { diceRoll, diceOutcomes, hasRolledDice, availableMoves };
+    
     if (!space) {
       return <div className="space-info empty">No space selected</div>;
     }

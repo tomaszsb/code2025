@@ -58,7 +58,7 @@ window.GameBoard = class GameBoard extends React.Component {
     
     // Set the selected space to the current player's position
     const currentPlayer = this.turnManager.getCurrentPlayer();
-    if (currentPlayer) {
+    if (currentPlayer && currentPlayer.position) {
       // Get the current space
       const currentSpace = this.state.spaces.find(s => s.id === currentPlayer.position);
       
@@ -76,6 +76,8 @@ window.GameBoard = class GameBoard extends React.Component {
       });
       console.log("GameBoard: Set middle column to current player's space:", currentPlayer.position);
       console.log("GameBoard: Captured initial player and space status", playerSnapshot, spaceSnapshot);
+    } else {
+      console.log("GameBoard: No current player available during mount");
     }
     
     // Connect to movement system

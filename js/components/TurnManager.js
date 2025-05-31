@@ -305,15 +305,23 @@ class TurnManager {
       return null;
     }
     
+    // Validate required player properties
+    if (!player.name || !player.id) {
+      console.warn('TurnManager: Player missing required properties (name or id)');
+      return null;
+    }
+    
     return {
       ...player,
-      resources: player.resources ? { ...player.resources } : {},
+      name: player.name || 'Unknown Player',
+      id: player.id || 'unknown-id',
+      resources: player.resources ? { ...player.resources } : { money: 0, time: 0 },
       cards: player.cards ? [...player.cards] : [],
       // Handle visitedSpaces properly for both Set and Array formats
       visitedSpaces: player.visitedSpaces ? 
         (Array.isArray(player.visitedSpaces) ? [...player.visitedSpaces] : Array.from(player.visitedSpaces)) : [],
       // Force the color to be the player's color for consistent UI
-      color: player.color
+      color: player.color || '#9c27b0'
     };
   }
   

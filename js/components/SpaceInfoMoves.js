@@ -209,148 +209,75 @@ window.SpaceInfoMoves = {
   },
 
   /**
-   * Renders available moves for the current space
+   * Renders available moves for the current space - SIMPLIFIED ORIGINAL LOGIC
    * @returns {JSX.Element|null} The available moves section or null
    */
   renderAvailableMoves: function() {
     const { space, onMoveSelect, selectedMoveId } = this.props;
     
-    // Check if this is a logic space
-    if (space && window.LogicSpaceManager && window.LogicSpaceManager.isPlayerInLogicSpace(window.GameStateManager.getCurrentPlayer())) {
-      return this.renderLogicSpaceUI();
-    }
-    
-    // Get moves with enhanced PM-DECISION-CHECK handling
-    const enhancedMoves = this.getAvailableMoves();
-    
-    if (!enhancedMoves || enhancedMoves.length === 0) {
-      return null;
-    }
-    
-    console.log('SpaceInfoMoves: Rendering available moves:', enhancedMoves.map(m => m.name).join(', '));
-    console.log('SpaceInfoMoves: Selected move ID:', selectedMoveId);
-    
-    return React.createElement('div', { className: 'space-available-moves' }, [
-      React.createElement('div', { key: 'label', className: 'space-section-label' }, 'Available Moves:'),
-      React.createElement('div', { key: 'list', className: 'available-moves-list', 'data-testid': 'moves-list' }, 
-        enhancedMoves.map(move => {
-          // Determine if this move is selected
-          const isSelected = selectedMoveId && selectedMoveId === move.id;
+    // Use MovementEngine to get available moves - this follows the original updateMovementSection logic
+    if (window.movementEngine && window.movementEngine.isReady()) {
+      const currentPlayer = window.GameStateManager.getCurrentPlayer();
+      if (currentPlayer) {
+        console.log('SpaceInfoMoves: Using MovementEngine to get moves');
+        const movementResult = window.movementEngine.getAvailableMovements(currentPlayer);
+        
+        // ORIGINAL LOGIC: If dice roll required, show dice requirement message
+        if (movementResult && movementResult.requiresDiceRoll) {
+          console.log('SpaceInfoMoves: MovementEngine says dice roll required');
+          return React.createElement('div', { className: 'space-available-moves' }, [
+            React.createElement('div', { key: 'label', className: 'space-section-label' }, 'Movement:'),
+            React.createElement('div', { key: 'dice-info' }, 'Roll dice first to see available moves')
+          ]);
+        }
+        
+        // NEW LOGIC: If logic space, show logic space UI
+        if (movementResult && movementResult.isLogicSpace) {
+          console.log('SpaceInfoMoves: Detected logic space, showing logic UI');
+          return this.renderLogicSpaceUI();
+        }
+        
+        // ORIGINAL LOGIC: If we have movement results, show them
+        if (Array.isArray(movementResult) && movementResult.length > 0) {
+          console.log('SpaceInfoMoves: MovementEngine returned moves:', movementResult);
           
-          // Add special styling for single choice spaces
-          const specialClasses = [];
-          if (move.isPermanentChoice) {
-            if (move.isRepeatedChoice) {
-              specialClasses.push('permanent-choice', 'repeated-choice');
-            } else if (move.isFirstTimeChoice) {
-              specialClasses.push('permanent-choice', 'first-time-choice');
-            }
-          }
-          if (move.fromOriginalSpace) {
-            specialClasses.push('from-original-space');
-          }
-          if (move.fromDiceRoll) {
-            specialClasses.push('from-dice-roll');
-          }
-          if (move.fromLogicSpace) {
-            specialClasses.push('from-logic-space');
-          }
-          
-          return React.createElement('button', {
-            key: move.id,
-            className: `move-button primary-move-btn ${isSelected ? 'selected' : ''} ${specialClasses.join(' ')}`,
-            onClick: () => {
-              console.log('SpaceInfoMoves: Move button clicked:', move.name, move.id);
-              
-              // Handle specially if this is a move from original space
-              if (move.fromOriginalSpace && move.originalSpaceId) {
-                console.log('SpaceInfoMoves: Handling return to original space:', move.originalSpaceId);
+          return React.createElement('div', { className: 'space-available-moves' }, [
+            React.createElement('div', { key: 'label', className: 'space-section-label' }, 'Available Moves:'),
+            React.createElement('div', { key: 'list', className: 'available-moves-list', 'data-testid': 'moves-list' }, 
+              movementResult.map(move => {
+                const isSelected = selectedMoveId && selectedMoveId === move.id;
                 
-                // Get current player
-                const player = window.GameStateManager.getCurrentPlayer();
-                if (player) {
-                  // Clear originalSpaceId as player is now returning to original path
-                  if (player.properties) {
-                    player.properties.originalSpaceId = null;
-                  }
-                  
-                  // Force state save
-                  if (window.GameStateManager.saveState) {
-                    window.GameStateManager.saveState();
-                  }
-                }
-              }
-              
-              // Handle single choice recording
-              if (move.isPermanentChoice && move.isFirstTimeChoice) {
-                const currentPlayer = window.GameStateManager.getCurrentPlayer();
-                if (currentPlayer && window.movementEngine) {
-                  window.movementEngine.recordSingleChoice(currentPlayer, space.name, move.name);
-                }
-              }
-              
-              if (onMoveSelect) {
-                onMoveSelect(move.id);
-              }
-            },
-            title: this.getMoveButtonTooltip(move)
-          }, move.description || move.name);
-        })
-      )
-    ]);
+                return React.createElement('button', {
+                  key: move.id,
+                  className: `move-button primary-move-btn ${isSelected ? 'selected' : ''}`,
+                  onClick: () => {
+                    console.log('SpaceInfoMoves: Move button clicked:', move.name, move.id);
+                    if (onMoveSelect) {
+                      onMoveSelect(move.id);
+                    }
+                  },
+                  title: move.description || move.name
+                }, move.description || move.name);
+              })
+            )
+          ]);
+        }
+      }
+    }
+    
+    // ORIGINAL LOGIC: If MovementEngine not available, show nothing (no fallback complexity)
+    console.log('SpaceInfoMoves: MovementEngine not available or no moves');
+    return null;
   },
 
   /**
-   * Renders the OWNER-FUND-INITIATION button if needed
-   * @returns {JSX.Element|null} The OWNER-FUND-INITIATION button section or null
+   * Renders the OWNER-FUND-INITIATION button if needed - DISABLED IN SIMPLIFIED SYSTEM
+   * @returns {JSX.Element|null} Always returns null - MovementEngine handles all moves
    */
   renderOwnerFundInitiationButton: function() {
-    const { space, availableMoves, onMoveSelect, selectedMoveId } = this.props;
-
-    // Only show this for OWNER-SCOPE-INITIATION spaces when the move isn't already in availableMoves
-    if (!space || 
-        space.name !== 'OWNER-SCOPE-INITIATION' || 
-        !onMoveSelect ||
-        availableMoves?.some(move => move.name.includes('OWNER-FUND-INITIATION'))) {
-      return null;
-    }
-    
-    // Find the OWNER-FUND-INITIATION space
-    const fundInitSpace = window.GameStateManager?.spaces?.find(s => s.name === 'OWNER-FUND-INITIATION');
-    if (!fundInitSpace) {
-      console.error('SpaceInfoMoves: OWNER-FUND-INITIATION space not found');
-      return null;
-    }
-    
-    const isSelected = selectedMoveId && selectedMoveId === fundInitSpace.id;
-    
-    return React.createElement('div', { className: 'space-available-moves' }, [
-      React.createElement('div', { key: 'label', className: 'space-section-label' }, 'Additional Move:'),
-      React.createElement('button', {
-        key: 'button',
-        className: `move-button primary-move-btn ${isSelected ? 'selected' : ''}`,
-        onClick: () => {
-          console.log('SpaceInfoMoves: OWNER-FUND-INITIATION button clicked');
-          console.log('SpaceInfoMoves: Found OWNER-FUND-INITIATION space:', fundInitSpace.id);
-          
-          // Trigger a custom event that the SpaceSelectionManager can listen for
-          // This is cleaner than trying to access the game board directly
-          const moveSelectEvent = new CustomEvent('forceMoveSelection', {
-            detail: {
-              spaceId: fundInitSpace.id,
-              spaceData: fundInitSpace,
-              source: 'additional-move-button'
-            }
-          });
-          
-          // Dispatch the event on the window
-          window.dispatchEvent(moveSelectEvent);
-          
-          // Also call onMoveSelect as fallback
-          onMoveSelect(fundInitSpace.id);
-        }
-      }, 'OWNER-FUND-INITIATION')
-    ]);
+    // SIMPLIFIED SYSTEM: MovementEngine handles all movement options
+    // No additional buttons needed - this prevents duplicates
+    return null;
   },
   
   /**
@@ -405,9 +332,22 @@ window.SpaceInfoMoves = {
     console.log(`SpaceInfoMoves: Previous space: ${previousSpace.name} (Path: ${previousSpace.Path}), Coming from side quest: ${cameFromQuestSide}`);
     
     if (!cameFromQuestSide && previousSpace.Path && previousSpace.Path.toLowerCase() === 'main') {
-      // Coming from main path - originalSpaceId should already be stored by MovementCore
-      // No need to store it here in the UI component
-      return availableMoves; // Only show standard moves
+      // Coming from main path - store originalSpaceId if not already stored
+      if (!player.properties) {
+        player.properties = {};
+      }
+      
+      if (!player.properties.originalSpaceId) {
+        player.properties.originalSpaceId = previousSpaceId;
+        console.log(`SpaceInfoMoves: Stored originalSpaceId: ${previousSpaceId}`);
+        
+        // Save the state
+        if (window.GameStateManager.saveState) {
+          window.GameStateManager.saveState();
+        }
+      }
+      
+      return availableMoves; // Only show standard moves for first visit from main path
     } else if (cameFromQuestSide) {
       // Coming from quest side - get stored original space moves
       const originalSpaceId = player.properties?.originalSpaceId;
@@ -455,23 +395,79 @@ window.SpaceInfoMoves = {
   },
   
   /**
-   * Gets moves for a specific space from game data
+   * Gets moves for a specific space from game data - FIXED TO HANDLE {ORIGINAL_SPACE}
    * @param {Object} space - The space to get moves for
    * @returns {Array} - Array of move objects
    */
   getMovesForSpace: function(space) {
-    // Check if we can use existing GameStateManager functions
-    if (window.GameStateManager && typeof window.GameStateManager.getAvailableMoves === 'function') {
-      console.log("SpaceInfoMoves: Using GameStateManager to get original space moves");
-      const player = window.GameStateManager.getCurrentPlayer();
-      return window.GameStateManager.getAvailableMoves(player, space) || [];
+    console.log("SpaceInfoMoves: Getting moves for space:", space.name);
+    
+    if (!space || !window.GameStateManager || !window.GameStateManager.spaces) {
+      console.log("SpaceInfoMoves: Missing space or GameStateManager");
+      return [];
     }
     
-    // Fallback to default implementation
-    console.log("SpaceInfoMoves: Using direct lookup to get original space moves");
-    // This would require actual implementation based on how moves are stored
-    // For now, return empty array as fallback
-    return [];
+    // Find the space data with "First" visit type (original moves)
+    const spaceData = window.GameStateManager.spaces.find(s => 
+      s.name === space.name && s['Visit Type'] === 'First'
+    );
+    
+    if (!spaceData) {
+      console.log("SpaceInfoMoves: No space data found for:", space.name);
+      return [];
+    }
+    
+    console.log("SpaceInfoMoves: Found space data:", spaceData);
+    
+    // Extract destinations from Space 1-5 columns (like in the reference file)
+    const rawDestinations = [
+      spaceData["Space 1"],
+      spaceData["Space 2"], 
+      spaceData["Space 3"],
+      spaceData["Space 4"],
+      spaceData["Space 5"]
+    ].filter(dest => dest && dest.toString().trim() !== "" && dest !== "null" && dest !== "n/a");
+    
+    console.log("SpaceInfoMoves: Raw destinations from original space:", rawDestinations);
+    
+    // Clean and validate destinations
+    const moves = [];
+    rawDestinations.forEach(dest => {
+      const destStr = dest.toString();
+      
+      // Skip invalid entries
+      if (destStr === "n/a" || destStr.toLowerCase().includes("n/a")) {
+        return;
+      }
+      
+      // Extract space name (part before " - " if it exists)
+      let spaceName = destStr;
+      if (destStr.includes(" - ")) {
+        spaceName = destStr.split(" - ")[0].trim();
+      }
+      
+      // Skip PM-DECISION-CHECK to prevent loops
+      if (spaceName === "PM-DECISION-CHECK") {
+        return;
+      }
+      
+      // Validate that this is a real space name
+      const destinationSpace = window.GameStateManager.spaces.find(s => s.name === spaceName);
+      if (destinationSpace) {
+        moves.push({
+          id: spaceName.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').toLowerCase() + '-first',
+          name: spaceName,
+          description: destStr,
+          type: 'original-space-move'
+        });
+        console.log("SpaceInfoMoves: Added move from original space:", spaceName);
+      } else {
+        console.log("SpaceInfoMoves: Space not found:", spaceName);
+      }
+    });
+    
+    console.log("SpaceInfoMoves: Final moves from original space:", moves.length, "moves");
+    return moves;
   },
   
   /**

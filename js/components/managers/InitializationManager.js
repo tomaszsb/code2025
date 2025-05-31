@@ -168,7 +168,9 @@ class InitializationManager {
     for (const component of requiredComponents) {
       if (!component.source || typeof component.source !== component.type) {
         missingComponents.push(component.name);
-        this.log('error', `InitializationManager: Missing component: ${component.name}`);
+        this.log('error', `InitializationManager: Missing component: ${component.name} (type: ${typeof component.source}, expected: ${component.type})`);
+      } else {
+        this.log('info', `InitializationManager: Component validated: ${component.name}`);
       }
     }
     
@@ -405,6 +407,15 @@ class InitializationManager {
       console.log('DEBUG: First space:', this.loadedData.spaces && this.loadedData.spaces[0] ? this.loadedData.spaces[0]['Space Name'] : 'no data');
       
       window.GameState.initialize(this.loadedData.spaces);
+      
+      // Load dice roll data into GameState for MovementEngine
+      window.GameState.loadDiceRollData(this.loadedData.diceRoll);
+      
+      // Initialize or reinitialize MovementEngine now that all data is loaded
+      if (window.movementEngine) {
+        window.movementEngine.initialize();
+        this.log('info', 'InitializationManager: MovementEngine reinitialized with complete data');
+      }
       
       // Initialize dice roll logic if available
       if (window.DiceRollLogic) {

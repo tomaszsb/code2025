@@ -10,8 +10,8 @@ console.log('MovementEngine.js file is beginning to be used');
 
 // VERSION TRACKING for cache-buster
 if (window.LOADED_VERSIONS) {
-  window.LOADED_VERSIONS['MovementEngine'] = '2025-05-26-002';
-  console.log('MovementEngine: Version 2025-05-26-002 loaded');
+  window.LOADED_VERSIONS['MovementEngine'] = '2025-05-30-007';
+  console.log('MovementEngine: Version 2025-05-30-007 loaded - Fixed logic choice validation');
 }
 
 class MovementEngine {
@@ -128,16 +128,27 @@ class MovementEngine {
   getSpaceType(spaceName) {
     if (!spaceName) return 'unknown';
     
+    console.log('MovementEngine: getSpaceType called for:', spaceName);
+    
     // Check cache first
     if (this.spaceTypeCache.has(spaceName)) {
-      return this.spaceTypeCache.get(spaceName);
+      const cachedType = this.spaceTypeCache.get(spaceName);
+      console.log('MovementEngine: Found cached type for', spaceName, ':', cachedType);
+      return cachedType;
     }
     
     // Find space and determine type
     const space = this.findSpaceByName(spaceName);
-    if (!space) return 'unknown';
+    if (!space) {
+      console.log('MovementEngine: No space found for', spaceName);
+      return 'unknown';
+    }
+    
+    console.log('MovementEngine: Found space for type detection:', space.name, 'Path:', space.Path);
     
     const spaceType = this.determineSpaceType(space);
+    console.log('MovementEngine: Determined space type for', spaceName, ':', spaceType);
+    
     this.spaceTypeCache.set(spaceName, spaceType);
     
     return spaceType;
@@ -198,23 +209,37 @@ class MovementEngine {
   }
   
   /**
-   * Extract space name from display text
+   * Extract space name from display text - FIXED VERSION
    * @param {string} displayName - Display name that might include descriptions
    * @returns {string} Cleaned space name
    */
   extractSpaceName(displayName) {
     if (!displayName) return '';
     
-    // Handle common patterns
-    if (displayName.includes(' - ')) {
-      return displayName.split(' - ')[0].trim();
+    let name = displayName;
+    
+    // Handle common patterns - remove " - " descriptions
+    if (name.includes(' - ')) {
+      name = name.split(' - ')[0].trim();
     }
     
-    return displayName.trim();
+    // CRITICAL FIX: Remove visit type suffixes (-first, -subsequent) from space IDs
+    name = name.replace(/-(?:first|subsequent)$/i, '');
+    
+    // CRITICAL FIX: Convert to uppercase to match CSV space names  
+    name = name.toUpperCase();
+    
+    // Handle special case normalization
+    if (name === 'OWNER SCOPE INITIATION') {
+      name = 'OWNER-SCOPE-INITIATION';
+    }
+    
+    console.log(`MovementEngine: extractSpaceName('${displayName}') -> '${name}'`);
+    return name;
   }
   
   /**
-   * Get available movements for a player - Main API method
+   * Get available movements for a player - SIMPLIFIED ORIGINAL LOGIC
    * @param {Object} player - Player object
    * @returns {Array|Object} Array of movement options or object with requiresDiceRoll flag
    */
@@ -236,8 +261,9 @@ class MovementEngine {
       return [];
     }
     
-    // Check if dice roll is required before movement
+    // ORIGINAL LOGIC: Simple dice check - if space requires dice and no dice rolled, require dice
     if (this.spaceRequiresDiceRoll(currentSpace, player)) {
+      console.log('MovementEngine: Dice roll required before movement');
       return {
         requiresDiceRoll: true,
         spaceName: currentSpace.name,
@@ -245,23 +271,28 @@ class MovementEngine {
       };
     }
     
-    // Get space type and handle accordingly
-    const spaceType = this.getSpaceType(currentSpace.name);
+    // ORIGINAL LOGIC: Check if dice result determines movement (like the original updateMovementSection)
+    const diceMovements = this.getDiceMovements(player, currentSpace);
+    if (diceMovements.length > 0) {
+      console.log('MovementEngine: Using dice-determined movements:', diceMovements.length);
+      return diceMovements;
+    }
     
-    switch (spaceType) {
-      case 'logic':
-        return this.getLogicSpaceMovements(player, currentSpace);
-        
-      case 'singleChoice':
-        return this.getSingleChoiceMovements(player, currentSpace);
-        
-      case 'special':
-        return this.getSpecialSpaceMovements(player, currentSpace);
-        
-      case 'main':
-      case 'sideQuest':
-      default:
-        return this.getStandardMovements(player, currentSpace);
+    // Check space type and handle accordingly
+    const spaceType = this.getSpaceType(currentSpace.name);
+    console.log('MovementEngine: Space type determined:', spaceType, 'for space:', currentSpace.name);
+    
+    if (spaceType === 'singleChoice') {
+      console.log('MovementEngine: Using single choice movements');
+      return this.getSingleChoiceMovements(player, currentSpace);
+    } else if (spaceType === 'logic') {
+      console.log('MovementEngine: Using logic space movements');
+      return this.getLogicSpaceMovements(player, currentSpace);
+    } else {
+      // ORIGINAL LOGIC: Get standard movements from Space 1-5 columns (like original extractSpaceMovements)
+      const standardMovements = this.extractSpaceMovements(currentSpace, player);
+      console.log('MovementEngine: Using standard movements from space columns:', standardMovements.length);
+      return standardMovements;
     }
   }
   
@@ -277,8 +308,6 @@ class MovementEngine {
     }
     
     console.log('MovementEngine: Getting space data for player position:', player.position);
-    console.log('MovementEngine: Sample space data structure:', this.gameStateManager.spaces[0]);
-    console.log('MovementEngine: Available columns:', Object.keys(this.gameStateManager.spaces[0] || {}));
     
     // Find space by ID first
     let space = this.gameStateManager.findSpaceById(player.position);
@@ -298,8 +327,7 @@ class MovementEngine {
     // Find space data with matching visit type
     const spaceData = this.gameStateManager.spaces.find(s => {
       const nameMatch = s.name === space.name;
-      // Try multiple possible column names for visit type
-      const visitTypeValue = s['Visit Type'] || s['visitType'] || s['visit_type'] || s['VisitType'];
+      const visitTypeValue = s['Visit Type'] || s.visitType;
       const visitMatch = visitTypeValue === visitType;
       console.log(`MovementEngine: Checking space '${s.name}' with visit type '${visitTypeValue}' - name match: ${nameMatch}, visit match: ${visitMatch}`);
       return nameMatch && visitMatch;
@@ -309,12 +337,12 @@ class MovementEngine {
     if (spaceData) {
       console.log('MovementEngine: Space data details:', {
         name: spaceData.name,
-        visitType: spaceData['Visit Type'] || spaceData['visitType'] || spaceData['visit_type'] || spaceData['VisitType'],
-        space1: spaceData['Space 1'] || spaceData['rawSpace1'],
-        space2: spaceData['Space 2'] || spaceData['rawSpace2'],
-        space3: spaceData['Space 3'] || spaceData['rawSpace3'],
-        space4: spaceData['Space 4'] || spaceData['rawSpace4'],
-        space5: spaceData['Space 5'] || spaceData['rawSpace5']
+        visitType: spaceData['Visit Type'] || spaceData.visitType,
+        space1: spaceData['Space 1'],
+        space2: spaceData['Space 2'],
+        space3: spaceData['Space 3'],
+        space4: spaceData['Space 4'],
+        space5: spaceData['Space 5']
       });
     }
     
@@ -334,7 +362,7 @@ class MovementEngine {
   }
   
   /**
-   * Check if player has visited a space before
+   * Check if player has visited a space before - FIXED VERSION
    * @param {Object} player - Player object
    * @param {string} spaceName - Space name to check
    * @returns {boolean} True if visited before
@@ -346,12 +374,20 @@ class MovementEngine {
     const visitedSpaces = Array.isArray(player.visitedSpaces) ? 
       new Set(player.visitedSpaces) : player.visitedSpaces;
     
+    // CRITICAL FIX: Use extractSpaceName to normalize both the check name and stored names
     const normalizedSpaceName = this.extractSpaceName(spaceName);
-    return visitedSpaces.has(normalizedSpaceName);
+    
+    console.log(`MovementEngine: hasPlayerVisitedSpace checking for '${normalizedSpaceName}' (from '${spaceName}')`);
+    console.log(`MovementEngine: visitedSpaces contains:`, Array.from(visitedSpaces));
+    
+    const hasVisited = visitedSpaces.has(normalizedSpaceName);
+    console.log(`MovementEngine: Result: ${hasVisited}`);
+    
+    return hasVisited;
   }
   
   /**
-   * Check if space requires a dice roll
+   * Check if space requires a dice roll - ORIGINAL LOGIC RESTORED
    * @param {Object} spaceData - Space data object
    * @param {Object} player - Player object
    * @returns {boolean} True if dice roll required
@@ -359,16 +395,22 @@ class MovementEngine {
   spaceRequiresDiceRoll(spaceData, player) {
     if (!spaceData || !this.gameStateManager.diceRollData) return false;
     
-    // If player already rolled dice this turn, don't require another
-    if (this.movementState.hasRolledDice) return false;
-    
-    // Check if space has dice roll data
+    // Check if dice roll data exists for this space
     const visitType = this.getVisitType(player, spaceData);
     const diceData = this.gameStateManager.diceRollData.find(roll => 
       roll['Space Name'] === spaceData.name && roll['Visit Type'] === visitType
     );
     
-    return !!diceData;
+    if (!diceData) return false;
+    
+    // ORIGINAL LOGIC: Only check internal MovementEngine state
+    // Do NOT sync stale dice results from other sources
+    const hasRolledDice = this.movementState.hasRolledDice;
+    
+    console.log(`MovementEngine: Space ${spaceData.name} requires dice: ${!!diceData}, has rolled: ${hasRolledDice}`);
+    
+    // ORIGINAL LOGIC: If space needs dice and no dice rolled, require dice
+    return !hasRolledDice;
   }
   
   /**
@@ -453,6 +495,14 @@ class MovementEngine {
     let yesDestination = answersText.substring(yesIndex + 5, noIndex).trim();
     let noDestination = answersText.substring(noIndex + 4).trim();
     
+    // CRITICAL FIX: Remove trailing " -" if present (CSV formatting artifact)
+    if (yesDestination.endsWith(' -')) {
+      yesDestination = yesDestination.slice(0, -2).trim();
+    }
+    if (noDestination.endsWith(' -')) {
+      noDestination = noDestination.slice(0, -2).trim();
+    }
+    
     // Resolve "Space X" references to actual column values
     if (yesDestination.startsWith('Space ')) {
       const spaceRef = spaceData[yesDestination];
@@ -479,9 +529,20 @@ class MovementEngine {
    * @returns {Object} Next step information
    */
   handleLogicChoice(player, spaceName, choice) {
-    if (!player.logicState || !player.logicState[spaceName]) {
-      console.error('MovementEngine: No logic state found for', spaceName);
+    // CRITICAL FIX: Only process logic choices for spaces that are actually logic spaces
+    const spaceType = this.getSpaceType(spaceName);
+    if (spaceType !== 'logic') {
+      console.warn(`MovementEngine: handleLogicChoice called on non-logic space: ${spaceName} (type: ${spaceType})`);
       return null;
+    }
+    
+    // Initialize logic state if not present (same as getCurrentLogicQuestion)
+    if (!player.logicState) {
+      player.logicState = {};
+    }
+    
+    if (!player.logicState[spaceName]) {
+      player.logicState[spaceName] = { currentQuestion: 1 };
     }
     
     const spaceData = this.getCurrentSpaceData(player);
@@ -544,38 +605,125 @@ class MovementEngine {
    */
   getSingleChoiceMovements(player, spaceData) {
     const spaceName = spaceData.name;
+    const visitType = this.getVisitType(player, spaceData);
+    
+    console.log(`MovementEngine: Getting single choice movements for ${spaceName}, visit type: ${visitType}`);
     
     // Initialize single choice tracking if not present
     if (!player.singleChoices) {
       player.singleChoices = {};
     }
     
-    // Check if player has made a choice here before
-    const previousChoice = player.singleChoices[spaceName];
-    
-    if (previousChoice) {
-      // Player has been here before, only show their previous choice
-      const choiceSpace = this.findSpaceByName(previousChoice);
-      if (choiceSpace) {
-        return [{
-          id: choiceSpace.id || this.generateSpaceId(choiceSpace.name),
-          name: choiceSpace.name,
-          type: this.getSpaceType(choiceSpace.name),
-          description: `Your chosen path: ${choiceSpace.name}`,
-          visitType: this.getVisitType(player, choiceSpace),
-          isPermanentChoice: true,
-          isRepeatedChoice: true
-        }];
+    // For subsequent visits, need to determine what was chosen originally
+    if (visitType === 'Subsequent') {
+      console.log('MovementEngine: Subsequent visit to single choice space');
+      
+      // Check if we have the choice recorded
+      const previousChoice = player.singleChoices[spaceName];
+      if (previousChoice) {
+        console.log('MovementEngine: Found recorded choice:', previousChoice);
+        const choiceSpace = this.findSpaceByName(previousChoice);
+        if (choiceSpace) {
+          return [{
+            id: choiceSpace.id || this.generateSpaceId(choiceSpace.name),
+            name: choiceSpace.name,
+            type: this.getSpaceType(choiceSpace.name),
+            description: `Your chosen path: ${choiceSpace.name}`,
+            visitType: this.getVisitType(player, choiceSpace),
+            isPermanentChoice: true,
+            isRepeatedChoice: true
+          }];
+        }
+      } else {
+        // Need to infer the choice from visited spaces
+        console.log('MovementEngine: No recorded choice, inferring from visited spaces');
+        const inferredChoice = this.inferSingleChoice(player, spaceData);
+        if (inferredChoice) {
+          console.log('MovementEngine: Inferred choice:', inferredChoice);
+          // Record the inferred choice for future visits
+          player.singleChoices[spaceName] = inferredChoice;
+          
+          const choiceSpace = this.findSpaceByName(inferredChoice);
+          if (choiceSpace) {
+            return [{
+              id: choiceSpace.id || this.generateSpaceId(choiceSpace.name),
+              name: choiceSpace.name,
+              type: this.getSpaceType(choiceSpace.name),
+              description: `Your chosen path: ${choiceSpace.name}`,
+              visitType: this.getVisitType(player, choiceSpace),
+              isPermanentChoice: true,
+              isRepeatedChoice: true
+            }];
+          }
+        }
       }
     }
     
-    // First time here, show all options and mark them as permanent choices
-    const movements = this.extractSpaceMovements(spaceData, player);
-    return movements.map(movement => ({
-      ...movement,
-      isPermanentChoice: true,
-      isFirstTimeChoice: true
-    }));
+    // First time here, get actual options from First visit data
+    console.log('MovementEngine: First visit to single choice space, getting original options');
+    const firstVisitData = this.gameStateManager.spaces.find(s => 
+      s.name === spaceName && s['Visit Type'] === 'First'
+    );
+    
+    if (firstVisitData) {
+      const movements = this.extractSpaceMovements(firstVisitData, player);
+      return movements.map(movement => ({
+        ...movement,
+        isPermanentChoice: true,
+        isFirstTimeChoice: true
+      }));
+    }
+    
+    console.warn('MovementEngine: No movements found for single choice space');
+    return [];
+  }
+  
+  /**
+   * Infer single choice from player's visited spaces
+   * @param {Object} player - Player object
+   * @param {Object} spaceData - Current space data
+   * @returns {string|null} Inferred choice or null
+   */
+  inferSingleChoice(player, spaceData) {
+    // Get the first visit data to see what the original options were
+    const firstVisitData = this.gameStateManager.spaces.find(s => 
+      s.name === spaceData.name && s['Visit Type'] === 'First'
+    );
+    
+    if (!firstVisitData) {
+      console.log('MovementEngine: No first visit data found for inference');
+      return null;
+    }
+    
+    // Get the original choice options
+    const originalChoices = [
+      firstVisitData["Space 1"],
+      firstVisitData["Space 2"],
+      firstVisitData["Space 3"],
+      firstVisitData["Space 4"],
+      firstVisitData["Space 5"]
+    ].filter(dest => dest && dest.toString().trim() !== "" && dest !== "null")
+     .map(dest => {
+       let spaceName = dest.toString();
+       if (spaceName.includes(" - ")) {
+         spaceName = spaceName.split(" - ")[0].trim();
+       }
+       return spaceName;
+     });
+    
+    console.log('MovementEngine: Original choice options:', originalChoices);
+    console.log('MovementEngine: Player visited spaces:', Array.from(player.visitedSpaces || []));
+    
+    // Check which of these choices the player has visited
+    for (const choice of originalChoices) {
+      if (this.hasPlayerVisitedSpace(player, choice)) {
+        console.log('MovementEngine: Found visited choice:', choice);
+        return choice;
+      }
+    }
+    
+    console.log('MovementEngine: Could not infer choice from visited spaces');
+    return null;
   }
   
   /**
@@ -653,50 +801,78 @@ class MovementEngine {
     return this.extractSpaceMovements(spaceData, player);
   }
   
+
   /**
-   * Get movements for standard spaces (main path, side quest)
-   * @param {Object} player - Player object
-   * @param {Object} spaceData - Current space data
-   * @returns {Array} Array of movement options
-   */
-  getStandardMovements(player, spaceData) {
-    // Check if dice result determines movement
-    if (this.movementState.hasRolledDice && this.movementState.diceResult) {
-      const diceMovements = this.getDiceMovements(player, spaceData);
-      if (diceMovements.length > 0) {
-        return diceMovements;
-      }
-    }
-    
-    return this.extractSpaceMovements(spaceData, player);
-  }
-  
-  /**
-   * Get movements determined by dice results
+   * Get movements determined by dice results - FIXED LOGIC
    * @param {Object} player - Player object
    * @param {Object} spaceData - Current space data
    * @returns {Array} Array of dice-determined movements
    */
   getDiceMovements(player, spaceData) {
-    if (!this.gameStateManager.diceRollData || !this.movementState.diceResult) {
+    if (!this.gameStateManager.diceRollData) {
+      console.log('MovementEngine: No dice roll data available');
       return [];
     }
     
+    // ORIGINAL LOGIC: Only use dice result from current movement state
+    // Do NOT pull stale results from other sources
+    const diceResult = this.movementState.diceResult;
+    
+    if (!diceResult) {
+      console.log('MovementEngine: No dice result for current space/turn');
+      return [];
+    }
+    
+    console.log('MovementEngine: Processing dice movements with result:', diceResult);
+    console.log('MovementEngine: Current space for dice lookup:', spaceData.name);
+    
     const visitType = this.getVisitType(player, spaceData);
+    console.log('MovementEngine: Visit type for dice lookup:', visitType);
+    
+    // DEBUG: Log available dice data
+    const availableDiceData = this.gameStateManager.diceRollData.filter(roll => 
+      roll['Space Name'] === spaceData.name
+    );
+    console.log('MovementEngine: Available dice data for space:', spaceData.name, availableDiceData);
+    
     const diceData = this.gameStateManager.diceRollData.find(roll => 
       roll['Space Name'] === spaceData.name && roll['Visit Type'] === visitType
     );
     
-    if (!diceData) return [];
+    if (!diceData) {
+      console.log('MovementEngine: No dice data found for', spaceData.name, visitType);
+      console.log('MovementEngine: All available dice space names:', 
+        [...new Set(this.gameStateManager.diceRollData.map(d => d['Space Name']))]);
+      return [];
+    }
     
-    const outcome = diceData[this.movementState.diceResult.toString()];
-    if (!outcome) return [];
+    console.log('MovementEngine: Found dice data:', {
+      spaceName: diceData['Space Name'],
+      visitType: diceData['Visit Type'],
+      dieRoll: diceData['Die Roll']
+    });
     
-    return this.parseMovementOutcome(outcome, player);
+    const outcome = diceData[diceResult.toString()];
+    if (!outcome) {
+      console.log('MovementEngine: No outcome found for dice result', diceResult);
+      console.log('MovementEngine: Available dice outcomes:', {
+        '1': diceData['1'], '2': diceData['2'], '3': diceData['3'],
+        '4': diceData['4'], '5': diceData['5'], '6': diceData['6']
+      });
+      return [];
+    }
+    
+    console.log('MovementEngine: Found dice outcome for roll', diceResult, ':', outcome);
+    
+    // Parse movement outcome from dice result
+    const movements = this.parseMovementOutcome(outcome, player);
+    console.log('MovementEngine: Parsed', movements.length, 'movements from dice outcome');
+    
+    return movements;
   }
   
   /**
-   * Parse movement outcome from dice result
+   * Parse movement outcome from dice result - FIXED VERSION using sample file logic
    * @param {string} outcome - Dice outcome text
    * @param {Object} player - Player object
    * @returns {Array} Array of movement options
@@ -704,69 +880,120 @@ class MovementEngine {
   parseMovementOutcome(outcome, player) {
     const movements = [];
     
-    if (outcome.includes(' or ')) {
-      // Multiple options separated by " or "
-      const options = outcome.split(' or ').map(opt => opt.trim());
-      options.forEach(option => {
-        const spaceName = this.extractSpaceName(option);
-        const space = this.findSpaceByName(spaceName);
-        if (space && this.isValidDestination(player, spaceName)) {
+    console.log('MovementEngine: Parsing dice outcome:', outcome);
+    
+    // Handle case where outcome contains movement destinations (like sample file)
+    if (outcome && (outcome.includes(' or ') || outcome.includes('-'))) {
+      
+      if (outcome.includes(' or ')) {
+        // Multiple options separated by " or " - EXACT SAMPLE FILE LOGIC
+        const options = outcome.split(' or ').map(opt => opt.trim());
+        console.log('MovementEngine: Found multiple dice options:', options);
+        
+        options.forEach(option => {
+          // Extract space name (part before " - " if it exists) - SAMPLE FILE LOGIC
+          let spaceName = option;
+          if (option.includes(' - ')) {
+            spaceName = option.split(' - ')[0].trim();
+          }
+          
+          console.log('MovementEngine: Processing dice option:', option, '-> spaceName:', spaceName);
+          
+          // Handle truncated space names (from sample file)
+          if (spaceName === 'REG-DOB-FEE-') {
+            spaceName = 'REG-DOB-FEE-REVIEW';
+          }
+          
+          // Check if it's a valid space name - DIRECT CHECK like sample file
+          const spaceExists = this.gameStateManager.spaces && 
+            this.gameStateManager.spaces.some(s => s.name === spaceName);
+          
+          console.log('MovementEngine: Space exists check for', spaceName, ':', spaceExists);
+          
+          if (spaceExists && !this.conflictsWithSingleChoice(player, spaceName)) {
+            const space = this.findSpaceByName(spaceName);
+            movements.push({
+              id: space ? (space.id || this.generateSpaceId(space.name)) : this.generateSpaceId(spaceName),
+              name: spaceName, // Use the verified space name directly
+              type: this.getSpaceType(spaceName),
+              description: option,
+              visitType: this.getVisitType(player, { name: spaceName }),
+              fromDiceRoll: true
+            });
+            console.log('MovementEngine: Added dice movement option:', spaceName);
+          } else {
+            console.log('MovementEngine: Rejected dice option:', spaceName, 'exists:', spaceExists);
+          }
+        });
+        
+      } else if (outcome.includes('-')) {
+        // Single destination with description - SAMPLE FILE LOGIC  
+        let spaceName = outcome;
+        if (outcome.includes(' - ')) {
+          spaceName = outcome.split(' - ')[0].trim();
+        }
+        
+        console.log('MovementEngine: Processing single dice outcome:', outcome, '-> spaceName:', spaceName);
+        
+        // Handle truncated space names (from sample file)
+        if (spaceName === 'REG-DOB-FEE-') {
+          spaceName = 'REG-DOB-FEE-REVIEW';
+        }
+        
+        // Check if it's a valid space name - DIRECT CHECK like sample file
+        const spaceExists = this.gameStateManager.spaces && 
+          this.gameStateManager.spaces.some(s => s.name === spaceName);
+        
+        console.log('MovementEngine: Single space exists check for', spaceName, ':', spaceExists);
+        
+        if (spaceExists && !this.conflictsWithSingleChoice(player, spaceName)) {
+          const space = this.findSpaceByName(spaceName);
           movements.push({
-            id: space.id || this.generateSpaceId(space.name),
-            name: space.name,
-            type: this.getSpaceType(space.name),
-            description: option,
-            visitType: this.getVisitType(player, space),
+            id: space ? (space.id || this.generateSpaceId(space.name)) : this.generateSpaceId(spaceName),
+            name: spaceName, // Use the verified space name directly
+            type: this.getSpaceType(spaceName),
+            description: `Dice Result: ${outcome}`,
+            visitType: this.getVisitType(player, { name: spaceName }),
             fromDiceRoll: true
           });
+          console.log('MovementEngine: Added single dice movement:', spaceName);
+        } else {
+          console.log('MovementEngine: Rejected single dice option:', spaceName, 'exists:', spaceExists);
         }
-      });
-    } else if (outcome.includes('-')) {
-      // Single destination with description
-      const spaceName = this.extractSpaceName(outcome);
-      const space = this.findSpaceByName(spaceName);
-      if (space && this.isValidDestination(player, spaceName)) {
-        movements.push({
-          id: space.id || this.generateSpaceId(space.name),
-          name: space.name,
-          type: this.getSpaceType(space.name),
-          description: `Dice Result: ${outcome}`,
-          visitType: this.getVisitType(player, space),
-          fromDiceRoll: true
-        });
       }
+    } else {
+      console.log('MovementEngine: Dice outcome does not contain movement destinations:', outcome);
     }
     
+    console.log('MovementEngine: Final dice movements parsed:', movements.length, 'options');
     return movements;
   }
   
   /**
-   * Extract movement options from space data
+   * Extract movement options from space data - REFERENCE FILE LOGIC
    * @param {Object} spaceData - Space data object
    * @param {Object} player - Player object
    * @returns {Array} Array of movement options
    */
   extractSpaceMovements(spaceData, player) {
     console.log('MovementEngine: Extracting movements from space:', spaceData.name);
-    console.log('MovementEngine: Full space data object:', spaceData);
     const movements = [];
     
-    // Get raw destinations from Space 1-5 columns - try multiple column name variations
+    // Get raw destinations from Space 1-5 columns
     const rawDestinations = [
-      spaceData["Space 1"] || spaceData["rawSpace1"] || spaceData["space1"],
-      spaceData["Space 2"] || spaceData["rawSpace2"] || spaceData["space2"], 
-      spaceData["Space 3"] || spaceData["rawSpace3"] || spaceData["space3"],
-      spaceData["Space 4"] || spaceData["rawSpace4"] || spaceData["space4"],
-      spaceData["Space 5"] || spaceData["rawSpace5"] || spaceData["space5"]
+      spaceData["Space 1"],
+      spaceData["Space 2"], 
+      spaceData["Space 3"],
+      spaceData["Space 4"],
+      spaceData["Space 5"]
     ].filter(dest => dest && dest.toString().trim() !== "" && dest !== "null");
     
     console.log('MovementEngine: Raw destinations found:', rawDestinations);
-    console.log('MovementEngine: Space data columns available:', Object.keys(spaceData));
     
-    // Process each destination
-    rawDestinations.forEach((dest, index) => {
+    // Clean and validate destinations
+    rawDestinations.forEach(dest => {
       const destStr = dest.toString();
-      console.log(`MovementEngine: Processing destination ${index + 1}:`, destStr);
+      console.log('MovementEngine: Processing destination:', destStr);
       
       // Skip invalid entries
       if (destStr === "n/a" || destStr.toLowerCase().includes("n/a")) {
@@ -774,78 +1001,122 @@ class MovementEngine {
         return;
       }
       
-      // Handle {ORIGINAL_SPACE} token
+      // Handle {ORIGINAL_SPACE} token - EXACT REFERENCE FILE LOGIC
       if (destStr.includes("{ORIGINAL_SPACE}")) {
         console.log('MovementEngine: Processing {ORIGINAL_SPACE} token');
-        console.log('MovementEngine: Player previousPosition:', player.previousPosition);
-        const originalSpaceMovements = this.getOriginalSpaceMovements(player);
-        console.log('MovementEngine: Original space movements found:', originalSpaceMovements.length);
-        movements.push(...originalSpaceMovements);
-        return;
+        console.log('MovementEngine: Player previousSpace:', player.previousSpace);
+        
+        if (player.previousSpace) {
+          // Get movement options from the original space
+          const originalSpaceData = this.gameStateManager.spaces.find(space => 
+            space.name === player.previousSpace
+          );
+          
+          console.log('MovementEngine: Found original space data:', !!originalSpaceData);
+          
+          if (originalSpaceData) {
+            const originalDestinations = [
+              originalSpaceData["Space 1"],
+              originalSpaceData["Space 2"], 
+              originalSpaceData["Space 3"],
+              originalSpaceData["Space 4"],
+              originalSpaceData["Space 5"]
+            ].filter(origDest => origDest && origDest.toString().trim() !== "" && origDest !== "null");
+            
+            console.log('MovementEngine: Original destinations found:', originalDestinations);
+            
+            // Add each original destination (except PM-DECISION-CHECK to prevent loops)
+            originalDestinations.forEach(origDest => {
+              const origDestStr = origDest.toString();
+              if (origDestStr === "n/a" || origDestStr.toLowerCase().includes("n/a")) return;
+              
+              let spaceName = origDestStr;
+              if (origDestStr.includes(" - ")) {
+                spaceName = origDestStr.split(" - ")[0].trim();
+              }
+              
+              // Filter out PM-DECISION-CHECK to prevent loops
+              if (spaceName === "PM-DECISION-CHECK") {
+                console.log('MovementEngine: Filtered out PM-DECISION-CHECK to prevent loops');
+                return;
+              }
+              
+              // Validate that this is a real space name
+              if (this.gameStateManager.spaces.some(s => s.name === spaceName)) {
+                movements.push({
+                  id: spaceName.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').toLowerCase(),
+                  name: spaceName,
+                  type: 'standard',
+                  description: `Continue: ${origDestStr}`,
+                  visitType: this.getVisitType(player, { name: spaceName }),
+                  fromOriginalSpace: true,
+                  originalSpaceName: player.previousSpace
+                });
+                console.log('MovementEngine: Added original space movement:', spaceName);
+              } else {
+                console.log('MovementEngine: Space not found for original movement:', spaceName);
+              }
+            });
+          } else {
+            console.log('MovementEngine: No original space data found for:', player.previousSpace);
+          }
+        } else {
+          console.log('MovementEngine: No previousSpace found on player');
+        }
+        return; // Skip the {ORIGINAL_SPACE} token itself
       }
       
-      // Extract space name
-      let spaceName = this.extractSpaceName(destStr);
+      // Extract space name (part before " - " if it exists)
+      let spaceName = destStr;
+      if (destStr.includes(" - ")) {
+        spaceName = destStr.split(" - ")[0].trim();
+      }
+      
       console.log('MovementEngine: Extracted space name:', spaceName);
       
-      // Validate destination
-      const isValid = this.isValidDestination(player, spaceName);
-      console.log('MovementEngine: Destination validation result:', isValid);
-      if (!isValid) {
-        console.log('MovementEngine: Destination rejected by validation');
-        return;
+      // Validate that this is a real space name
+      const spaceExists = this.gameStateManager.spaces.some(s => s.name === spaceName);
+      if (spaceExists) {
+        movements.push({
+          id: spaceName.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').toLowerCase(),
+          name: spaceName,
+          type: 'standard', 
+          description: destStr,
+          visitType: this.getVisitType(player, { name: spaceName })
+        });
+        console.log('MovementEngine: Added movement:', spaceName);
+      } else {
+        console.log('MovementEngine: Space not found in game data:', spaceName);
+        console.log('MovementEngine: Available space names:', this.gameStateManager.spaces.map(s => s.name).slice(0, 10));
       }
-      
-      // Find space object
-      const space = this.findSpaceByName(spaceName);
-      console.log('MovementEngine: Found space object:', !!space, space ? space.name : 'not found');
-      if (!space) {
-        console.log('MovementEngine: Space object not found for:', spaceName);
-        console.log('MovementEngine: Available space names (first 20):', 
-          this.gameStateManager.spaces ? this.gameStateManager.spaces.slice(0, 20).map(s => s.name) : 'No spaces');
-        return;
-      }
-      
-      const movement = {
-        id: space.id || this.generateSpaceId(space.name),
-        name: space.name,
-        type: this.getSpaceType(space.name),
-        description: destStr,
-        visitType: this.getVisitType(player, space)
-      };
-      
-      console.log('MovementEngine: Created movement option:', movement);
-      movements.push(movement);
     });
     
-    console.log('MovementEngine: Final movements array:', movements);
+    console.log('MovementEngine: Final movements array:', movements.length, 'movements');
     return movements;
   }
   
   /**
    * Get movements from {ORIGINAL_SPACE} token
-   * @param {Object} player - Player object
+   * @param {Object} player - Player object  
    * @returns {Array} Array of movement options from original space
    */
   getOriginalSpaceMovements(player) {
     const movements = [];
     
     console.log('MovementEngine: getOriginalSpaceMovements called with player:', player.name);
-    console.log('MovementEngine: Player previousPosition:', player.previousPosition);
+    console.log('MovementEngine: Player previousSpace:', player.previousSpace);
     
-    if (!player.previousPosition) {
-      console.log('MovementEngine: No previousPosition found, returning empty movements');
+    if (!player.previousSpace) {
+      console.log('MovementEngine: No previousSpace found, returning empty movements');
       return movements;
     }
     
-    // Get original space data
-    const originalSpace = this.gameStateManager.findSpaceById(player.previousPosition);
-    if (!originalSpace) return movements;
-    
     // Get movement options from original space
     const originalSpaceData = this.gameStateManager.spaces.find(s => 
-      s.name === originalSpace.name && s['Visit Type'] === 'First'
+      s.name === player.previousSpace
     );
+    
+    console.log('MovementEngine: Found original space data:', !!originalSpaceData);
     
     if (!originalSpaceData) return movements;
     
@@ -857,6 +1128,8 @@ class MovementEngine {
       originalSpaceData["Space 4"],
       originalSpaceData["Space 5"]
     ].filter(dest => dest && dest.toString().trim() !== "" && dest !== "null");
+    
+    console.log('MovementEngine: Original destinations:', originalDestinations);
     
     originalDestinations.forEach(dest => {
       const destStr = dest.toString();
@@ -882,7 +1155,7 @@ class MovementEngine {
         description: `Continue: ${destStr}`,
         visitType: this.getVisitType(player, space),
         fromOriginalSpace: true,
-        originalSpaceName: originalSpace.name
+        originalSpaceName: player.previousSpace
       });
     });
     
@@ -938,6 +1211,16 @@ class MovementEngine {
     }
     
     console.log(`MovementEngine: Dice roll completed: ${diceResult}`);
+  }
+  
+  /**
+   * Set dice result for current space/turn - PUBLIC METHOD
+   * @param {number} diceResult - Dice result (1-6)
+   */
+  setDiceResult(diceResult) {
+    this.movementState.hasRolledDice = true;
+    this.movementState.diceResult = diceResult;
+    console.log(`MovementEngine: Dice result set to ${diceResult} for current turn`);
   }
   
   /**
@@ -1087,9 +1370,10 @@ class MovementEngine {
     // Update player position
     const oldPosition = player.position;
     
-    // Update previousPosition for {ORIGINAL_SPACE} tracking
+    // Update previousSpace for {ORIGINAL_SPACE} tracking
     if (currentSpace && this.getSpaceType(currentSpace.name) === 'main') {
-      player.previousPosition = oldPosition;
+      player.previousSpace = currentSpace.name; // Store the SPACE NAME, not position ID
+      console.log('MovementEngine: Updated previousSpace to:', player.previousSpace);
     }
     
     player.position = destinationSpace.id || destinationSpace.name;
@@ -1103,6 +1387,9 @@ class MovementEngine {
     // Reset movement state for new turn
     this.resetMovementState();
     
+    // CRITICAL FIX: Reset dice state when moving to ensure clean turn
+    this.resetDiceState();
+    
     console.log(`MovementEngine: Player ${player.name} moved from ${oldPosition} to ${player.position}`);
     
     return {
@@ -1114,7 +1401,7 @@ class MovementEngine {
   }
   
   /**
-   * Mark a space as visited by a player
+   * Mark a space as visited by a player - FIXED VERSION
    * @param {Object} player - Player object
    * @param {string} spaceId - Space ID to mark as visited
    */
@@ -1128,10 +1415,12 @@ class MovementEngine {
       player.visitedSpaces = new Set(player.visitedSpaces);
     }
     
-    const spaceName = this.extractSpaceName(spaceId);
-    player.visitedSpaces.add(spaceName);
+    // CRITICAL FIX: Use extractSpaceName to properly normalize the space name
+    const normalizedSpaceName = this.extractSpaceName(spaceId);
+    player.visitedSpaces.add(normalizedSpaceName);
     
-    console.log(`MovementEngine: Marked ${spaceName} as visited for ${player.name}`);
+    console.log(`MovementEngine: Marked '${normalizedSpaceName}' as visited for ${player.name} (from spaceId: '${spaceId}')`);
+    console.log(`MovementEngine: Player ${player.name} visitedSpaces now contains:`, Array.from(player.visitedSpaces));
   }
   
   /**
@@ -1186,8 +1475,19 @@ class MovementEngine {
       diceResult: null
     };
     
-    // Clear caches
+    // Clear caches to prevent stale data
     this.movementOptionsCache.clear();
+    
+    console.log('MovementEngine: Movement state and caches reset');
+  }
+  
+  /**
+   * Reset dice state when moving to new space - ADDED FOR ORIGINAL LOGIC
+   */
+  resetDiceState() {
+    this.movementState.hasRolledDice = false;
+    this.movementState.diceResult = null;
+    console.log('MovementEngine: Dice state reset for new space');
   }
   
   /**
@@ -1239,6 +1539,16 @@ class MovementEngine {
 // Export MovementEngine for use in other files
 window.MovementEngine = MovementEngine;
 
+// Global helper function to set dice result in MovementEngine
+window.setMovementEngineDiceResult = function(diceResult) {
+  if (window.movementEngine && window.movementEngine.setDiceResult) {
+    window.movementEngine.setDiceResult(diceResult);
+    console.log('Global helper: Set MovementEngine dice result to', diceResult);
+  } else {
+    console.warn('Global helper: MovementEngine not available to set dice result');
+  }
+};
+
 // Create a singleton instance for global use
 if (window.GameStateManager) {
   window.movementEngine = new MovementEngine(window.GameStateManager);
@@ -1255,4 +1565,4 @@ if (window.GameStateManager) {
   waitForGameStateManager();
 }
 
-console.log('MovementEngine.js code execution finished - Complete documented logic system implemented [2025-05-26]');
+console.log('MovementEngine.js code execution finished - Fixed logic choice validation [2025-05-30-007]');

@@ -52,9 +52,16 @@ const LogicSpaceManager = {
       return null;
     }
 
+    // Get the current space data to extract the proper space name
+    const spaceData = window.movementEngine.getCurrentSpaceData(currentPlayer);
+    if (!spaceData) {
+      console.error('LogicSpaceManager: No current space data found');
+      return null;
+    }
+
     const result = window.movementEngine.handleLogicChoice(
       currentPlayer, 
-      currentPlayer.position, 
+      spaceData.name, // Use the clean space name, not the position ID
       choice
     );
 
@@ -110,10 +117,8 @@ const LogicSpaceManager = {
       // Trigger UI updates
       this.triggerUIUpdates();
       
-      // Complete the turn
-      if (window.TurnManager) {
-        window.TurnManager.completeTurn();
-      }
+      // DO NOT call TurnManager.completeTurn() here!
+      // Let the normal game flow continue - player should see movement options at new space
     } else {
       console.error('LogicSpaceManager: Failed to move to destination:', result.error);
     }

@@ -116,7 +116,8 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
       onMoveSelect, 
       onRollDice, 
       hasRolledDice, 
-      hasDiceRollSpace 
+      hasDiceRollSpace,
+      isRollingDice
     } = this.props;
     
     console.log('SpaceInfo render - diceRoll:', diceRoll, 'diceOutcomes:', diceOutcomes);
@@ -170,14 +171,42 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
         {/* Add Roll Dice button inside the space info card */}
         {onRollDice && (
           <div className="space-roll-dice-container">
-            <button 
-              onClick={onRollDice}
-              className={`roll-dice-btn ${hasRolledDice ? 'used' : ''}`}
-              disabled={hasRolledDice}
-              title={hasRolledDice ? 'Already rolled dice this turn' : 'Roll dice for this space'}
-            >
-              {hasRolledDice ? 'Dice Rolled' : 'Roll Dice'}
-            </button>
+            {/* Show rolling animation or dice result if currently rolling */}
+            {this.props.isRollingDice && (
+              <div className="dice-rolling-animation">
+                <div className="dice-3d rolling">
+                  <div className="dice-face-3d rolling">
+                    <div className="dice-face-front">🎲</div>
+                    <div className="dice-face-back">🎲</div>
+                    <div className="dice-face-right">🎲</div>
+                    <div className="dice-face-left">🎲</div>
+                    <div className="dice-face-top">🎲</div>
+                    <div className="dice-face-bottom">🎲</div>
+                  </div>
+                </div>
+                <span className="rolling-text">Rolling...</span>
+              </div>
+            )}
+            
+            {/* Show dice result if rolled */}
+            {hasRolledDice && diceRoll && !this.props.isRollingDice && (
+              <div className="dice-result-display">
+                <div className="dice-result-number">{diceRoll}</div>
+                <span className="dice-result-text">Rolled: {diceRoll}</span>
+              </div>
+            )}
+            
+            {/* Show roll button */}
+            {!this.props.isRollingDice && (
+              <button 
+                onClick={onRollDice}
+                className={`roll-dice-btn ${hasRolledDice ? 'used' : ''}`}
+                disabled={hasRolledDice || this.props.isRollingDice}
+                title={hasRolledDice ? 'Already rolled dice this turn' : 'Roll dice for this space'}
+              >
+                {hasRolledDice ? 'Dice Rolled' : 'Roll Dice'}
+              </button>
+            )}
           </div>
         )}
         

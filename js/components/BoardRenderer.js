@@ -29,7 +29,8 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
       showInstructions,
       instructionsData,
       currentPlayerOnLanding,
-      currentSpaceOnLanding
+      currentSpaceOnLanding,
+      isRollingDice
     } = this.props;
     
     // Check if game is ended
@@ -136,6 +137,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
                   onRollDice={hasDiceRollSpace ? gameBoard.diceManager.handleRollDiceClick : null}
                   hasRolledDice={hasRolledDice}
                   hasDiceRollSpace={hasDiceRollSpace}
+                  isRollingDice={gameBoard.state.isRollingDice}
                   selectedMoveId={selectedMove}
                 />
               )}
@@ -207,21 +209,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
           </div>
         )}
         
-        {/* Dice Roll component */}
-        {showDiceRoll && gameBoard.diceRollRef && (
-          <div className="dice-roll-wrapper">
-            <DiceRoll
-              visible={true}
-              space={{ name: diceRollSpace }}
-              visitType={diceRollVisitType}
-              diceData={diceRollData}
-              onRollComplete={gameBoard.diceManager.handleDiceRollComplete}
-              onMoveSelect={gameBoard.diceManager.handleDiceRollMoveSelect}
-              onShowOutcomes={gameBoard.diceManager.handleDiceOutcomes}
-              ref={gameBoard.diceRollRef}
-            />
-          </div>
-        )}
+        {/* Dice Roll component removed - now handled directly in SpaceInfo blue button */}
         
         {/* Card draw animation */}
         {cardDrawAnimation && newCardData && newCardData.type && (

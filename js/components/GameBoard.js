@@ -232,6 +232,7 @@ window.GameBoard = class GameBoard extends React.Component {
         currentPlayerOnLanding={this.state.currentPlayerOnLanding}
         currentSpaceOnLanding={this.state.currentSpaceOnLanding}
         showSpaceExplorer={this.state.showSpaceExplorer}
+        isRollingDice={this.state.isRollingDice}
       />
     );
   }

@@ -360,15 +360,65 @@ class SpaceSelectionManager {
   }
   
   /**
-   * Direct move selection handler - mirrors the simple logic from knowledge file
+   * Direct move selection handler - PROPER FIX: Visit-type aware space resolution
    * This is called directly from move buttons, bypassing space click validation
-   * @param {string} moveId - ID of the selected move
+   * @param {string} moveId - ID or name of the selected move
    */
   handleMoveSelection = (moveId) => {
     console.log('SpaceSelectionManager: Direct move selection:', moveId);
     
-    // Find the space data for the selected move
-    const spaceData = this.gameBoard.state.spaces.find(space => space.id === moveId);
+    // PRIMARY: Try exact ID match first (for normal space-to-space moves)
+    let spaceData = this.gameBoard.state.spaces.find(space => space.id === moveId);
+    
+    if (spaceData) {
+      console.log('SpaceSelectionManager: Found space by exact ID match:', spaceData.name);
+    } else {
+      console.log('SpaceSelectionManager: Exact ID match failed, attempting visit-type aware resolution');
+      
+      // LOGIC SPACE FIX: When logic spaces pass space names instead of IDs
+      // We need to determine the correct visit type and construct the proper ID
+      
+      const currentPlayer = window.GameStateManager.getCurrentPlayer();
+      if (!currentPlayer) {
+        console.error('SpaceSelectionManager: No current player for visit-type resolution');
+        return;
+      }
+      
+      // Determine if player has visited this space before
+      const hasVisited = this.hasPlayerVisitedSpace(currentPlayer, moveId);
+      const visitType = hasVisited ? 'subsequent' : 'first';
+      
+      console.log(`SpaceSelectionManager: Player ${currentPlayer.name} ${hasVisited ? 'has' : 'has not'} visited ${moveId} before`);
+      console.log(`SpaceSelectionManager: Using visit type: ${visitType}`);
+      
+      // Construct the expected space ID format
+      const expectedSpaceId = moveId.toLowerCase().replace(/\s+/g, '-') + '-' + visitType;
+      console.log('SpaceSelectionManager: Looking for space ID:', expectedSpaceId);
+      
+      // Find space with the constructed ID
+      spaceData = this.gameBoard.state.spaces.find(space => space.id === expectedSpaceId);
+      
+      if (spaceData) {
+        console.log('SpaceSelectionManager: Found space by visit-type resolution:', spaceData.name);
+      } else {
+        // Fallback: Try case-insensitive name matching (for edge cases)
+        console.log('SpaceSelectionManager: ID construction failed, trying name matching');
+        spaceData = this.gameBoard.state.spaces.find(space => 
+          space.name && space.name.toUpperCase() === moveId.toUpperCase() &&
+          space['Visit Type'] && space['Visit Type'].toLowerCase() === visitType
+        );
+        
+        if (spaceData) {
+          console.log('SpaceSelectionManager: Found space by name + visit type matching:', spaceData.name);
+        }
+      }
+    }
+    
+    if (!spaceData) {
+      console.error('SpaceSelectionManager: Could not resolve space for moveId:', moveId);
+      console.log('SpaceSelectionManager: Available space IDs:', this.gameBoard.state.spaces.slice(0, 5).map(s => s.id) + '...');
+      // Continue with null to maintain existing error handling
+    }
     
     // Update GameBoard state with selected move - mirrors knowledge file logic
     this.gameBoard.setState({
@@ -379,6 +429,7 @@ class SpaceSelectionManager {
       // After state update, update visual cues to show selected move
       this.updateAvailableMoveVisuals();
       console.log('SpaceSelectionManager: Move selected - End Turn button should now be enabled');
+      console.log('SpaceSelectionManager: exploredSpace set to:', spaceData ? spaceData.name : 'NULL');
     });
     
     // Dispatch event for tracking
@@ -452,23 +503,47 @@ class SpaceSelectionManager {
   }
   
   /**
+   * Check if a player has visited a specific space by name
+   * @param {Object} player - The player object
+   * @param {string} spaceName - The name of the space to check
+   * @returns {boolean} True if player has visited this space before
+   */
+  hasPlayerVisitedSpace = (player, spaceName) => {
+    if (!player || !spaceName) return false;
+    
+    // Use MovementEngine if available
+    if (window.movementEngine && window.movementEngine.hasPlayerVisitedSpace) {
+      return window.movementEngine.hasPlayerVisitedSpace(player, spaceName);
+    }
+    
+    // Fallback: Check player's visitedSpaces directly
+    if (player.visitedSpaces) {
+      // Handle both Set and Array formats
+      const visitedSpaces = Array.isArray(player.visitedSpaces) 
+        ? player.visitedSpaces 
+        : Array.from(player.visitedSpaces);
+      
+      // Check if any visited space matches this name
+      return visitedSpaces.some(visitedSpaceName => 
+        visitedSpaceName && visitedSpaceName.toUpperCase() === spaceName.toUpperCase()
+      );
+    }
+    
+    return false;
+  }
+  
+  /**
    * Check if the current player is visiting the selected space for the first time
-   * REFACTORED: Now delegates to MovementEngine for visit type logic
+   * BACKWARD COMPATIBILITY: Wrapper around hasPlayerVisitedSpace
    * @returns {boolean} True if first visit, false otherwise
    */
   isVisitingFirstTime = () => {
-    if (!window.movementEngine) {
-      console.warn('SpaceSelectionManager: MovementEngine not available for visit check');
-      return true;
-    }
-    
     const currentPlayer = window.GameStateManager.getCurrentPlayer();
     const selectedSpace = this.getSelectedSpace();
     
     if (!currentPlayer || !selectedSpace) return true;
     
-    // Use MovementEngine's visit checking logic
-    return !window.movementEngine.hasPlayerVisitedSpace(currentPlayer, selectedSpace.name);
+    return !this.hasPlayerVisitedSpace(currentPlayer, selectedSpace.name);
   }
   
   /**
@@ -692,3 +767,4 @@ window.SpaceSelectionManager = SpaceSelectionManager;
 
 console.log('SpaceSelectionManager.js code execution finished');
 console.log('SpaceSelectionManager.js REFACTORED: Now delegates movement logic to MovementEngine, focuses on UI [2025-05-26]');
+console.log('SpaceSelectionManager.js PROPER FIX: Visit-type aware space resolution for logic space destinations [2025-06-01]');

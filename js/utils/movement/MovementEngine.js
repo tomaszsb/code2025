@@ -10,8 +10,8 @@ console.log('MovementEngine.js file is beginning to be used');
 
 // VERSION TRACKING for cache-buster
 if (window.LOADED_VERSIONS) {
-  window.LOADED_VERSIONS['MovementEngine'] = '2025-05-30-007';
-  console.log('MovementEngine: Version 2025-05-30-007 loaded - Fixed logic choice validation');
+  window.LOADED_VERSIONS['MovementEngine'] = '2025-06-01-003';
+  console.log('MovementEngine: Version 2025-06-01-003 loaded - Fixed position tracking by using GameStateManager.movePlayer()');
 }
 
 class MovementEngine {
@@ -292,7 +292,12 @@ class MovementEngine {
       // ORIGINAL LOGIC: Get standard movements from Space 1-5 columns (like original extractSpaceMovements)
       const standardMovements = this.extractSpaceMovements(currentSpace, player);
       console.log('MovementEngine: Using standard movements from space columns:', standardMovements.length);
-      return standardMovements;
+      
+      // PHASE 1 ENHANCEMENT: Add PM-DECISION-CHECK logic from SpaceInfoMoves
+      const enhancedMovements = this.enhanceMovesForPMDecisionCheck(standardMovements, player, currentSpace);
+      console.log('MovementEngine: Enhanced movements for PM-DECISION-CHECK:', enhancedMovements.length);
+      
+      return enhancedMovements;
     }
   }
   
@@ -460,7 +465,7 @@ class MovementEngine {
   }
   
   /**
-   * Parse logic question from space column text
+   * Parse logic question from space column text - FIXED VERSION
    * @param {string} questionText - Raw question text from CSV
    * @param {Object} spaceData - Space data for context
    * @returns {Object|null} Parsed question data
@@ -475,27 +480,36 @@ class MovementEngine {
     const question = parts[0].trim() + '?';
     const answersText = parts[1].trim();
     
-    // Look for YES and NO patterns
+    // Look for YES pattern
     const yesIndex = answersText.indexOf('YES -');
-    let noIndex = answersText.indexOf(' NO -');
-    
-    // If " NO -" not found, try "NO -" at start or after space
-    if (noIndex === -1) {
-      noIndex = answersText.indexOf('NO -');
-      if (noIndex > 0 && answersText[noIndex - 1] !== ' ') {
-        noIndex = -1;
-      }
-    }
-    
-    if (yesIndex === -1 || noIndex === -1) {
-      console.warn('MovementEngine: Parse failed - yesIndex:', yesIndex, 'noIndex:', noIndex);
+    if (yesIndex === -1) {
+      console.warn('MovementEngine: Parse failed - no YES found in:', answersText);
       return null;
     }
     
-    let yesDestination = answersText.substring(yesIndex + 5, noIndex).trim();
-    let noDestination = answersText.substring(noIndex + 4).trim();
+    // CRITICAL FIX: Find the correct " NO -" pattern
+    // Use lastIndexOf to get the actual NO answer, not one embedded in destination names
+    let noIndex = answersText.lastIndexOf(' NO -');
     
-    // CRITICAL FIX: Remove trailing " -" if present (CSV formatting artifact)
+    // If lastIndexOf didn't work, try finding "NO -" at the start
+    if (noIndex === -1) {
+      const startNoIndex = answersText.indexOf('NO -');
+      if (startNoIndex === 0) {
+        noIndex = 0;
+      }
+    }
+    
+    if (noIndex === -1) {
+      console.warn('MovementEngine: Parse failed - no NO found in:', answersText);
+      console.warn('MovementEngine: yesIndex:', yesIndex, 'noIndex:', noIndex);
+      return null;
+    }
+    
+    // Extract destinations
+    let yesDestination = answersText.substring(yesIndex + 5, noIndex).trim();
+    let noDestination = answersText.substring(noIndex + (noIndex === 0 ? 3 : 4)).trim();
+    
+    // Remove trailing " -" if present (CSV formatting artifact)
     if (yesDestination.endsWith(' -')) {
       yesDestination = yesDestination.slice(0, -2).trim();
     }
@@ -514,6 +528,11 @@ class MovementEngine {
       if (spaceRef) noDestination = spaceRef;
     }
     
+    console.log('MovementEngine: Parsed logic question successfully:');
+    console.log('  Question:', question);
+    console.log('  YES destination:', yesDestination);
+    console.log('  NO destination:', noDestination);
+    
     return {
       question: question,
       yes: yesDestination,
@@ -522,7 +541,7 @@ class MovementEngine {
   }
   
   /**
-   * Handle logic choice selection
+   * Handle logic choice selection - FIXED to properly detect questions vs destinations
    * @param {Object} player - Player object
    * @param {string} spaceName - Current space name
    * @param {boolean} choice - true for YES, false for NO
@@ -559,41 +578,115 @@ class MovementEngine {
     
     const destination = choice ? questionData.yes : questionData.no;
     
-    // Check if destination is another question (Space X) or final destination
-    if (destination.includes('Space ')) {
-      const spaceMatch = destination.match(/Space (\d+)/);
-      if (spaceMatch) {
-        const nextQuestionNum = parseInt(spaceMatch[1]);
-        player.logicState[spaceName].currentQuestion = nextQuestionNum;
+    console.log('MovementEngine: Logic choice made:', choice ? 'YES' : 'NO');
+    console.log('MovementEngine: Raw destination:', destination);
+    
+    // CRITICAL FIX: Check if destination contains a question (has "?") - this means it's another question
+    if (destination.includes('?')) {
+      console.log('MovementEngine: Destination contains "?", treating as another question:', destination);
+      // This is another question - parse it and continue in logic space
+      const newQuestionData = this.parseLogicQuestion(destination, spaceData);
+      if (newQuestionData) {
+        // Increment question number for tracking
+        const currentQuestionNum = player.logicState[spaceName].currentQuestion;
+        player.logicState[spaceName].currentQuestion = currentQuestionNum + 1;
+        
+        console.log('MovementEngine: Successfully parsed next question, staying in logic space');
         return {
           type: 'nextQuestion',
-          questionNumber: nextQuestionNum,
-          nextQuestion: this.getCurrentLogicQuestion(player, spaceData)
+          questionNumber: currentQuestionNum + 1,
+          nextQuestion: newQuestionData
         };
+      } else {
+        console.warn('MovementEngine: Failed to parse question from destination:', destination);
       }
     }
     
-    // Final destination - handle multiple destinations separated by " or "
-    const destinations = destination.includes(' or ') ? 
-      destination.split(' or ').map(d => d.trim()) : [destination];
+    // FALLBACK: Check if destination is a Space X reference that needs resolution
+    if (destination.includes('Space ')) {
+      console.log('MovementEngine: Destination contains "Space", checking if it\'s a reference:', destination);
+      const spaceMatch = destination.match(/Space (\d+)/);
+      if (spaceMatch) {
+        const nextQuestionNum = parseInt(spaceMatch[1]);
+        const nextQuestionText = spaceData[`Space ${nextQuestionNum}`];
+        console.log(`MovementEngine: Looking up Space ${nextQuestionNum}:`, nextQuestionText);
+        
+        if (nextQuestionText && nextQuestionText.includes('?')) {
+          // It's another question
+          console.log('MovementEngine: Space reference contains question, continuing in logic space');
+          player.logicState[spaceName].currentQuestion = nextQuestionNum;
+          return {
+            type: 'nextQuestion',
+            questionNumber: nextQuestionNum,
+            nextQuestion: this.getCurrentLogicQuestion(player, spaceData)
+          };
+        } else {
+          console.log('MovementEngine: Space reference does not contain question, treating as final destination');
+        }
+      }
+    }
     
-    // Clean up logic state
+    console.log('MovementEngine: Treating destination as final space destination(s):', destination);
+    
+    // PART 2 FIX: Handle "or" in final destinations
+    let destinationOptions;
+    if (destination.includes(' or ')) {
+      // Split destinations separated by " or "
+      destinationOptions = destination.split(' or ').map(d => d.trim());
+      console.log('MovementEngine: Found multiple destinations with "or":', destinationOptions);
+    } else {
+      // Single destination
+      destinationOptions = [destination];
+      console.log('MovementEngine: Single destination:', destinationOptions);
+    }
+    
+    // Process each destination option
+    const processedDestinations = destinationOptions.map(dest => {
+      const cleanDest = this.extractSpaceName(dest);
+      const space = this.findSpaceByName(cleanDest);
+      
+      if (!space) {
+        console.warn('MovementEngine: Could not find space for destination:', dest, '-> cleaned:', cleanDest);
+        return null;
+      }
+      
+      // CRITICAL FIX: Use space name as ID for logic destinations
+      // This ensures executePlayerMove can find the space properly
+      return {
+        id: space.name, // Use actual space name, not generated ID
+        name: space.name,
+        type: this.getSpaceType(space.name),
+        description: dest, // Keep original description with any extra text
+        visitType: this.getVisitType(player, space),
+        fromLogicSpace: true
+      };
+    }).filter(Boolean); // Remove any null entries
+    
+    console.log('MovementEngine: Processed destinations:', processedDestinations.length, 'valid options');
+    
+    // FIXED: For FDNY logic spaces, return destinations as selectable options requiring "end turn"
+    // instead of immediately processing them
+    if (spaceName === 'REG-FDNY-FEE-REVIEW') {
+      console.log('MovementEngine: FDNY logic space - returning destinations as selectable options');
+      
+      // Don't clean up logic state yet - keep it until player actually moves
+      // This allows proper tracking of the logic flow
+      
+      return {
+        type: 'selectableDestinations',
+        destinations: processedDestinations,
+        hasMultipleOptions: processedDestinations.length > 1,
+        requiresEndTurn: true // Flag indicating these require "end turn" button
+      };
+    }
+    
+    // For other logic spaces, clean up logic state and process immediately
     delete player.logicState[spaceName];
     
     return {
       type: 'finalDestination',
-      destinations: destinations.map(dest => {
-        const cleanDest = this.extractSpaceName(dest);
-        const space = this.findSpaceByName(cleanDest);
-        return space ? {
-          id: space.id || this.generateSpaceId(space.name),
-          name: space.name,
-          type: this.getSpaceType(space.name),
-          description: dest,
-          visitType: this.getVisitType(player, space),
-          fromLogicSpace: true
-        } : null;
-      }).filter(Boolean)
+      destinations: processedDestinations,
+      hasMultipleOptions: processedDestinations.length > 1
     };
   }
   
@@ -743,7 +836,7 @@ class MovementEngine {
   }
   
   /**
-   * Check if a destination conflicts with previous single choice decisions
+   * Check if a destination conflicts with previous single choice decisions - WITH AUDIT OVERRIDE
    * @param {Object} player - Player object
    * @param {string} destination - Destination to check
    * @returns {boolean} True if there's a conflict
@@ -751,6 +844,18 @@ class MovementEngine {
   conflictsWithSingleChoice(player, destination) {
     if (!player.singleChoices || !this.gameStateManager.spaces) {
       return false;
+    }
+    
+    // AUDIT OVERRIDE: If player is in audit, allow slow path access regardless of original choice
+    if (this.isPlayerInAudit(player) && destination === 'REG-DOB-PLAN-EXAM') {
+      console.log(`MovementEngine: Allowing ${destination} - player is in audit, overriding single choice restriction`);
+      return false;
+    }
+    
+    // AUDIT RESTRICTION: If player is in audit, block fast path access
+    if (this.isPlayerInAudit(player) && destination === 'REG-DOB-PROF-CERT') {
+      console.log(`MovementEngine: Blocking ${destination} - player is in audit, must use slow path`);
+      return true;
     }
     
     // Get all single choice spaces and their destinations
@@ -1096,6 +1201,187 @@ class MovementEngine {
   }
   
   /**
+   * Helper to extract base name without visit type - FROM SPACEINFOMOVES
+   * @param {string} spaceId - The space ID or name
+   * @returns {string} - The base name without visit type
+   */
+  extractBaseName(spaceId) {
+    if (!spaceId) return '';
+    // Remove visit type suffix and get just the base name
+    return spaceId.split('-first')[0].split('-subsequent')[0];
+  }
+  
+  /**
+   * Gets moves for a specific space from game data - FROM SPACEINFOMOVES
+   * @param {Object} space - The space to get moves for
+   * @returns {Array} - Array of move objects
+   */
+  getMovesForSpace(space) {
+    console.log("MovementEngine: Getting moves for space:", space.name);
+    
+    if (!space || !this.gameStateManager || !this.gameStateManager.spaces) {
+      console.log("MovementEngine: Missing space or GameStateManager");
+      return [];
+    }
+    
+    // Find the space data with "First" visit type (original moves)
+    const spaceData = this.gameStateManager.spaces.find(s => 
+      s.name === space.name && s['Visit Type'] === 'First'
+    );
+    
+    if (!spaceData) {
+      console.log("MovementEngine: No space data found for:", space.name);
+      return [];
+    }
+    
+    console.log("MovementEngine: Found space data:", spaceData);
+    
+    // Extract destinations from Space 1-5 columns
+    const rawDestinations = [
+      spaceData["Space 1"],
+      spaceData["Space 2"], 
+      spaceData["Space 3"],
+      spaceData["Space 4"],
+      spaceData["Space 5"]
+    ].filter(dest => dest && dest.toString().trim() !== "" && dest !== "null" && dest !== "n/a");
+    
+    console.log("MovementEngine: Raw destinations from original space:", rawDestinations);
+    
+    // Clean and validate destinations
+    const moves = [];
+    rawDestinations.forEach(dest => {
+      const destStr = dest.toString();
+      
+      // Skip invalid entries
+      if (destStr === "n/a" || destStr.toLowerCase().includes("n/a")) {
+        return;
+      }
+      
+      // Extract space name (part before " - " if it exists)
+      let spaceName = destStr;
+      if (destStr.includes(" - ")) {
+        spaceName = destStr.split(" - ")[0].trim();
+      }
+      
+      // Skip PM-DECISION-CHECK to prevent loops
+      if (spaceName === "PM-DECISION-CHECK") {
+        return;
+      }
+      
+      // Validate that this is a real space name
+      const destinationSpace = this.gameStateManager.spaces.find(s => s.name === spaceName);
+      if (destinationSpace) {
+        moves.push({
+          id: spaceName.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').toLowerCase(),
+          name: spaceName,
+          description: destStr,
+          type: this.getSpaceType(spaceName),
+          visitType: this.getVisitType({ visitedSpaces: new Set() }, { name: spaceName }),
+          fromOriginalSpace: true
+        });
+        console.log("MovementEngine: Added move from original space:", spaceName);
+      } else {
+        console.log("MovementEngine: Space not found:", spaceName);
+      }
+    });
+    
+    console.log("MovementEngine: Final moves from original space:", moves.length, "moves");
+    return moves;
+  }
+  
+  /**
+   * Enhance movements for PM-DECISION-CHECK spaces - FROM SPACEINFOMOVES LOGIC
+   * @param {Array} movements - Current movements
+   * @param {Object} player - Player object
+   * @param {Object} currentSpace - Current space data
+   * @returns {Array} Enhanced movements
+   */
+  enhanceMovesForPMDecisionCheck(movements, player, currentSpace) {
+    console.log('MovementEngine: Enhancing moves for PM-DECISION-CHECK space');
+    
+    // Only process PM-DECISION-CHECK spaces
+    if (!currentSpace || currentSpace.name !== 'PM-DECISION-CHECK') {
+      return movements;
+    }
+    
+    // Check if player has used CHEAT-BYPASS (point of no return)
+    if (player.hasUsedCheatBypass || (player.properties && player.properties.hasUsedCheatBypass)) {
+      console.log('MovementEngine: Player has used CHEAT-BYPASS, no return possible');
+      return movements;
+    }
+    
+    // Check if player came from a side quest space
+    const previousSpaceId = player.previousPosition;
+    if (!previousSpaceId) {
+      console.log('MovementEngine: No previous space found');
+      return movements;
+    }
+    
+    const previousSpace = this.gameStateManager.findSpaceById(previousSpaceId);
+    if (!previousSpace) {
+      console.log('MovementEngine: Previous space not found');
+      return movements;
+    }
+    
+    // Use Path column to determine if coming from side quest
+    const cameFromQuestSide = previousSpace.Path && 
+      previousSpace.Path.toLowerCase().includes('side quest');
+    
+    console.log(`MovementEngine: Previous space: ${previousSpace.name} (Path: ${previousSpace.Path}), Coming from side quest: ${cameFromQuestSide}`);
+    
+    if (!cameFromQuestSide && previousSpace.Path && previousSpace.Path.toLowerCase() === 'main') {
+      // Coming from main path - store originalSpaceId if not already stored
+      if (!player.properties) {
+        player.properties = {};
+      }
+      
+      if (!player.properties.originalSpaceId) {
+        player.properties.originalSpaceId = previousSpaceId;
+        console.log(`MovementEngine: Stored originalSpaceId: ${previousSpaceId}`);
+        
+        // Save the state
+        if (this.gameStateManager.saveState) {
+          this.gameStateManager.saveState();
+        }
+      }
+      
+      return movements; // Only show standard moves for first visit from main path
+    } else if (cameFromQuestSide) {
+      // Coming from quest side - get stored original space moves
+      const originalSpaceId = player.properties?.originalSpaceId;
+      console.log(`MovementEngine: Retrieved original space ID: ${originalSpaceId}`);
+      
+      if (originalSpaceId) {
+        // Find original space
+        const originalSpace = this.gameStateManager.findSpaceById(originalSpaceId);
+        
+        if (originalSpace) {
+          console.log(`MovementEngine: Found original space: ${originalSpace.name}`);
+          
+          // Get moves from original space
+          const originalMoves = this.getMovesForSpace(originalSpace);
+          console.log(`MovementEngine: Found ${originalMoves.length} moves from original space`);
+          
+          // Add label to original space moves
+          originalMoves.forEach(move => {
+            move.description = `${move.description} (Return to ${this.extractBaseName(originalSpace.name)})`;
+            move.fromOriginalSpace = true;
+            move.originalSpaceId = originalSpaceId;
+          });
+          
+          // Show both standard moves and original space moves
+          return [...movements, ...originalMoves];
+        }
+      }
+      
+      console.log("MovementEngine: No original space found, showing standard moves only");
+      return movements; // Fallback to standard moves
+    }
+    
+    return movements;
+  }
+  
+  /**
    * Get movements from {ORIGINAL_SPACE} token
    * @param {Object} player - Player object  
    * @returns {Array} Array of movement options from original space
@@ -1339,7 +1625,7 @@ class MovementEngine {
   }
   
   /**
-   * Execute a complete turn transition with space effects and visit tracking
+   * Execute a complete turn transition with space effects and visit tracking - WITH AUDIT MANAGEMENT
    * @param {Object} player - Player object
    * @param {string} destinationId - Destination space ID
    * @returns {Object} Turn completion result
@@ -1350,13 +1636,46 @@ class MovementEngine {
       return { success: false, error: 'Invalid parameters' };
     }
     
+    console.log(`MovementEngine: executePlayerMove called with destinationId: '${destinationId}'`);
+    
     const currentSpace = this.getCurrentSpaceData(player);
-    const destinationSpace = this.gameStateManager.findSpaceById(destinationId) || 
-      this.findSpaceByName(destinationId);
+    console.log('MovementEngine: Current space:', currentSpace ? currentSpace.name : 'none');
+    
+    // ENHANCED SPACE LOOKUP: Try multiple methods to find destination
+    let destinationSpace = null;
+    
+    // Try 1: Direct findSpaceById
+    destinationSpace = this.gameStateManager.findSpaceById(destinationId);
+    console.log('MovementEngine: findSpaceById result:', !!destinationSpace);
+    
+    // Try 2: Direct findSpaceByName
+    if (!destinationSpace) {
+      destinationSpace = this.findSpaceByName(destinationId);
+      console.log('MovementEngine: findSpaceByName result:', !!destinationSpace);
+    }
+    
+    // Try 3: Search in spaces array by name
+    if (!destinationSpace && this.gameStateManager.spaces) {
+      destinationSpace = this.gameStateManager.spaces.find(s => s.name === destinationId);
+      console.log('MovementEngine: Direct spaces array search result:', !!destinationSpace);
+    }
     
     if (!destinationSpace) {
       console.error('MovementEngine: Destination space not found:', destinationId);
+      console.error('MovementEngine: Available space names:', this.gameStateManager.spaces.map(s => s.name).slice(0, 10));
       return { success: false, error: 'Destination not found' };
+    }
+    
+    console.log('MovementEngine: Found destination space:', destinationSpace.name);
+    
+    // AUDIT MANAGEMENT: Check for audit entry
+    if (destinationSpace.name === 'REG-DOB-AUDIT') {
+      this.enterAudit(player);
+    }
+    
+    // AUDIT MANAGEMENT: Check for audit resolution
+    if (this.isPlayerInAudit(player) && this.shouldResolveAudit(currentSpace, destinationSpace)) {
+      this.resolveAudit(player);
     }
     
     // Record single choice if applicable
@@ -1364,24 +1683,36 @@ class MovementEngine {
       this.recordSingleChoice(player, currentSpace.name, destinationSpace.name);
     }
     
-    // Mark current space as visited before leaving
-    this.markSpaceAsVisited(player, player.position);
-    
-    // Update player position
-    const oldPosition = player.position;
-    
-    // Update previousSpace for {ORIGINAL_SPACE} tracking
+    // Update previousSpace for {ORIGINAL_SPACE} tracking BEFORE moving
     if (currentSpace && this.getSpaceType(currentSpace.name) === 'main') {
       player.previousSpace = currentSpace.name; // Store the SPACE NAME, not position ID
       console.log('MovementEngine: Updated previousSpace to:', player.previousSpace);
     }
     
-    player.position = destinationSpace.id || destinationSpace.name;
+    // Store old position for return value
+    const oldPosition = player.position;
+    
+    // FIXED: Use GameStateManager.movePlayer() for proper position tracking
+    // This ensures previousPosition is set correctly and all movement logic is consistent
+    console.log(`MovementEngine: Using GameStateManager.movePlayer() to move from '${oldPosition}' to '${destinationSpace.id}'`);
+    this.gameStateManager.movePlayer(player.id, destinationSpace.id);
+    
+    // Get the updated position after GameStateManager processes the move
+    const newPosition = player.position;
+    console.log(`MovementEngine: Player position tracked: '${oldPosition}' -> '${newPosition}', previousPosition: '${player.previousPosition}'`);
     
     // Apply space effects at destination
     const destinationSpaceData = this.getCurrentSpaceData(player);
     if (destinationSpaceData) {
       this.applySpaceEffects(player, destinationSpaceData, this.movementState.diceResult);
+    }
+    
+    // CRITICAL FIX: Clear logic state when leaving logic spaces
+    if (currentSpace && this.getSpaceType(currentSpace.name) === 'logic') {
+      console.log('MovementEngine: Clearing logic state when leaving logic space');
+      if (player.logicState && player.logicState[currentSpace.name]) {
+        delete player.logicState[currentSpace.name];
+      }
     }
     
     // Reset movement state for new turn
@@ -1491,6 +1822,76 @@ class MovementEngine {
   }
   
   /**
+   * Check if player is currently in audit
+   * @param {Object} player - Player object
+   * @returns {boolean} True if player is in audit
+   */
+  isPlayerInAudit(player) {
+    return player.auditStatus && player.auditStatus.inAudit === true;
+  }
+  
+  /**
+   * Enter audit state for a player
+   * @param {Object} player - Player object
+   */
+  enterAudit(player) {
+    // Initialize audit status if not present
+    if (!player.auditStatus) {
+      player.auditStatus = {};
+    }
+    
+    // Store original path choice
+    const originalChoice = player.singleChoices ? player.singleChoices['REG-DOB-TYPE-SELECT'] : null;
+    
+    player.auditStatus = {
+      inAudit: true,
+      originalPath: originalChoice,
+      auditSpace: 'REG-DOB-AUDIT',
+      entryTime: Date.now()
+    };
+    
+    console.log(`MovementEngine: Player ${player.name} entered audit. Original path: ${originalChoice}`);
+  }
+  
+  /**
+   * Check if audit should be resolved based on movement
+   * @param {Object} currentSpace - Current space data
+   * @param {Object} destinationSpace - Destination space data
+   * @returns {boolean} True if audit should be resolved
+   */
+  shouldResolveAudit(currentSpace, destinationSpace) {
+    // Audit is resolved when moving away from REG-DOB-PLAN-EXAM after completing audit process
+    // This is when player has successfully resolved the audit issues
+    return currentSpace && 
+           currentSpace.name === 'REG-DOB-PLAN-EXAM' && 
+           destinationSpace && 
+           destinationSpace.name !== 'REG-DOB-PLAN-EXAM' &&
+           destinationSpace.name !== 'REG-DOB-AUDIT';
+  }
+  
+  /**
+   * Resolve audit state for a player
+   * @param {Object} player - Player object
+   */
+  resolveAudit(player) {
+    if (!this.isPlayerInAudit(player)) {
+      return;
+    }
+    
+    const originalPath = player.auditStatus.originalPath;
+    
+    // Clear audit status
+    player.auditStatus = {
+      inAudit: false,
+      originalPath: null,
+      auditSpace: null,
+      resolvedTime: Date.now()
+    };
+    
+    console.log(`MovementEngine: Player ${player.name} resolved audit. Returning to original path: ${originalPath}`);
+  }
+  
+  /**
    * Get debug information
    * @returns {Object} Debug information
    */
@@ -1506,7 +1907,8 @@ class MovementEngine {
         id: currentPlayer.id,
         name: currentPlayer.name,
         position: currentPlayer.position,
-        visitedSpaces: currentPlayer.visitedSpaces ? Array.from(currentPlayer.visitedSpaces) : []
+        visitedSpaces: currentPlayer.visitedSpaces ? Array.from(currentPlayer.visitedSpaces) : [],
+        auditStatus: currentPlayer.auditStatus || null
       } : null
     };
   }
@@ -1565,4 +1967,4 @@ if (window.GameStateManager) {
   waitForGameStateManager();
 }
 
-console.log('MovementEngine.js code execution finished - Fixed logic choice validation [2025-05-30-007]');
+console.log('MovementEngine.js code execution finished - Fixed position tracking by using GameStateManager.movePlayer() [2025-06-01-003]');

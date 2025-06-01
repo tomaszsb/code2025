@@ -103,19 +103,49 @@ class TurnManager {
   /**
    * Handle ending the current turn and transitioning to the next player
    * PHASE 4: Now uses MovementEngine for complete turn completion logic
+   * FIXED: Added support for FDNY-style selectable destinations
    */
   handleEndTurn = () => {
     console.log('TurnManager: Ending current turn');
     const { selectedMove, availableMoves, hasSelectedMove } = this.gameBoard.state;
     const currentPlayer = this.getCurrentPlayer();
     
+    // FIXED: Check for FDNY-style selected destination from SpaceInfo component
+    let moveToExecute = selectedMove;
+    let shouldExecuteMove = selectedMove && hasSelectedMove;
+    
+    // Check if there's a selected destination from FDNY logic space
+    if (!shouldExecuteMove && this.gameBoard.spaceInfo && this.gameBoard.spaceInfo.state) {
+      const spaceInfoState = this.gameBoard.spaceInfo.state;
+      if (spaceInfoState.selectedDestination) {
+        console.log('TurnManager: Found FDNY-style selected destination:', spaceInfoState.selectedDestination);
+        moveToExecute = spaceInfoState.selectedDestination.id;
+        shouldExecuteMove = true;
+        
+        // Clear the FDNY selection state
+        this.gameBoard.spaceInfo.setState({
+          selectableDestinations: null,
+          selectedDestination: null
+        });
+        
+        // Also clean up logic state in MovementEngine
+        if (window.movementEngine && currentPlayer) {
+          const currentSpaceData = window.movementEngine.getCurrentSpaceData(currentPlayer);
+          if (currentSpaceData && currentPlayer.logicState && currentPlayer.logicState[currentSpaceData.name]) {
+            delete currentPlayer.logicState[currentSpaceData.name];
+            console.log('TurnManager: Cleaned up logic state for FDNY space');
+          }
+        }
+      }
+    }
+    
     // If a move was selected and the hasSelectedMove flag is true, execute it now when ending the turn
-    if (selectedMove && hasSelectedMove && currentPlayer) {
-      console.log('TurnManager: Executing selected move via MovementEngine:', selectedMove);
+    if (moveToExecute && shouldExecuteMove && currentPlayer) {
+      console.log('TurnManager: Executing selected move via MovementEngine:', moveToExecute);
       
       // PHASE 4: Use MovementEngine for complete turn completion with all effects
       if (window.movementEngine && window.movementEngine.isReady()) {
-        const moveResult = window.movementEngine.executePlayerMove(currentPlayer, selectedMove);
+        const moveResult = window.movementEngine.executePlayerMove(currentPlayer, moveToExecute);
         
         if (moveResult.success) {
           console.log(`TurnManager: Move executed successfully from ${moveResult.fromSpace} to ${moveResult.toSpace}`);
@@ -131,12 +161,12 @@ class TurnManager {
         } else {
           console.error('TurnManager: Move execution failed:', moveResult.error);
           // Fallback to old method if MovementEngine fails
-          window.GameStateManager.movePlayer(currentPlayer.id, selectedMove);
+          window.GameStateManager.movePlayer(currentPlayer.id, moveToExecute);
         }
       } else {
         console.warn('TurnManager: MovementEngine not ready, using fallback method');
         // Fallback to old method if MovementEngine not available
-        window.GameStateManager.movePlayer(currentPlayer.id, selectedMove);
+        window.GameStateManager.movePlayer(currentPlayer.id, moveToExecute);
       }
     } else {
       // If there are no available moves, that's okay - the player might have just drawn cards

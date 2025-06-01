@@ -28,6 +28,84 @@ window.SpaceInfoMoves = {
       return null;
     }
 
+    // FIXED: Check if we have selectable destinations (FDNY-style requiring "end turn")
+    if (this.state && this.state.selectableDestinations && this.state.selectableDestinations.length > 0) {
+      console.log('SpaceInfoMoves: DEBUG - Rendering selectable destination buttons, destinations:', this.state.selectableDestinations);
+      
+      const self = this; // Capture this context
+      const selectedDest = this.state.selectedDestination;
+      
+      return React.createElement('div', { className: 'space-available-moves logic-selectable-destinations' }, [
+        React.createElement('div', { key: 'label', className: 'space-section-label' }, '🎯 Select your destination:'),
+        React.createElement('div', { key: 'buttons', className: 'logic-destination-buttons' }, 
+          this.state.selectableDestinations.map((destination, index) => {
+            console.log('SpaceInfoMoves: DEBUG - Creating selectable button for destination:', destination);
+            
+            const isSelected = selectedDest && selectedDest.id === destination.id;
+            
+            return React.createElement('button', {
+              key: index,
+              className: `move-button logic-destination-btn ${isSelected ? 'selected' : ''}`,
+              onClick: function() {
+                console.log('SpaceInfoMoves: SELECTABLE BUTTON CLICKED! Destination:', destination.name, destination.id);
+                // Set selection but don't move yet - requires "end turn" button
+                self.setState({ selectedDestination: destination });
+                console.log('SpaceInfoMoves: Destination selected, waiting for end turn');
+              },
+              title: destination.description || destination.name
+            }, destination.description || destination.name);
+          })
+        ),
+        selectedDest ? React.createElement('div', { key: 'selected-info', className: 'selected-destination-info' }, 
+          `Selected: ${selectedDest.name} (Press "End Turn" to move)`
+        ) : React.createElement('div', { key: 'instruction', className: 'selection-instruction' }, 
+          'Click a destination above, then press "End Turn" to move'
+        )
+      ]);
+    }
+
+    // FIXED: Check if we have final destinations to display
+    if (this.state && this.state.logicDestinations && this.state.logicDestinations.length > 0) {
+      console.log('SpaceInfoMoves: DEBUG - Rendering destination buttons, destinations:', this.state.logicDestinations);
+      
+      const self = this; // Capture this context
+      
+      return React.createElement('div', { className: 'space-available-moves logic-destinations' }, [
+        React.createElement('div', { key: 'label', className: 'space-section-label' }, '🎯 Logic Complete! Choose your destination:'),
+        React.createElement('div', { key: 'buttons', className: 'logic-destination-buttons' }, 
+          this.state.logicDestinations.map((destination, index) => {
+            console.log('SpaceInfoMoves: DEBUG - Creating button for destination:', destination);
+            
+            return React.createElement('button', {
+              key: index,
+              className: 'move-button logic-destination-btn',
+              onClick: function() {
+              console.log('SpaceInfoMoves: BUTTON CLICKED! Destination:', destination.name, destination.id);
+              try {
+              const { onMoveSelect } = self.props;
+              console.log('SpaceInfoMoves: onMoveSelect available:', !!onMoveSelect);
+              if (onMoveSelect) {
+              console.log('SpaceInfoMoves: Calling onMoveSelect with ID:', destination.id);
+              onMoveSelect(destination.id);
+              console.log('SpaceInfoMoves: onMoveSelect called successfully');
+              }
+              // FIXED: Defer the local setState to prevent timing issues with GameBoard state update
+              console.log('SpaceInfoMoves: Clearing logicDestinations (deferred)');
+              setTimeout(() => {
+                  self.setState({ logicDestinations: null });
+              }, 50); // Small delay to allow GameBoard state to update first
+              } catch (error) {
+                  console.error('SpaceInfoMoves: Error in button click handler:', error);
+            }
+          },
+              title: destination.description || destination.name
+            }, destination.description || destination.name);
+          })
+        )
+      ]);
+    }
+
+    // EXISTING: Show current question if no destinations
     const questionData = window.LogicSpaceManager.getCurrentLogicQuestion();
     
     if (!questionData) {
@@ -80,6 +158,9 @@ window.SpaceInfoMoves = {
       } else if (result.type === 'finalDestination') {
         // Show destination selection or auto-move
         this.handleLogicDestinations(result.destinations);
+      } else if (result.type === 'selectableDestinations') {
+        // FIXED: Handle FDNY-style destinations that require "end turn" button
+        this.handleSelectableDestinations(result.destinations);
       }
     }
   },
@@ -89,6 +170,8 @@ window.SpaceInfoMoves = {
    * @param {Array} destinations - Available destinations
    */
   handleLogicDestinations: function(destinations) {
+    console.log('SpaceInfoMoves: handleLogicDestinations called with:', destinations);
+    
     if (!destinations || destinations.length === 0) {
       console.error('SpaceInfoMoves: No destinations from logic space');
       return;
@@ -96,18 +179,42 @@ window.SpaceInfoMoves = {
 
     if (destinations.length === 1) {
       // Single destination - move automatically
+      console.log('SpaceInfoMoves: Single destination, moving automatically to:', destinations[0]);
       const { onMoveSelect } = this.props;
       if (onMoveSelect) {
         onMoveSelect(destinations[0].id);
       }
     } else {
       // Multiple destinations - let UI show choices
-      // This will be handled by the next render cycle
+      console.log('SpaceInfoMoves: Multiple destinations, setting state for UI display');
       this.setState(prevState => ({ 
         renderKey: prevState.renderKey + 1,
         logicDestinations: destinations 
       }));
+      console.log('SpaceInfoMoves: State updated with logicDestinations');
     }
+  },
+
+  /**
+   * Handle selectable destinations that require "end turn" button (FDNY-style)
+   * @param {Array} destinations - Available destinations
+   */
+  handleSelectableDestinations: function(destinations) {
+    console.log('SpaceInfoMoves: handleSelectableDestinations called with:', destinations);
+    
+    if (!destinations || destinations.length === 0) {
+      console.error('SpaceInfoMoves: No selectable destinations from logic space');
+      return;
+    }
+
+    // Always show as selectable options requiring "end turn"
+    console.log('SpaceInfoMoves: Setting selectable destinations that require end turn');
+    this.setState(prevState => ({ 
+      renderKey: prevState.renderKey + 1,
+      selectableDestinations: destinations,
+      selectedDestination: null // Clear any previous selection
+    }));
+    console.log('SpaceInfoMoves: State updated with selectableDestinations');
   },
 
   /**
@@ -159,25 +266,22 @@ window.SpaceInfoMoves = {
       return null;
     }
     
-    // Get previous space
+    // Get previous space (quest path)
     const previousSpaceId = player.previousPosition;
-    if (!previousSpaceId) {
-      return null;
+    let previousSpaceName = null;
+    let cameFromQuestSide = false;
+    
+    if (previousSpaceId) {
+      const previousSpace = window.GameStateManager.findSpaceById(previousSpaceId);
+      if (previousSpace) {
+        previousSpaceName = this.extractBaseName(previousSpace.name);
+        // Check if player came from a side quest space using Path column
+        cameFromQuestSide = previousSpace.Path && 
+          previousSpace.Path.toLowerCase().includes('side quest');
+      }
     }
     
-    const previousSpace = window.GameStateManager.findSpaceById(previousSpaceId);
-    if (!previousSpace) {
-      return null;
-    }
-    
-    // Extract the base name without suffixes
-    const previousSpaceName = this.extractBaseName(previousSpace.name);
-    
-    // Check if player came from a side quest space using Path column
-    const cameFromQuestSide = previousSpace.Path && 
-      previousSpace.Path.toLowerCase().includes('side quest');
-    
-    // Get original space info (if it exists)
+    // Get original space info (main path)
     const originalSpaceId = player.properties?.originalSpaceId;
     let originalSpaceInfo = null;
     
@@ -188,21 +292,22 @@ window.SpaceInfoMoves = {
       }
     }
     
+    // FIXED: Always show both paths separately
     return React.createElement('div', { className: 'space-path-info-container' }, [
       React.createElement('div', { key: 'main', className: 'space-path-info main-path' }, [
         React.createElement('div', { key: 'label', className: 'path-info-label' }, 'Main Path:'),
         React.createElement('div', { key: 'content', className: 'path-info-content' }, 
           originalSpaceInfo ? 
-            `Your original space was ${originalSpaceInfo}.` : 
-            `You came from ${previousSpaceName}.`
+            `Your last main path location was ${originalSpaceInfo}.` : 
+            'No main path location recorded yet.'
         )
       ]),
       React.createElement('div', { key: 'quest', className: 'space-path-info quest-path' }, [
         React.createElement('div', { key: 'label', className: 'path-info-label' }, 'Quest Path:'),
         React.createElement('div', { key: 'content', className: 'path-info-content' }, 
-          cameFromQuestSide ? 
-            `You came from ${previousSpaceName}.` : 
-            'You are not on a quest yet.'
+          cameFromQuestSide && previousSpaceName ? 
+            `Your last quest path location was ${previousSpaceName}.` : 
+            'You are not coming from a quest path.'
         )
       ])
     ]);

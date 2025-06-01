@@ -243,6 +243,9 @@ class DiceManager {
     window.GameStateManager.hasRolledDice = true;
     console.log('DiceManager: Set hasRolledDice=true in both GameBoard state and GameStateManager');
     
+    // No longer show the separate DiceRoll component
+    // showDiceRoll: false, // Removed - no longer needed
+    
     // Wait for state update to complete before getting available moves
     setTimeout(() => {
       this.updateAvailableMovesAfterDiceRoll(outcomes, currentPlayer);
@@ -561,8 +564,16 @@ class DiceManager {
     this.pendingRequirements = {};
   }
   
-  // Handle roll dice button click
+  // Handle roll dice button click - now handles dice rolling directly
   handleRollDiceClick = () => {
+    console.log('DiceManager: Dice roll button clicked - handling directly');
+    
+    // Skip if gameBoard is not initialized
+    if (!this.gameBoard || !this.gameBoard.state) {
+      console.log('DiceManager: gameBoard or state not initialized in handleRollDiceClick');
+      return;
+    }
+    
     // Use SpaceSelectionManager to get selected space
     const selectedSpace = this.gameBoard.spaceSelectionManager?.getSelectedSpace();
     let spaceName;
@@ -591,18 +602,15 @@ class DiceManager {
             const cardText = currentSpace[cardType];
             if (cardText && typeof cardText === 'string' && cardText.includes('if you roll')) {
               console.log(`DiceManager: Found conditional dice roll requirement in ${cardType}: ${cardText}`);
-              // Use the new method that doesn't cause infinite loops
               this.saveConditionalRequirement(currentSpace, cardType, cardText);
             }
           }
         } else {
-          // Fallback only if we can't find the current space
           spaceName = "ARCH-INITIATION";
           visitType = 'first';
           console.log('DiceManager: Falling back to ARCH-INITIATION for dice roll');
         }
       } else {
-        // Fallback if no current player
         spaceName = "ARCH-INITIATION";
         visitType = 'first';
       }
@@ -610,13 +618,11 @@ class DiceManager {
     
     // Make sure we always have a valid visit type
     if (!visitType || (visitType !== 'first' && visitType !== 'subsequent')) {
-      // Extract visit type from ID as a last resort
       if (spaceId && (spaceId.endsWith('-first') || spaceId.includes('-first-'))) {
         visitType = 'first';
       } else if (spaceId && (spaceId.endsWith('-subsequent') || spaceId.includes('-subsequent-'))) {
         visitType = 'subsequent';
       } else {
-        // Final fallback
         visitType = 'first';
       }
     }
@@ -629,29 +635,147 @@ class DiceManager {
       spaceId: spaceId
     });
     
-    // Skip if gameBoard is not initialized
-    if (!this.gameBoard || !this.gameBoard.state) {
-      console.log('DiceManager: gameBoard or state not initialized in handleRollDiceClick');
-      return;
-    }
+    // Perform the dice roll directly
+    this.performDirectDiceRoll(spaceName, visitType);
+  }
+  
+  // New method to handle dice rolling directly without separate component
+  performDirectDiceRoll = (spaceName, visitType) => {
+    console.log('DiceManager: Performing direct dice roll for', spaceName, visitType);
     
-    // Temporary compatibility: Update GameBoard state until all components are refactored
-    this.gameBoard.setState({
-      showDiceRoll: true,
-      diceRollSpace: spaceName,
-      diceRollVisitType: visitType
-    }, () => {
-      // After setState completes, use the ref to call rollDice on the DiceRoll component
-      if (this.gameBoard.diceRollRef && this.gameBoard.diceRollRef.current) {
-        console.log('DiceManager: Automatically rolling dice after showing component');
-        // Add a small delay to ensure the component is fully rendered
-        setTimeout(() => {
-          this.gameBoard.diceRollRef.current.rollDice();
-        }, 100);
-      }
+    // Set rolling state
+    this.gameBoard.setState({ 
+      isRollingDice: true,
+      hasRolledDice: false // Ensure this is false while rolling
     });
     
-    console.log('DiceManager: Showing dice roll for', spaceName, visitType);
+    // Simulate dice roll animation delay (1.2 seconds like the original DiceRoll component)
+    setTimeout(() => {
+      // Generate random number between 1 and 6
+      const result = Math.floor(Math.random() * 6) + 1;
+      console.log('DiceManager: Direct dice roll result:', result);
+      
+      // Process the dice roll outcome
+      const outcomes = this.processDiceRollOutcome(result, spaceName, visitType);
+      
+      // Complete the dice roll
+      this.completeDiceRoll(result, outcomes);
+      
+    }, 1200); // Match the animation timing from original DiceRoll component
+  }
+  
+  // Process dice roll outcome (moved from DiceRoll component)
+  processDiceRollOutcome = (rollResult, spaceName, visitType) => {
+    console.log('DiceManager: Processing direct roll', rollResult, 'for space', spaceName, 'visit type', visitType);
+    
+    // Get dice outcomes data
+    const diceRollData = this.gameBoard.state.diceRollData || [];
+    const diceOutcomes = diceRollData.filter(data => 
+      data['Space Name'] === spaceName && 
+      data['Visit Type'].toLowerCase() === visitType.toLowerCase()
+    );
+    
+    console.log('DiceManager: Available outcomes:', diceOutcomes);
+    
+    if (!diceOutcomes || diceOutcomes.length === 0) {
+      console.log('DiceManager: No outcomes available');
+      return { moves: [] };
+    }
+    
+    // Process outcomes
+    const outcomes = {};
+    
+    for (const outcomeData of diceOutcomes) {
+      const dieRollType = outcomeData['Die Roll'];
+      const outcomeValue = outcomeData[rollResult.toString()];
+      
+      console.log('DiceManager: Processing outcome type', dieRollType, 'value:', outcomeValue);
+      
+      if (outcomeValue && outcomeValue.trim() !== '' && outcomeValue !== 'n/a') {
+        if (dieRollType === 'W Cards Discard' || dieRollType === 'discard W Cards') {
+          outcomes.discardWCards = outcomeValue;
+          console.log('DiceManager: Detected W cards discard requirement:', outcomeValue);
+        } else {
+          outcomes[dieRollType] = outcomeValue;
+        }
+      }
+    }
+    
+    console.log('DiceManager: Processed outcomes:', outcomes);
+    
+    // Find available moves based on the Next Step outcome if it exists
+    let availableMoves = [];
+    if (outcomes['Next Step']) {
+      const nextStepValue = outcomes['Next Step'];
+      console.log('DiceManager: Finding spaces for Next Step:', nextStepValue);
+      
+      // Use DiceRollLogic to find the available spaces
+      if (window.DiceRollLogic && window.DiceRollLogic.findSpacesFromOutcome) {
+        availableMoves = window.DiceRollLogic.findSpacesFromOutcome(window.GameState, nextStepValue);
+        console.log('DiceManager: Found available moves:', availableMoves.map(m => m.name).join(', '));
+      }
+    }
+    
+    // Add moves to the outcomes object
+    outcomes.moves = availableMoves;
+    
+    console.log('DiceManager: processDiceRollOutcome completed');
+    return outcomes;
+  }
+  
+  // Complete dice roll processing
+  completeDiceRoll = (result, outcomes) => {
+    console.log('DiceManager: Completing dice roll with result:', result);
+    
+    // Update MovementEngine dice state immediately
+    if (window.setMovementEngineDiceResult) {
+      window.setMovementEngineDiceResult(result);
+      console.log('DiceManager: Updated MovementEngine dice state with result:', result);
+    }
+    
+    // Get current player
+    const currentPlayer = window.GameStateManager.getCurrentPlayer();
+    const currentPosition = currentPlayer ? currentPlayer.position : null;
+    
+    // Process W card requirements
+    this.processWCardRequirements(outcomes);
+    
+    // Process conditional card requirements
+    this.processConditionalCardRequirements(result, currentPlayer);
+    
+    // Update game state
+    this.gameBoard.setState({
+      isRollingDice: false,
+      diceOutcomes: outcomes,
+      lastDiceRoll: result,
+      hasRolledDice: true,
+      selectedSpace: currentPosition
+    });
+    
+    // Also update GameStateManager's hasRolledDice property
+    window.GameStateManager.hasRolledDice = true;
+    console.log('DiceManager: Set hasRolledDice=true in both GameBoard state and GameStateManager');
+    
+    // Dispatch event
+    window.GameStateManager.dispatchEvent('diceRolled', {
+      result: result,
+      outcomes: outcomes,
+      currentPlayer: currentPlayer,
+      currentPosition: currentPosition,
+      forDisplay: false,
+      hasSelectedMove: false,
+      selectedMove: null
+    });
+    
+    // Update available moves after a short delay
+    setTimeout(() => {
+      this.updateAvailableMovesAfterDiceRoll(outcomes, currentPlayer);
+    }, 100);
+    
+    // Process card draws
+    this.processCardDraws(outcomes, currentPlayer);
+    
+    console.log('DiceManager: Direct dice roll completed successfully');
   }
   
   // Event handler for playerMoved event

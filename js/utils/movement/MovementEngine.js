@@ -154,59 +154,7 @@ class MovementEngine {
     return spaceType;
   }
   
-  /**
-   * Find a space by name
-   * @param {string} spaceName - Name to search for
-   * @returns {Object|null} Space object or null
-   */
-  findSpaceByName(spaceName) {
-    if (!this.gameStateManager.spaces || !spaceName) return null;
-    
-    console.log('MovementEngine: Finding space by name:', spaceName);
-    
-    // First try exact match
-    let space = this.gameStateManager.spaces.find(s => s.name === spaceName);
-    console.log('MovementEngine: Exact match result:', !!space);
-    
-    // If not found, try normalized name match
-    if (!space) {
-      const normalizedName = this.extractSpaceName(spaceName);
-      console.log('MovementEngine: Trying normalized name:', normalizedName);
-      space = this.gameStateManager.spaces.find(s => 
-        this.extractSpaceName(s.name) === normalizedName
-      );
-      console.log('MovementEngine: Normalized match result:', !!space);
-    }
-    
-    // If still not found, try case-insensitive match
-    if (!space) {
-      const lowerCaseName = spaceName.toLowerCase();
-      console.log('MovementEngine: Trying case-insensitive match for:', lowerCaseName);
-      space = this.gameStateManager.spaces.find(s => 
-        s.name.toLowerCase() === lowerCaseName
-      );
-      console.log('MovementEngine: Case-insensitive match result:', !!space);
-    }
-    
-    // If still not found, try removing suffixes like "-first", "-subsequent" and convert to uppercase
-    if (!space) {
-      const baseName = spaceName.replace(/-(?:first|subsequent)$/i, '').toUpperCase();
-      console.log('MovementEngine: Trying uppercase base name without suffix:', baseName);
-      space = this.gameStateManager.spaces.find(s => 
-        s.name.toUpperCase() === baseName
-      );
-      console.log('MovementEngine: Uppercase base name match result:', !!space);
-    }
-    
-    if (space) {
-      console.log('MovementEngine: Found space:', space.name);
-    } else {
-      console.log('MovementEngine: No space found for:', spaceName);
-      console.log('MovementEngine: Available space names:', this.gameStateManager.spaces.map(s => s.name).slice(0, 10));
-    }
-    
-    return space;
-  }
+  // PHASE 3: Deleted complex MovementEngine.findSpaceByName() - Using simple GameStateManager.findSpaceByName() instead
   
   /**
    * Extract space name from display text - FIXED VERSION
@@ -317,9 +265,9 @@ class MovementEngine {
     // Find space by ID first
     let space = this.gameStateManager.findSpaceById(player.position);
     
-    // If not found by ID, try by name
+    // If not found by ID, try by name using GameStateManager
     if (!space) {
-      space = this.findSpaceByName(player.position);
+      space = this.gameStateManager.findSpaceByName(player.position);
     }
     
     console.log('MovementEngine: Found base space:', space ? space.name : 'not found');
@@ -1011,12 +959,12 @@ class MovementEngine {
           
           // Check if it's a valid space name - DIRECT CHECK like sample file
           const spaceExists = this.gameStateManager.spaces && 
-            this.gameStateManager.spaces.some(s => s.name === spaceName);
+          this.gameStateManager.spaces.some(s => s.name === spaceName);
           
           console.log('MovementEngine: Space exists check for', spaceName, ':', spaceExists);
           
           if (spaceExists && !this.conflictsWithSingleChoice(player, spaceName)) {
-            const space = this.findSpaceByName(spaceName);
+          const space = this.gameStateManager.findSpaceByName(spaceName);
             movements.push({
               id: space ? (space.id || this.generateSpaceId(space.name)) : this.generateSpaceId(spaceName),
               name: spaceName, // Use the verified space name directly
@@ -1052,7 +1000,7 @@ class MovementEngine {
         console.log('MovementEngine: Single space exists check for', spaceName, ':', spaceExists);
         
         if (spaceExists && !this.conflictsWithSingleChoice(player, spaceName)) {
-          const space = this.findSpaceByName(spaceName);
+          const space = this.gameStateManager.findSpaceByName(spaceName);
           movements.push({
             id: space ? (space.id || this.generateSpaceId(space.name)) : this.generateSpaceId(spaceName),
             name: spaceName, // Use the verified space name directly
@@ -1431,7 +1379,7 @@ class MovementEngine {
       if (!this.isValidDestination(player, spaceName)) return;
       
       // Find space object
-      const space = this.findSpaceByName(spaceName);
+      const space = this.gameStateManager.findSpaceByName(spaceName);
       if (!space) return;
       
       movements.push({
@@ -1458,7 +1406,7 @@ class MovementEngine {
     if (!destination) return false;
     
     // Check if destination exists
-    const space = this.findSpaceByName(destination);
+    const space = this.gameStateManager.findSpaceByName(destination);
     if (!space) return false;
     
     // Check for single choice conflicts
@@ -1650,7 +1598,7 @@ class MovementEngine {
     
     // Try 2: Direct findSpaceByName
     if (!destinationSpace) {
-      destinationSpace = this.findSpaceByName(destinationId);
+      destinationSpace = this.gameStateManager.findSpaceByName(destinationId);
       console.log('MovementEngine: findSpaceByName result:', !!destinationSpace);
     }
     

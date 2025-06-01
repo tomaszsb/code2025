@@ -314,65 +314,41 @@ window.SpaceInfoMoves = {
   },
 
   /**
-   * Renders available moves for the current space - SIMPLIFIED ORIGINAL LOGIC
+   * Renders available moves for the current space - PHASE 2: USE ENHANCED MOVEMENTENGINE
    * @returns {JSX.Element|null} The available moves section or null
    */
   renderAvailableMoves: function() {
-    const { space, onMoveSelect, selectedMoveId } = this.props;
+    const { space, onMoveSelect, selectedMoveId, availableMoves } = this.props;
     
-    // Use MovementEngine to get available moves - this follows the original updateMovementSection logic
-    if (window.movementEngine && window.movementEngine.isReady()) {
-      const currentPlayer = window.GameStateManager.getCurrentPlayer();
-      if (currentPlayer) {
-        console.log('SpaceInfoMoves: Using MovementEngine to get moves');
-        const movementResult = window.movementEngine.getAvailableMovements(currentPlayer);
-        
-        // ORIGINAL LOGIC: If dice roll required, show dice requirement message
-        if (movementResult && movementResult.requiresDiceRoll) {
-          console.log('SpaceInfoMoves: MovementEngine says dice roll required');
-          return React.createElement('div', { className: 'space-available-moves' }, [
-            React.createElement('div', { key: 'label', className: 'space-section-label' }, 'Movement:'),
-            React.createElement('div', { key: 'dice-info' }, 'Roll dice first to see available moves')
-          ]);
-        }
-        
-        // NEW LOGIC: If logic space, show logic space UI
-        if (movementResult && movementResult.isLogicSpace) {
-          console.log('SpaceInfoMoves: Detected logic space, showing logic UI');
-          return this.renderLogicSpaceUI();
-        }
-        
-        // ORIGINAL LOGIC: If we have movement results, show them
-        if (Array.isArray(movementResult) && movementResult.length > 0) {
-          console.log('SpaceInfoMoves: MovementEngine returned moves:', movementResult);
-          
-          return React.createElement('div', { className: 'space-available-moves' }, [
-            React.createElement('div', { key: 'label', className: 'space-section-label' }, 'Available Moves:'),
-            React.createElement('div', { key: 'list', className: 'available-moves-list', 'data-testid': 'moves-list' }, 
-              movementResult.map(move => {
-                const isSelected = selectedMoveId && selectedMoveId === move.id;
-                
-                return React.createElement('button', {
-                  key: move.id,
-                  className: `move-button primary-move-btn ${isSelected ? 'selected' : ''}`,
-                  onClick: () => {
-                    console.log('SpaceInfoMoves: Move button clicked:', move.name, move.id);
-                    if (onMoveSelect) {
-                      onMoveSelect(move.id);
-                    }
-                  },
-                  title: move.description || move.name
-                }, move.description || move.name);
-              })
-            )
-          ]);
-        }
-      }
+    // PHASE 2 CHANGE: Use enhanced MovementEngine data from parent component
+    // This eliminates duplicate MovementEngine calls and uses coordinated data
+    if (!availableMoves || availableMoves.length === 0) {
+      console.log('SpaceInfoMoves: No available moves from parent component');
+      return null;
     }
     
-    // ORIGINAL LOGIC: If MovementEngine not available, show nothing (no fallback complexity)
-    console.log('SpaceInfoMoves: MovementEngine not available or no moves');
-    return null;
+    console.log('SpaceInfoMoves: Using enhanced MovementEngine data from parent:', availableMoves);
+    
+    return React.createElement('div', { className: 'space-available-moves' }, [
+      React.createElement('div', { key: 'label', className: 'space-section-label' }, 'Available Moves:'),
+      React.createElement('div', { key: 'list', className: 'available-moves-list', 'data-testid': 'moves-list' }, 
+        availableMoves.map(move => {
+          const isSelected = selectedMoveId && selectedMoveId === move.id;
+          
+          return React.createElement('button', {
+            key: move.id,
+            className: `move-button primary-move-btn ${isSelected ? 'selected' : ''}`,
+            onClick: () => {
+              console.log('SpaceInfoMoves: Move button clicked:', move.name, move.id);
+              if (onMoveSelect) {
+                onMoveSelect(move.id);
+              }
+            },
+            title: this.getMoveButtonTooltip(move)
+          }, move.description || move.name);
+        })
+      )
+    ]);
   },
 
   /**
@@ -385,108 +361,7 @@ window.SpaceInfoMoves = {
     return null;
   },
   
-  /**
-   * Handles PM-DECISION-CHECK space logic to show original space moves
-   * @returns {Array} The combined array of moves
-   */
-  getAvailableMoves: function() {
-    const { availableMoves } = this.props;
-    
-    // If no available moves, return empty array
-    if (!availableMoves || availableMoves.length === 0) {
-      return [];
-    }
-    
-    // Get current space and check if it's PM-DECISION-CHECK
-    const { space } = this.props;
-    if (!space || space.name !== 'PM-DECISION-CHECK') {
-      return availableMoves;
-    }
-    
-    console.log('SpaceInfoMoves: Processing moves for PM-DECISION-CHECK space');
-    
-    // Get current player
-    const player = window.GameStateManager.getCurrentPlayer();
-    if (!player) {
-      return availableMoves;
-    }
-    
-    // Check if player has used CHEAT-BYPASS (point of no return)
-    if (player.hasUsedCheatBypass || (player.properties && player.properties.hasUsedCheatBypass)) {
-      console.log('SpaceInfoMoves: Player has used CHEAT-BYPASS, no return possible');
-      return availableMoves;
-    }
-    
-    // Check if player came from a side quest space
-    const previousSpaceId = player.previousPosition;
-    if (!previousSpaceId) {
-      console.log('SpaceInfoMoves: No previous space found');
-      return availableMoves;
-    }
-    
-    const previousSpace = window.GameStateManager.findSpaceById(previousSpaceId);
-    if (!previousSpace) {
-      console.log('SpaceInfoMoves: Previous space not found');
-      return availableMoves;
-    }
-    
-    // Use Path column to determine if coming from side quest
-    const cameFromQuestSide = previousSpace.Path && 
-      previousSpace.Path.toLowerCase().includes('side quest');
-    
-    console.log(`SpaceInfoMoves: Previous space: ${previousSpace.name} (Path: ${previousSpace.Path}), Coming from side quest: ${cameFromQuestSide}`);
-    
-    if (!cameFromQuestSide && previousSpace.Path && previousSpace.Path.toLowerCase() === 'main') {
-      // Coming from main path - store originalSpaceId if not already stored
-      if (!player.properties) {
-        player.properties = {};
-      }
-      
-      if (!player.properties.originalSpaceId) {
-        player.properties.originalSpaceId = previousSpaceId;
-        console.log(`SpaceInfoMoves: Stored originalSpaceId: ${previousSpaceId}`);
-        
-        // Save the state
-        if (window.GameStateManager.saveState) {
-          window.GameStateManager.saveState();
-        }
-      }
-      
-      return availableMoves; // Only show standard moves for first visit from main path
-    } else if (cameFromQuestSide) {
-      // Coming from quest side - get stored original space moves
-      const originalSpaceId = player.properties?.originalSpaceId;
-      console.log(`SpaceInfoMoves: Retrieved original space ID: ${originalSpaceId}`);
-      
-      if (originalSpaceId) {
-        // Find original space
-        const originalSpace = window.GameStateManager.findSpaceById(originalSpaceId);
-        
-        if (originalSpace) {
-          console.log(`SpaceInfoMoves: Found original space: ${originalSpace.name}`);
-          
-          // Get moves from original space
-          const originalMoves = this.getMovesForSpace(originalSpace);
-          console.log(`SpaceInfoMoves: Found ${originalMoves.length} moves from original space`);
-          
-          // Add label to original space moves
-          originalMoves.forEach(move => {
-            move.name = `${move.name} (Return to ${this.extractBaseName(originalSpace.name)})`;
-            move.fromOriginalSpace = true;
-            move.originalSpaceId = originalSpaceId;
-          });
-          
-          // Show both standard moves and original space moves
-          return [...availableMoves, ...originalMoves];
-        }
-      }
-      
-      console.log("SpaceInfoMoves: No original space found, showing standard moves only");
-      return availableMoves; // Fallback to standard moves
-    }
-    
-    return availableMoves;
-  },
+  // PHASE 3: Deleted SpaceInfoMoves.getAvailableMoves() - Business logic moved to MovementEngine in Phase 1
   
   /**
    * Helper to extract base name without visit type

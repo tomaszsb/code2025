@@ -264,7 +264,7 @@ class GameStateManager {
       this.spaceCache.byId.set(space.id, space);
       this.spaceCache.byName.set(space.name, space);
       
-      const normalizedName = this.extractSpaceName(space.name);
+      const normalizedName = window.movementEngine.extractSpaceName(space.name);
       // Group spaces by normalized name for quick access to all variants
       if (!this.spaceCache.byNormalizedName.has(normalizedName)) {
         this.spaceCache.byNormalizedName.set(normalizedName, []);
@@ -455,35 +455,7 @@ class GameStateManager {
     console.log('GameStateManager: nextPlayerTurn method completed');
   }
   
-  // Extract the space name from a display name (without visit type) - FIXED VERSION
-  extractSpaceName(displayName) {
-    console.log(`GameStateManager: extractSpaceName method is being used for: "${displayName}"`);
-    
-    if (!displayName) return '';
-    
-    let result = displayName;
-    
-    // For display names that might have explanatory text after a dash
-    if (result.includes(' - ')) {
-      result = result.split(' - ')[0].trim();
-    }
-    
-    // CRITICAL FIX: Remove visit type suffixes (-first, -subsequent) from space IDs
-    result = result.replace(/-(?:first|subsequent)$/i, '');
-    
-    // CRITICAL FIX: Convert to uppercase to match CSV space names
-    result = result.toUpperCase();
-    
-    // Fix the issue with OWNER-SCOPE-INITIATION vs. OWNER SCOPE INITIATION
-    // This ensures consistent normalization for comparison
-    if (result === 'OWNER SCOPE INITIATION') {
-      result = 'OWNER-SCOPE-INITIATION';
-      console.log('GameStateManager: Normalized "OWNER SCOPE INITIATION" to "OWNER-SCOPE-INITIATION"');
-    }
-    
-    console.log(`GameStateManager: extractSpaceName method completed with result: "${result}"`);
-    return result;
-  }
+  // PHASE 3: Deleted duplicate GameStateManager.extractSpaceName() - Using MovementEngine.extractSpaceName() instead
   
   // Find a space by ID - now using cache
   findSpaceById(spaceId) {
@@ -541,7 +513,7 @@ class GameStateManager {
     // Add the current space to visited spaces if not already there
     if (currentSpace) {
     // CRITICAL FIX: Use extractSpaceName to properly normalize the space name
-    const currentSpaceName = this.extractSpaceName(currentSpace.name);
+    const currentSpaceName = window.movementEngine.extractSpaceName(currentSpace.name);
     
     // Initialize visitedSpaces as Set if it's still an array (for backward compatibility)
     if (!player.visitedSpaces || Array.isArray(player.visitedSpaces)) {
@@ -591,7 +563,7 @@ class GameStateManager {
     player.position = spaceId;
     
     // SIMPLE FIX: If moving to a space that's been visited before, use the subsequent version
-    if (newSpace && player.visitedSpaces && player.visitedSpaces.has(this.extractSpaceName(newSpace.name))) {
+    if (newSpace && player.visitedSpaces && player.visitedSpaces.has(window.movementEngine.extractSpaceName(newSpace.name))) {
       const subsequentSpaceId = spaceId.replace('-first', '-subsequent');
       const subsequentSpace = this.findSpaceById(subsequentSpaceId);
       if (subsequentSpace) {
@@ -627,90 +599,22 @@ class GameStateManager {
     console.log('GameStateManager: movePlayer method completed');
   }
   
-  // Check if player has visited a space before - now using Set
-  hasPlayerVisitedSpace(player, spaceName) {
-    console.log('GameStateManager: hasPlayerVisitedSpace method is being used');
-    console.log('GameStateManager: Checking space:', spaceName, 'Player:', player.name, 'ID:', player.id);
-    
-    // Handle both Set and Array for backward compatibility
-    if (!player.visitedSpaces) {
-      player.visitedSpaces = new Set();
-      console.log('GameStateManager: Created new visitedSpaces Set');
-    } else if (Array.isArray(player.visitedSpaces)) {
-      // Convert array to Set if needed
-      console.log('GameStateManager: Converting visitedSpaces from Array to Set');
-      player.visitedSpaces = new Set(player.visitedSpaces);
-    }
-    
-    const normalizedSpaceName = this.extractSpaceName(spaceName);
-    console.log('GameStateManager: Original space name:', spaceName, 'Normalized name:', normalizedSpaceName);
-    
-    // Debug logging to help diagnose visit type issues
-    console.log('GameStateManager: Player position:', player.position, 'Previous position:', player.previousPosition);
-    console.log('GameStateManager: Player visited spaces:', Array.from(player.visitedSpaces));
-    console.log('GameStateManager: Detailed visitedSpaces contents:', JSON.stringify(Array.from(player.visitedSpaces)));
-    console.log('GameStateManager: Looking for space name:', normalizedSpaceName);
-    console.log('GameStateManager: visitedSpaces Set contents:', Array.from(player.visitedSpaces));
-    
-    // Special case: When a player is first placed on a space (like at game start),
-    // they haven't really "visited" it yet - they're just starting there
-    if (player.visitedSpaces.size === 0) {
-      console.log('GameStateManager: First move in game, treating as first visit');
-      return false;
-    }
-    
-    // Simple check: is the normalized space name in visitedSpaces?
-    const hasVisited = player.visitedSpaces.has(normalizedSpaceName);
-    
-    console.log('GameStateManager: hasVisited (Set.has):', hasVisited);
-    console.log('GameStateManager: Space name "' + normalizedSpaceName + '" in visitedSpaces Set?', hasVisited);
-    
-    // Get current space info to determine if player is currently on this space
-    const currentSpace = this.findSpaceById(player.position);
-    const currentSpaceName = currentSpace ? this.extractSpaceName(currentSpace.name) : null;
-    const isCurrentSpace = currentSpaceName === normalizedSpaceName;
-    
-    console.log('GameStateManager: isCurrentSpace:', isCurrentSpace);
-    
-    // FIXED LOGIC: If the space is in visitedSpaces, they've been there before
-    // regardless of whether they're currently on it or not
-    if (hasVisited) {
-      console.log('GameStateManager: Space is in visitedSpaces - this means subsequent visit');
-      console.log('GameStateManager: hasPlayerVisitedSpace method completed with result: true');
-      return true;
-    }
-    
-    // If space is not in visitedSpaces, it's a first visit
-    console.log('GameStateManager: Space not in visitedSpaces - this is a first visit');
-    console.log('GameStateManager: hasPlayerVisitedSpace method completed with result: false');
-    return false;
-  }
+  // PHASE 3: Deleted overengineered GameStateManager.hasPlayerVisitedSpace() - Using simple MovementEngine.hasPlayerVisitedSpace() instead
   
-  // Find a space by name - now using cache
+  // PHASE 4: Simple CSV lookup - no complex fallbacks
   findSpaceByName(name) {
     console.log('GameStateManager: findSpaceByName method is being used');
     
     if (!name) return null;
     
-    // Try exact match from cache first
-    let match = this.spaceCache.byName.get(name);
+    // 1. Normalize name to CSV format
+    const normalizedName = window.movementEngine.extractSpaceName(name);
     
-    // If no exact match, try normalized name lookup
-    if (!match) {
-      const normalizedName = this.extractSpaceName(name);
-      const spaces = this.spaceCache.byNormalizedName.get(normalizedName);
-      
-      // If we have spaces with this normalized name, return the first one
-      if (spaces && spaces.length > 0) {
-        match = spaces[0];
-      }
-    }
+    // 2. Look up in CSV/cache (single source of truth)
+    const spaces = this.spaceCache.byNormalizedName.get(normalizedName);
     
-    // Fallback to old method if cache fails
-    if (!match) {
-      const cleanedName = this.extractSpaceName(name);
-      match = this.spaces.find(s => this.extractSpaceName(s.name) === cleanedName);
-    }
+    // 3. Return result (no fallbacks, no guessing)
+    const match = spaces && spaces.length > 0 ? spaces[0] : null;
     
     console.log('GameStateManager: findSpaceByName method completed');
     return match;
@@ -1231,9 +1135,9 @@ class GameStateManager {
     
     // First pass: determine the correct visit type for each space name
     this.spaces.forEach(space => {
-      const normalizedName = this.extractSpaceName(space.name);
+      const normalizedName = window.movementEngine.extractSpaceName(space.name);
       if (!visitTypeMap.has(normalizedName)) {
-        const hasVisited = this.hasPlayerVisitedSpace(currentPlayer, normalizedName);
+        const hasVisited = window.movementEngine.hasPlayerVisitedSpace(currentPlayer, normalizedName);
         visitTypeMap.set(normalizedName, hasVisited ? 'subsequent' : 'first');
         console.log(`GameStateManager: Space ${normalizedName} - hasVisited: ${hasVisited}, visitType: ${hasVisited ? 'subsequent' : 'first'}`);
       }
@@ -1242,7 +1146,7 @@ class GameStateManager {
     // Second pass: update the visitType property of every space
     let updatedCount = 0;
     this.spaces.forEach(space => {
-      const normalizedName = this.extractSpaceName(space.name);
+      const normalizedName = window.movementEngine.extractSpaceName(space.name);
       const correctVisitType = visitTypeMap.get(normalizedName);
       
       if (space.visitType !== correctVisitType) {

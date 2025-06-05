@@ -135,11 +135,16 @@ console.log('player-setup.css file is beginning to be used');
   flex: 1;
   padding: 1rem 1.5rem;
   font-size: 1rem;
+  font-weight: 500;
   transition: all 0.2s ease;
   border-radius: 8px;
+  border: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 140px;
+  color: white;
 }
 
 .continue-game-btn {
@@ -148,7 +153,7 @@ console.log('player-setup.css file is beginning to be used');
 
 .continue-game-btn:hover {
   background-color: #3367d6;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .new-game-btn {
@@ -157,7 +162,7 @@ console.log('player-setup.css file is beginning to be used');
 
 .new-game-btn:hover {
   background-color: #2d9249;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .btn-icon {
@@ -300,8 +305,11 @@ console.log('player-setup.css file is beginning to be used');
 
 .start-game-btn {
   width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
   padding: 1.2rem;
   font-size: 1.1rem;
+  font-weight: 500;
   background-color: #4285f4;
   color: white;
   border: none;
@@ -316,7 +324,7 @@ console.log('player-setup.css file is beginning to be used');
 
 .start-game-btn:hover {
   background-color: #3367d6;
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
 }
 

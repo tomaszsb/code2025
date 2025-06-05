@@ -411,11 +411,20 @@ class InitializationManager {
       // Load dice roll data into GameState for MovementEngine
       window.GameState.loadDiceRollData(this.loadedData.diceRoll);
       
-      // Initialize or reinitialize MovementEngine now that all data is loaded
-      if (window.movementEngine) {
-        window.movementEngine.initialize();
-        this.log('info', 'InitializationManager: MovementEngine reinitialized with complete data');
+      // CRITICAL FIX: Ensure MovementEngine is properly initialized after all data is loaded
+      if (!window.movementEngine) {
+        console.log('InitializationManager: Creating MovementEngine instance');
+        window.movementEngine = new window.MovementEngine(window.GameState);
       }
+      
+      // Initialize MovementEngine with complete data
+      const movementEngineInitResult = window.movementEngine.initialize();
+      if (!movementEngineInitResult) {
+        throw new Error('MovementEngine initialization failed - cannot start game');
+      }
+      
+      this.log('info', 'InitializationManager: MovementEngine successfully initialized with complete data');
+      this.log('info', `InitializationManager: MovementEngine ready status: ${window.movementEngine.isReady()}`);
       
       // Initialize dice roll logic if available
       if (window.DiceRollLogic) {
@@ -441,9 +450,10 @@ class InitializationManager {
         E: window.GameState.cardCollections.E || []
       };
       
-      // Store result
+      // Store result with MovementEngine status
       this.stageResults.initializeGameState = {
-        success: true
+        success: true,
+        movementEngineReady: window.movementEngine ? window.movementEngine.isReady() : false
       };
       
       this.log('info', 'InitializationManager: Game state initialized successfully');

@@ -24,22 +24,29 @@ window.SpaceInfoMoves = {
    */
   renderLogicSpaceUI: function() {
     const currentPlayer = window.GameStateManager.getCurrentPlayer();
-    if (!currentPlayer || !window.LogicSpaceManager) {
+    const { availableMoves } = this.props;
+    
+    // CRITICAL FIX: Check if logic space data is passed through availableMoves
+    const logicSpaceData = availableMoves && availableMoves.length > 0 && availableMoves[0].isLogicSpace ? availableMoves[0] : null;
+    
+    if (!currentPlayer || !logicSpaceData) {
       return null;
     }
-
-    // FIXED: Check if we have selectable destinations (FDNY-style requiring "end turn")
-    if (this.state && this.state.selectableDestinations && this.state.selectableDestinations.length > 0) {
-      console.log('SpaceInfoMoves: DEBUG - Rendering selectable destination buttons, destinations:', this.state.selectableDestinations);
+    
+    console.log('SpaceInfoMoves: Rendering logic space UI with data:', logicSpaceData);
+    
+    // CRITICAL FIX: Check if we have selectable destinations first
+    if (logicSpaceData.hasDestinations && logicSpaceData.selectableDestinations && logicSpaceData.selectableDestinations.length > 0) {
+      console.log('SpaceInfoMoves: Rendering selectable destination buttons');
       
-      const self = this; // Capture this context
-      const selectedDest = this.state.selectedDestination;
+      const self = this;
+      const selectedDest = this.state?.selectedDestination || logicSpaceData.selectedDestination;
       
       return React.createElement('div', { className: 'space-available-moves logic-selectable-destinations' }, [
         React.createElement('div', { key: 'label', className: 'space-section-label' }, '🎯 Select your destination:'),
         React.createElement('div', { key: 'buttons', className: 'logic-destination-buttons' }, 
-          this.state.selectableDestinations.map((destination, index) => {
-            console.log('SpaceInfoMoves: DEBUG - Creating selectable button for destination:', destination);
+          logicSpaceData.selectableDestinations.map((destination, index) => {
+            console.log('SpaceInfoMoves: Creating selectable button for destination:', destination);
             
             const isSelected = selectedDest && selectedDest.id === destination.id;
             
@@ -48,63 +55,83 @@ window.SpaceInfoMoves = {
               className: `move-button logic-destination-btn ${isSelected ? 'selected' : ''}`,
               onClick: function() {
                 console.log('SpaceInfoMoves: SELECTABLE BUTTON CLICKED! Destination:', destination.name, destination.id);
-                // Set selection but don't move yet - requires "end turn" button
-                self.setState({ selectedDestination: destination });
-                console.log('SpaceInfoMoves: Destination selected, waiting for end turn');
+                
+                // CRITICAL FIX: Ensure proper state synchronization for End Turn button
+                // Update local state first
+                if (self.setState) {
+                  self.setState({ selectedDestination: destination });
+                }
+                
+                // Use SpaceSelectionManager to handle the move selection properly
+                if (window.currentGameBoard && window.currentGameBoard.spaceSelectionManager) {
+                  window.currentGameBoard.spaceSelectionManager.handleMoveSelection(destination.id);
+                  console.log('SpaceInfoMoves: Move selection handled via SpaceSelectionManager');
+                  
+                  // CRITICAL FIX: Force GameBoard state update to enable End Turn button
+                  window.currentGameBoard.setState({
+                    selectedMove: destination.id,
+                    hasSelectedMove: true,
+                    exploredSpace: null // Will be set by SpaceSelectionManager
+                  });
+                  console.log('SpaceInfoMoves: FIXED - GameBoard state updated to enable End Turn button');
+                } else {
+                  console.log('SpaceInfoMoves: SpaceSelectionManager not available, using direct onMoveSelect');
+                  const { onMoveSelect } = self.props;
+                  if (onMoveSelect) {
+                    onMoveSelect(destination.id);
+                  }
+                }
               },
               title: destination.description || destination.name
             }, destination.description || destination.name);
           })
         ),
-        selectedDest ? React.createElement('div', { key: 'selected-info', className: 'selected-destination-info' }, 
-          `Selected: ${selectedDest.name} (Press "End Turn" to move)`
-        ) : React.createElement('div', { key: 'instruction', className: 'selection-instruction' }, 
+        React.createElement('div', { key: 'instruction', className: 'selection-instruction' }, 
           'Click a destination above, then press "End Turn" to move'
         )
       ]);
     }
-
-    // FIXED: Check if we have final destinations to display
-    if (this.state && this.state.logicDestinations && this.state.logicDestinations.length > 0) {
-      console.log('SpaceInfoMoves: DEBUG - Rendering destination buttons, destinations:', this.state.logicDestinations);
+    
+    // If we have current question data, render the question directly
+    if (logicSpaceData.currentQuestion) {
+      const questionData = logicSpaceData.currentQuestion;
       
-      const self = this; // Capture this context
-      
-      return React.createElement('div', { className: 'space-available-moves logic-destinations' }, [
-        React.createElement('div', { key: 'label', className: 'space-section-label' }, '🎯 Logic Complete! Choose your destination:'),
-        React.createElement('div', { key: 'buttons', className: 'logic-destination-buttons' }, 
-          this.state.logicDestinations.map((destination, index) => {
-            console.log('SpaceInfoMoves: DEBUG - Creating button for destination:', destination);
-            
-            return React.createElement('button', {
-              key: index,
-              className: 'move-button logic-destination-btn',
-              onClick: function() {
-              console.log('SpaceInfoMoves: BUTTON CLICKED! Destination:', destination.name, destination.id);
-              try {
-              const { onMoveSelect } = self.props;
-              console.log('SpaceInfoMoves: onMoveSelect available:', !!onMoveSelect);
-              if (onMoveSelect) {
-              console.log('SpaceInfoMoves: Calling onMoveSelect with ID:', destination.id);
-              onMoveSelect(destination.id);
-              console.log('SpaceInfoMoves: onMoveSelect called successfully');
-              }
-              // FIXED: Defer the local setState to prevent timing issues with GameBoard state update
-              console.log('SpaceInfoMoves: Clearing logicDestinations (deferred)');
-              setTimeout(() => {
-                  self.setState({ logicDestinations: null });
-              }, 50); // Small delay to allow GameBoard state to update first
-              } catch (error) {
-                  console.error('SpaceInfoMoves: Error in button click handler:', error);
-            }
-          },
-              title: destination.description || destination.name
-            }, destination.description || destination.name);
-          })
-        )
+      return React.createElement('div', { className: 'space-available-moves logic-space' }, [
+        React.createElement('div', { key: 'label', className: 'space-section-label' }, '🧠 Logic Space - Decision Tree:'),
+        React.createElement('div', { key: 'container', className: 'logic-question-container' }, [
+          React.createElement('div', { key: 'question', className: 'logic-question' }, [
+            React.createElement('h3', { key: 'text' }, questionData.question),
+            React.createElement('div', { key: 'choices', className: 'logic-choices' }, [
+              React.createElement('button', {
+                key: 'yes',
+                className: 'logic-choice-btn yes-btn',
+                onClick: () => {
+                  console.log('SpaceInfoMoves: YES button clicked');
+                  this.handleLogicChoice(true);
+                }
+              }, 'YES'),
+              React.createElement('button', {
+                key: 'no', 
+                className: 'logic-choice-btn no-btn',
+                onClick: () => {
+                  console.log('SpaceInfoMoves: NO button clicked');
+                  this.handleLogicChoice(false);
+                }
+              }, 'NO')
+            ])
+          ])
+        ])
       ]);
     }
-
+    
+    // Fallback to LogicSpaceManager if no direct question data
+    if (!window.LogicSpaceManager) {
+      return React.createElement('div', { className: 'space-available-moves logic-space-error' }, [
+        React.createElement('div', { key: 'label', className: 'space-section-label' }, 'Logic Space:'),
+        React.createElement('div', { key: 'error', className: 'logic-error' }, 'LogicSpaceManager not available')
+      ]);
+    }
+    
     // EXISTING: Show current question if no destinations
     const questionData = window.LogicSpaceManager.getCurrentLogicQuestion();
     
@@ -124,12 +151,18 @@ window.SpaceInfoMoves = {
             React.createElement('button', {
               key: 'yes',
               className: 'logic-choice-btn yes-btn',
-              onClick: () => this.handleLogicChoice(true)
+              onClick: () => {
+                console.log('SpaceInfoMoves: YES button clicked (fallback)');
+                this.handleLogicChoice(true);
+              }
             }, 'YES'),
             React.createElement('button', {
               key: 'no', 
               className: 'logic-choice-btn no-btn',
-              onClick: () => this.handleLogicChoice(false)
+              onClick: () => {
+                console.log('SpaceInfoMoves: NO button clicked (fallback)');
+                this.handleLogicChoice(false);
+              }
             }, 'NO')
           ])
         ])
@@ -142,6 +175,8 @@ window.SpaceInfoMoves = {
    * @param {boolean} choice - true for YES, false for NO
    */
   handleLogicChoice: function(choice) {
+    console.log('SpaceInfoMoves: handleLogicChoice called with choice:', choice);
+    
     if (!window.LogicSpaceManager) {
       console.error('SpaceInfoMoves: LogicSpaceManager not available');
       return;
@@ -153,8 +188,30 @@ window.SpaceInfoMoves = {
       console.log('SpaceInfoMoves: Logic choice result:', result);
       
       if (result.type === 'nextQuestion') {
-        // Force re-render to show next question
-        this.setState(prevState => ({ renderKey: prevState.renderKey + 1 }));
+        // CRITICAL FIX: Update the logic space data in GameBoard state instead of local state
+        // Force a new question to be loaded by updating the availableMoves
+        const newLogicSpaceData = {
+          isLogicSpace: true,
+          requiresLogicProcessing: true,
+          spaceName: result.spaceName || 'REG-FDNY-FEE-REVIEW',
+          currentQuestion: result.nextQuestion
+        };
+        
+        // Update SpaceSelectionManager to refresh with new question
+        if (window.currentGameBoard && window.currentGameBoard.spaceSelectionManager) {
+          // Update GameBoard state with new logic question
+          window.currentGameBoard.setState({
+            availableMoves: [newLogicSpaceData],
+            isLogicSpace: true
+          });
+          console.log('SpaceInfoMoves: Updated GameBoard with new logic question');
+        }
+        
+        // Force SpaceInfo to re-render with new question
+        if (this.setState) {
+          this.setState(prevState => ({ renderKey: (prevState.renderKey || 0) + 1 }));
+        }
+        
       } else if (result.type === 'finalDestination') {
         // Show destination selection or auto-move
         this.handleLogicDestinations(result.destinations);
@@ -207,13 +264,36 @@ window.SpaceInfoMoves = {
       return;
     }
 
-    // Always show as selectable options requiring "end turn"
-    console.log('SpaceInfoMoves: Setting selectable destinations that require end turn');
-    this.setState(prevState => ({ 
-      renderKey: prevState.renderKey + 1,
+    // CRITICAL FIX: Update GameBoard state instead of local component state
+    // Create a special logic space data object that indicates destinations are ready
+    const destinationLogicSpaceData = {
+      isLogicSpace: true,
+      requiresLogicProcessing: false,
+      spaceName: 'REG-FDNY-FEE-REVIEW',
+      hasDestinations: true,
       selectableDestinations: destinations,
-      selectedDestination: null // Clear any previous selection
-    }));
+      selectedDestination: null
+    };
+    
+    // Update GameBoard with selectable destinations
+    if (window.currentGameBoard) {
+      window.currentGameBoard.setState({
+        availableMoves: [destinationLogicSpaceData],
+        isLogicSpace: true,
+        logicDestinations: destinations
+      });
+      console.log('SpaceInfoMoves: Updated GameBoard with selectable destinations');
+    }
+    
+    // Also try to update SpaceInfo state if available
+    if (this.setState) {
+      this.setState(prevState => ({ 
+        renderKey: (prevState.renderKey || 0) + 1,
+        selectableDestinations: destinations,
+        selectedDestination: null
+      }));
+    }
+    
     console.log('SpaceInfoMoves: State updated with selectableDestinations');
   },
 
@@ -319,6 +399,12 @@ window.SpaceInfoMoves = {
    */
   renderAvailableMoves: function() {
     const { space, onMoveSelect, selectedMoveId, availableMoves } = this.props;
+    
+    // CRITICAL FIX: Skip rendering regular moves if this is a logic space
+    if (availableMoves && availableMoves.length > 0 && availableMoves[0].isLogicSpace) {
+      console.log('SpaceInfoMoves: Skipping regular moves rendering - this is a logic space');
+      return null;
+    }
     
     // PHASE 2 CHANGE: Use enhanced MovementEngine data from parent component
     // This eliminates duplicate MovementEngine calls and uses coordinated data

@@ -88,7 +88,8 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
                   <window.SpaceExplorer 
                     space={exploredSpace || gameBoard.spaceSelectionManager.getSelectedSpace()}
                     visitType={exploredSpace ? 
-                      (GameState.hasPlayerVisitedSpace(currentPlayer, exploredSpace.name) ? 'subsequent' : 'first')
+                      (window.movementEngine && window.movementEngine.hasPlayerVisitedSpace && 
+                       window.movementEngine.hasPlayerVisitedSpace(currentPlayer, exploredSpace.name) ? 'subsequent' : 'first')
                       : 'first'}
                     diceRollData={diceRollData}
                     onClose={gameBoard.spaceExplorerManager.handleCloseExplorer}
@@ -139,6 +140,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
                   hasDiceRollSpace={hasDiceRollSpace}
                   isRollingDice={gameBoard.state.isRollingDice}
                   selectedMoveId={selectedMove}
+                  isLogicSpace={gameBoard.state.isLogicSpace}
                 />
               )}
               {/* Debug info */}

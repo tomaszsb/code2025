@@ -233,6 +233,9 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
           return null;
         })}
         
+        {/* Logic space UI - from SpaceInfoMoves */}
+        {this.renderLogicSpaceUI()}
+        
         {/* Available moves section - from SpaceInfoMoves */}
         {this.renderAvailableMoves()}
         
@@ -269,11 +272,25 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
                         <div className="effect-text">{space[field.key]}</div>
                         {hasRolledDice && diceRoll && (
                           <div className="dice-result-message">
-                            You rolled a {diceRoll}. {diceRoll === 1 ? (
-                              <span className="condition-met">✓ Condition met!</span>
-                            ) : (
-                              <span className="condition-not-met">✗ Condition not met.</span>
-                            )}
+                            You rolled a {diceRoll}. {(() => {
+                              // Parse the dice roll requirement from the card text
+                              const conditionalRollPattern = /if\s+you\s+roll\s+(?:a|an)?\s*(\d+)/i;
+                              const match = space[field.key].match(conditionalRollPattern);
+                              
+                              if (match && match[1]) {
+                                const requiredRoll = parseInt(match[1], 10);
+                                const conditionMet = diceRoll === requiredRoll;
+                                
+                                return conditionMet ? (
+                                  <span className="condition-met">✓ Condition met!</span>
+                                ) : (
+                                  <span className="condition-not-met">✗ Condition not met.</span>
+                                );
+                              }
+                              
+                              // Default fallback if no pattern found
+                              return <span className="condition-met">✓ Condition met!</span>;
+                            })()}
                           </div>
                         )}
                       </div>

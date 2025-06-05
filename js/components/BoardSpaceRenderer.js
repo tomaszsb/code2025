@@ -33,8 +33,8 @@ window.BoardSpaceRenderer = {
     if (window.GameState && players.length > 0) {
       const currentPlayer = window.GameState.getCurrentPlayer();
       if (currentPlayer && space) {
-        const spaceName = window.GameState.extractSpaceName(space.name);
-        const hasVisited = window.GameState.hasPlayerVisitedSpace(currentPlayer, spaceName);
+        const spaceName = window.movementEngine?.extractSpaceName?.(space.name) || space.name;
+        const hasVisited = window.movementEngine?.hasPlayerVisitedSpace?.(currentPlayer, spaceName) || false;
         
         // Force the correct visit type based on visit history
         const correctVisitType = hasVisited ? 'subsequent' : 'first';
@@ -104,8 +104,8 @@ window.BoardSpaceRenderer = {
       if (players.length > 0) {
         const currentPlayer = window.GameState.getCurrentPlayer();
         if (currentPlayer) {
-          const spaceName = window.GameState.extractSpaceName(space.name);
-          const hasVisited = window.GameState.hasPlayerVisitedSpace(currentPlayer, spaceName);
+          const spaceName = window.movementEngine?.extractSpaceName?.(space.name) || space.name;
+          const hasVisited = window.movementEngine?.hasPlayerVisitedSpace?.(currentPlayer, spaceName) || false;
           console.log(`BoardSpaceRenderer: Space ${spaceName} visited status check: ${hasVisited}, displayed type: ${visitType}`);
           
           // Alert in case of mismatch
@@ -294,12 +294,12 @@ window.BoardSpaceRenderer = {
     // Process each space
     spaces.forEach(space => {
       // Skip instruction spaces
-      if (space.name.includes('START - Quick play guide')) {
+      if (space.name && (space.name.includes('START - Quick play guide') || space.name.includes('START-QUICK-PLAY-GUIDE'))) {
         return;
       }
       
       // Extract the base space name
-      const spaceName = window.GameState.extractSpaceName(space.name);
+      const spaceName = window.movementEngine?.extractSpaceName?.(space.name) || space.name;
       
       // Skip if we already added a space with this name
       if (addedSpaceNames.has(spaceName)) {
@@ -316,12 +316,12 @@ window.BoardSpaceRenderer = {
       
       // Get all spaces matching this name
       const matchingSpaces = spaces.filter(s => 
-        window.GameState.extractSpaceName(s.name) === spaceName &&
+        (window.movementEngine?.extractSpaceName?.(s.name) || s.name) === spaceName &&
         s.type && s.type.toUpperCase() === 'SETUP'
       );
       
       // Check if player has visited this space before
-      const hasVisited = currentPlayer && window.GameState.hasPlayerVisitedSpace(currentPlayer, spaceName);
+      const hasVisited = currentPlayer && (window.movementEngine?.hasPlayerVisitedSpace?.(currentPlayer, spaceName) || false);
       const requiredVisitType = hasVisited ? 'subsequent' : 'first';
       
       console.log(`BoardSpaceRenderer: OWNER-SCOPE-INITIATION visit type should be: ${requiredVisitType}`);
@@ -350,7 +350,7 @@ window.BoardSpaceRenderer = {
         } else {
           // Last resort - find any space with this name
           const anyMatchingSpace = spaces.find(s => 
-            window.GameState.extractSpaceName(s.name) === spaceName
+            (window.movementEngine?.extractSpaceName?.(s.name) || s.name) === spaceName
           );
           
           if (anyMatchingSpace) {
@@ -388,7 +388,7 @@ window.BoardSpaceRenderer = {
         }
         
         // Determine if player has visited this space
-        const hasVisited = window.GameState.hasPlayerVisitedSpace(currentPlayer, spaceName);
+        const hasVisited = window.movementEngine?.hasPlayerVisitedSpace?.(currentPlayer, spaceName) || false;
         
         // Determine required visit type
         const requiredVisitType = hasVisited ? 'subsequent' : 'first';
@@ -401,7 +401,7 @@ window.BoardSpaceRenderer = {
         
         // Get all spaces matching this name
         const matchingSpaces = spaces.filter(s => 
-        window.GameState.extractSpaceName(s.name) === spaceName
+        (window.movementEngine?.extractSpaceName?.(s.name) || s.name) === spaceName
         );
         
         // First, find any variant of this space

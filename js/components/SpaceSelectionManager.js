@@ -73,33 +73,45 @@ class SpaceSelectionManager {
     console.log('SpaceSelectionManager: updateAvailableMoves called');
     console.log('SpaceSelectionManager: Updating available moves via MovementEngine');
     
-    // Check if MovementEngine is available
-    if (!window.movementEngine || !window.movementEngine.isReady()) {
-      console.warn('SpaceSelectionManager: MovementEngine not ready');
-      console.log('SpaceSelectionManager: MovementEngine exists:', !!window.movementEngine);
-      console.log('SpaceSelectionManager: MovementEngine isReady:', window.movementEngine ? window.movementEngine.isReady() : 'N/A');
+    // CRITICAL FIX: Proper MovementEngine readiness check with no fallback generation
+    if (!window.movementEngine) {
+      console.error('SpaceSelectionManager: MovementEngine not found');
       
-      // Debug MovementEngine initialization status
-      if (window.movementEngine) {
-        console.log('SpaceSelectionManager: MovementEngine initialized:', window.movementEngine.initialized);
-        console.log('SpaceSelectionManager: GameStateManager exists:', !!window.movementEngine.gameStateManager);
-        console.log('SpaceSelectionManager: GameStateManager isProperlyInitialized:', window.movementEngine.gameStateManager ? window.movementEngine.gameStateManager.isProperlyInitialized : 'N/A');
-        console.log('SpaceSelectionManager: Spaces available:', window.movementEngine.gameStateManager ? window.movementEngine.gameStateManager.spaces?.length : 'N/A');
+      // Update GameBoard state to show no available moves
+      this.gameBoard.setState({ 
+        availableMoves: [],
+        showDiceRoll: false,
+        diceRollSpace: null
+      });
+      return;
+    }
+    
+    if (!window.movementEngine.isReady()) {
+      console.error('SpaceSelectionManager: MovementEngine not ready');
+      console.error('SpaceSelectionManager: Debug info:', {
+        exists: !!window.movementEngine,
+        initialized: window.movementEngine.initialized,
+        gameStateManager: !!window.movementEngine.gameStateManager,
+        gameStateInitialized: window.movementEngine.gameStateManager?.isProperlyInitialized,
+        spacesCount: window.movementEngine.gameStateManager?.spaces?.length || 0,
+        diceDataCount: window.movementEngine.gameStateManager?.diceRollData?.length || 0
+      });
+      
+      // CRITICAL FIX: Try to initialize MovementEngine if possible
+      const initResult = window.movementEngine.initialize();
+      if (!initResult) {
+        console.error('SpaceSelectionManager: MovementEngine initialization failed');
         
-        // Try to initialize MovementEngine if it's not ready
-        console.log('SpaceSelectionManager: Attempting to initialize MovementEngine...');
-        window.movementEngine.initialize();
-        
-        // Check if it's ready now
-        if (window.movementEngine.isReady()) {
-          console.log('SpaceSelectionManager: MovementEngine successfully initialized!');
-        } else {
-          console.log('SpaceSelectionManager: MovementEngine still not ready after initialization attempt');
-          return;
-        }
-      } else {
+        // Update GameBoard state to show no available moves (no fallback generation)
+        this.gameBoard.setState({ 
+          availableMoves: [],
+          showDiceRoll: false,
+          diceRollSpace: null
+        });
         return;
       }
+      
+      console.log('SpaceSelectionManager: MovementEngine successfully initialized on retry');
     }
     
     // Get current player
@@ -154,23 +166,82 @@ class SpaceSelectionManager {
       return;
     }
     
+    // CRITICAL FIX: Handle logic space requirement
+    if (movementResult && typeof movementResult === 'object' && movementResult.isLogicSpace) {
+      console.log('SpaceSelectionManager: Logic space detected - passing logic data to UI');
+      
+      // Pass the logic space object as a special type of "available move"
+      // This allows SpaceInfo to receive and process the logic space data
+      const logicSpaceMove = {
+        isLogicSpace: true,
+        requiresLogicProcessing: true,
+        spaceName: movementResult.spaceName,
+        currentQuestion: movementResult.currentQuestion
+      };
+      
+      // Update GameBoard state with logic space data
+      this.gameBoard.setState({ 
+        availableMoves: [logicSpaceMove], // Wrap in array for compatibility
+        showDiceRoll: false,
+        diceRollSpace: null,
+        diceRollVisitType: null,
+        isLogicSpace: true // Add flag for UI components
+      });
+      
+      return;
+    }
+    
+    // CRITICAL FIX: Validate movement result before processing
+    if (!Array.isArray(movementResult) || movementResult.length === 0) {
+      console.log('SpaceSelectionManager: No valid movements available');
+      
+      // Update GameBoard state with empty moves (no fallback generation)
+      this.gameBoard.setState({ 
+        availableMoves: [],
+        showDiceRoll: false,
+        diceRollSpace: null,
+        diceRollVisitType: null,
+        isLogicSpace: false // Reset logic space flag
+      });
+      return;
+    }
+    
     // Convert MovementEngine format to UI format
     const uiMovements = this.convertMovementsToUIFormat(movementResult);
     
     console.log('SpaceSelectionManager: UI movements:', uiMovements);
     
+    // CRITICAL FIX: Validate UI movements contain valid space IDs
+    const validMovements = uiMovements.filter(movement => {
+      if (!movement.id || typeof movement.id !== 'string') {
+        console.warn('SpaceSelectionManager: Filtering out movement with invalid ID:', movement);
+        return false;
+      }
+      
+      // CRITICAL FIX: Block any fallback IDs that might have been generated
+      if (movement.id.includes('fallback')) {
+        console.error('SpaceSelectionManager: Blocking fallback movement ID:', movement.id);
+        return false;
+      }
+      
+      return true;
+    });
+    
+    console.log('SpaceSelectionManager: Valid movements after filtering:', validMovements);
+    
     // Dispatch event for available moves update
     window.GameStateManager.dispatchEvent('gameStateChanged', {
       changeType: 'availableMovesUpdated',
-      availableMoves: uiMovements
+      availableMoves: validMovements
     });
     
     // Update GameBoard state
     this.gameBoard.setState({ 
-      availableMoves: uiMovements, 
+      availableMoves: validMovements, 
       showDiceRoll: false,
       diceRollSpace: null,
-      diceRollVisitType: null
+      diceRollVisitType: null,
+      isLogicSpace: false // Reset logic space flag for normal moves
     }, () => {
       // Apply visual cues for available moves after state update
       this.updateAvailableMoveVisuals();

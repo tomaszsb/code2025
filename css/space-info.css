@@ -150,16 +150,21 @@ console.log('space-info.css file is beginning to be used');
   border-radius: 0.25rem;
   background-color: #e9ecef;
   color: #495057;
-  font-weight: bold;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
-  width: 100%;
+  width: auto;
+  min-width: 120px;
+  max-width: 200px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .move-button:hover {
   background-color: #dee2e6;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 /* Primary move button style - more prominent */
@@ -311,15 +316,19 @@ console.log('space-info.css file is beginning to be used');
   margin-top: 0.25rem;
   border: none;
   border-radius: 0.25rem;
-  background-color: #28a745;
+  background-color: #34a853;
   color: white;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  width: auto;
 }
 
 .draw-cards-btn:hover {
-  background-color: #218838;
+  background-color: #2d9249;
+  transform: translateY(-1px);
 }
 
 .draw-cards-btn.used {
@@ -384,18 +393,19 @@ console.log('space-info.css file is beginning to be used');
   padding: 0.75rem 1rem;
   border: none;
   border-radius: 0.25rem;
-  background-color: #4285f4;
-  color: white;
-  font-weight: bold;
+  background-color: #fbbc05;
+  color: #333;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
   min-width: 120px;
+  width: auto;
 }
 
 .roll-dice-btn:hover {
-  background-color: #3367d6;
-  transform: translateY(-2px);
+  background-color: #f2a600;
+  transform: translateY(-1px);
 }
 
 .roll-dice-btn.used {

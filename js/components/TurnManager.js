@@ -110,6 +110,11 @@ class TurnManager {
     const { selectedMove, availableMoves, hasSelectedMove } = this.gameBoard.state;
     const currentPlayer = this.getCurrentPlayer();
     
+    console.log('TurnManager: FDNY DEBUG - Initial state check:');
+    console.log('  - selectedMove:', selectedMove);
+    console.log('  - hasSelectedMove:', hasSelectedMove);
+    console.log('  - availableMoves count:', availableMoves ? availableMoves.length : 'null');
+    
     // FIXED: Check for FDNY-style selected destination from SpaceInfo component
     let moveToExecute = selectedMove;
     let shouldExecuteMove = selectedMove && hasSelectedMove;
@@ -139,15 +144,15 @@ class TurnManager {
       }
     }
     
-    // If a move was selected and the hasSelectedMove flag is true, execute it now when ending the turn
+    // CRITICAL FIX: Only execute moves when MovementEngine is ready and we have a valid move
     if (moveToExecute && shouldExecuteMove && currentPlayer) {
       console.log('TurnManager: Executing selected move via MovementEngine:', moveToExecute);
       
-      // PHASE 4: Use MovementEngine for complete turn completion with all effects
+      // CRITICAL FIX: MovementEngine must be ready - no fallback logic
       if (window.movementEngine && window.movementEngine.isReady()) {
         const moveResult = window.movementEngine.executePlayerMove(currentPlayer, moveToExecute);
         
-        if (moveResult.success) {
+        if (moveResult && moveResult.success) {
           console.log(`TurnManager: Move executed successfully from ${moveResult.fromSpace} to ${moveResult.toSpace}`);
           
           // Trigger playerMoved event via GameStateManager for UI updates
@@ -159,27 +164,32 @@ class TurnManager {
             spaceData: moveResult.spaceData
           });
         } else {
-          console.error('TurnManager: Move execution failed:', moveResult.error);
-          // Fallback to old method if MovementEngine fails
-          window.GameStateManager.movePlayer(currentPlayer.id, moveToExecute);
+          console.error('TurnManager: Move execution failed:', moveResult?.error || 'Unknown error');
+          console.error('TurnManager: Cannot execute move - MovementEngine executePlayerMove failed');
+          return; // Don't continue to next turn if move failed
         }
       } else {
-        console.warn('TurnManager: MovementEngine not ready, using fallback method');
-        // Fallback to old method if MovementEngine not available
-        window.GameStateManager.movePlayer(currentPlayer.id, moveToExecute);
+        console.error('TurnManager: Cannot execute move - MovementEngine not ready');
+        console.error('TurnManager: MovementEngine exists:', !!window.movementEngine);
+        console.error('TurnManager: MovementEngine isReady:', window.movementEngine?.isReady());
+        
+        // REMOVED FALLBACK LOGIC: No more fallback to GameStateManager.movePlayer
+        // This prevents invalid "space-X-fallback" IDs from being processed
+        
+        // Show error to user and don't advance turn
+        alert('Cannot move player: Game engine not ready. Please refresh the page.');
+        return; // Don't continue to next turn
       }
     } else {
-      // If there are no available moves, that's okay - the player might have just drawn cards
-      // or performed another action that doesn't involve movement
+      // Handle cases where no move was selected
       if (availableMoves && availableMoves.length === 0) {
         console.log('TurnManager: No available moves to execute, turn can end without movement');
-      }
-      // If there are available moves but none selected, inform the player they need to select a move
-      else if (availableMoves && availableMoves.length > 0) {
+      } else if (availableMoves && availableMoves.length > 0) {
         console.log('TurnManager: Moves available but none selected. Player must select a move before ending turn');
-      }
-      else {
-        console.log('TurnManager: No move selected for execution');
+        console.log('TurnManager: Available moves:', availableMoves.map(m => m.name || m.id));
+        return; // Don't advance turn if moves are available but none selected
+      } else {
+        console.log('TurnManager: No move selected and no available moves data');
       }
     }
     

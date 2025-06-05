@@ -52,16 +52,17 @@
     <!-- Core Data Management -->
     <script type="text/babel" src="js/utils/DiceRollLogic.js"></script>
     <script type="text/babel" src="js/utils/CardDrawUtil.js"></script>
+    
+    <!-- Consolidated Movement System - MOVED BEFORE GameStateManager -->
+    <script type="text/babel" src="js/utils/movement/MovementEngine.js"></script>
+    <script type="text/babel" src="js/utils/movement/MovementSystemSimplified.js"></script>
+    
     <script type="text/babel" src="js/data/GameStateManager.js"></script>
     <!-- Keeping for backward compatibility -->
     <script type="text/babel" src="js/data/game-state.js"></script>
     
     <!-- Component Interfaces (new) -->
     <script type="text/babel" src="js/interfaces/CardManagerInterface.js"></script>
-    
-    <!-- Consolidated Movement System -->
-    <script type="text/babel" src="js/utils/movement/MovementEngine.js"></script>
-    <script type="text/babel" src="js/utils/movement/MovementSystemSimplified.js"></script>
     
     <!-- Load all manager components first -->
     <script type="text/babel" src="js/components/managers/InitializationManager.js"></script>

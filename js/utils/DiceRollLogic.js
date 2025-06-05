@@ -260,28 +260,38 @@ window.DiceRollLogic = {
       spaceName = spaceName.split(' - ')[0].trim();
     }
     
-    return this.findSpacesWithName(gameState, spaceName);
+    console.log('DiceRollLogic: Extracted space name:', spaceName);
+    const result = this.findSpacesWithName(gameState, spaceName);
+    console.log('DiceRollLogic: Found spaces:', result.length);
+    
+    return result;
   },
   
   // Find spaces with a matching name
   findSpacesWithName(gameState, name) {
-    console.log('DiceRollLogic: Looking for spaces with name:', name);
+    console.log('DiceRollLogic: Looking for spaces with name:', '"' + name + '"');
     
     const currentPlayer = gameState.getCurrentPlayer();
-    const cleanedName = gameState.extractSpaceName(name);
+    const cleanedName = window.movementEngine?.extractSpaceName?.(name) || name;
+    
+    console.log('DiceRollLogic: Cleaned name:', '"' + cleanedName + '"');
     
     // Find all spaces that match this name
     const matchingSpaces = gameState.spaces.filter(space => {
-      const extractedName = gameState.extractSpaceName(space.name);
+      const extractedName = window.movementEngine?.extractSpaceName?.(space.name) || space.name;
       return extractedName === cleanedName;
     });
     
     console.log('DiceRollLogic: Found', matchingSpaces.length, 'spaces matching:', cleanedName);
     
-    if (matchingSpaces.length === 0) return [];
+    if (matchingSpaces.length === 0) {
+      console.error('DiceRollLogic: No spaces found with name:', cleanedName);
+      console.error('DiceRollLogic: Available space names sample:', gameState.spaces.map(s => s.name).slice(0, 10));
+      return [];
+    }
     
     // Determine visit type
-    const hasVisitedSpace = gameState.hasPlayerVisitedSpace(currentPlayer, cleanedName);
+    const hasVisitedSpace = window.movementEngine?.hasPlayerVisitedSpace?.(currentPlayer, cleanedName) || false;
     const targetVisitType = hasVisitedSpace ? 'subsequent' : 'first';
     
     console.log('DiceRollLogic: For', cleanedName, 'visit type should be:', targetVisitType);

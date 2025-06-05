@@ -319,20 +319,53 @@ class DiceManager {
       this.gameBoard.setState({ 
         availableMoves: movesToUpdate,
         hasSelectedMove: false,  // Allow player to select a move
-        selectedMove: null       // Clear any previously selected move
+        selectedMove: null,      // Clear any previously selected move
+        isRollingDice: false,    // Ensure dice UI is hidden
+        showDiceRoll: false      // Ensure dice UI is hidden
       });
     } else {
       // Handle case with no available moves
+      console.error('DiceManager: CRITICAL ERROR - No moves found after dice roll!');
+      console.error('DiceManager: Dice outcomes:', outcomes);
+      console.error('DiceManager: Current player position:', currentPlayer?.position);
+      
+      // FALLBACK: Try to get moves directly from MovementEngine
+      if (window.movementEngine && window.movementEngine.isReady()) {
+        console.log('DiceManager: Attempting fallback - getting moves from MovementEngine');
+        const fallbackMoves = window.movementEngine.getAvailableMovements(currentPlayer);
+        
+        if (Array.isArray(fallbackMoves) && fallbackMoves.length > 0) {
+          console.log('DiceManager: Fallback successful - found', fallbackMoves.length, 'moves from MovementEngine');
+          this.gameBoard.setState({ 
+            availableMoves: fallbackMoves,
+            hasSelectedMove: false,
+            selectedMove: null,
+            isRollingDice: false,
+            showDiceRoll: false
+          });
+          return;
+        }
+      }
+      
+      // Still no moves - this is a critical error
+      console.error('DiceManager: CRITICAL: No moves available from any source after dice roll!');
+      
       if (this.gameBoard.state.availableMoves && this.gameBoard.state.availableMoves.length > 0) {
         console.log('DiceManager: No moves determined, but keeping existing moves:', 
                   this.gameBoard.state.availableMoves.map(m => m.name || 'unnamed').join(', '));
         // Keep existing moves if any
+        this.gameBoard.setState({ 
+          isRollingDice: false,
+          showDiceRoll: false
+        });
       } else {
-        console.log('DiceManager: No valid moves available after dice roll');
+        console.log('DiceManager: No valid moves available after dice roll - allowing end turn');
         this.gameBoard.setState({ 
           availableMoves: [],
-          hasSelectedMove: true,   // Force player to end turn since no valid moves
-          selectedMove: null       // Clear any previously selected move
+          hasSelectedMove: false,  // Allow end turn
+          selectedMove: null,
+          isRollingDice: false,
+          showDiceRoll: false
         });
       }
     }
@@ -711,8 +744,14 @@ class DiceManager {
       
       // Use DiceRollLogic to find the available spaces
       if (window.DiceRollLogic && window.DiceRollLogic.findSpacesFromOutcome) {
-        availableMoves = window.DiceRollLogic.findSpacesFromOutcome(window.GameState, nextStepValue);
+        availableMoves = window.DiceRollLogic.findSpacesFromOutcome(window.GameStateManager, nextStepValue);
         console.log('DiceManager: Found available moves:', availableMoves.map(m => m.name).join(', '));
+      }
+      
+      // COMPREHENSIVE FIX: If no moves found, handle multiple choice outcomes directly
+      if (availableMoves.length === 0 && nextStepValue && nextStepValue.includes(' or ')) {
+        console.log('DiceManager: No moves from DiceRollLogic, handling multiple choice directly:', nextStepValue);
+        availableMoves = this.handleMultipleChoiceOutcome(nextStepValue);
       }
     }
     
@@ -721,6 +760,52 @@ class DiceManager {
     
     console.log('DiceManager: processDiceRollOutcome completed');
     return outcomes;
+  }
+  
+  // NEW METHOD: Handle multiple choice outcomes directly
+  handleMultipleChoiceOutcome = (nextStepValue) => {
+    console.log('DiceManager: Processing multiple choice outcome:', nextStepValue);
+    
+    // Split on ' or ' and process each option
+    const spaceOptions = nextStepValue.split(' or ').map(option => option.trim());
+    console.log('DiceManager: Space options found:', spaceOptions);
+    
+    const availableMoves = [];
+    const currentPlayer = window.GameStateManager.getCurrentPlayer();
+    
+    for (const option of spaceOptions) {
+      // Extract space name (part before ' - ' if it exists)
+      let spaceName = option;
+      if (spaceName.includes(' - ')) {
+        spaceName = spaceName.split(' - ')[0].trim();
+      }
+      
+      console.log('DiceManager: Processing space option:', spaceName);
+      
+      // Determine visit type based on player's history
+      const hasVisited = window.GameStateManager.hasPlayerVisitedSpace(spaceName, currentPlayer);
+      const visitType = hasVisited ? 'subsequent' : 'first';
+      
+      console.log('DiceManager: Space', spaceName, 'visit type:', visitType, '(has visited:', hasVisited, ')');
+      
+      // Create proper space ID
+      const spaceId = spaceName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + visitType;
+      
+      // Create move object
+      const move = {
+        id: spaceId,
+        name: spaceName,
+        description: option,
+        visitType: visitType,
+        fromDiceRoll: true
+      };
+      
+      availableMoves.push(move);
+      console.log('DiceManager: Created move:', move);
+    }
+    
+    console.log('DiceManager: Final available moves from multiple choice:', availableMoves.length);
+    return availableMoves;
   }
   
   // Complete dice roll processing
@@ -743,9 +828,10 @@ class DiceManager {
     // Process conditional card requirements
     this.processConditionalCardRequirements(result, currentPlayer);
     
-    // Update game state
+    // CRITICAL FIX: Ensure dice rolling UI is completely hidden
     this.gameBoard.setState({
       isRollingDice: false,
+      showDiceRoll: false,  // Ensure dice UI is hidden
       diceOutcomes: outcomes,
       lastDiceRoll: result,
       hasRolledDice: true,

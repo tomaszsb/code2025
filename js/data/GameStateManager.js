@@ -827,11 +827,11 @@ class GameStateManager {
   }
   
   // Draw a card of the specified type
-  drawCard(playerId, cardType) {
+  drawCard(playerId, cardType, filters = {}) {
     console.log('GameStateManager: drawCard method is being used');
     
     // Validate inputs
-    if (!playerId || !cardType || !this.cardCollections[cardType]) {
+    if (!playerId || !cardType) {
       console.error('GameStateManager: Invalid parameters for drawCard');
       return null;
     }
@@ -843,18 +843,30 @@ class GameStateManager {
       return null;
     }
     
-    // Check if there are cards available
-    if (this.cardCollections[cardType].length === 0) {
+    // Use new card querying system if unified data is available
+    let availableCards = [];
+    if (window.InitializationManager && window.InitializationManager.loadedData && window.InitializationManager.loadedData.allCards) {
+      // Use unified card system
+      availableCards = window.queryCards(
+        window.InitializationManager.loadedData.allCards, 
+        { card_type: cardType, ...filters }
+      );
+    } else if (this.cardCollections && this.cardCollections[cardType]) {
+      // Fallback to legacy system
+      availableCards = this.cardCollections[cardType];
+    }
+    
+    if (availableCards.length === 0) {
       console.log(`GameStateManager: No ${cardType} cards available to draw`);
       return null;
     }
     
-    // Draw a random card
-    const randomIndex = Math.floor(Math.random() * this.cardCollections[cardType].length);
-    const drawnCard = { ...this.cardCollections[cardType][randomIndex] };
+    // Random selection or weighted selection based on distribution_level
+    const selectedCard = this.selectCard(availableCards);
     
-    // Add a unique ID and card type to the card
-    drawnCard.id = `${cardType}-card-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    // Create a unique instance for the player
+    const drawnCard = { ...selectedCard };
+    drawnCard.id = drawnCard.card_id || `${cardType}-card-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     drawnCard.type = cardType;
     
     // Add the card to the player's hand
@@ -862,6 +874,10 @@ class GameStateManager {
       player.cards = [];
     }
     player.cards.push(drawnCard);
+    
+    // Work cards represent scope (costs), not income
+    // They should not add money - only Bank/Investor cards add money
+    // Work cards are just added to hand for scope calculation
     
     // Save the updated state
     this.saveState();
@@ -874,11 +890,51 @@ class GameStateManager {
       card: drawnCard
     });
     
-    console.log(`GameStateManager: Player ${player.name} drew a ${cardType} card`);
+    console.log(`GameStateManager: Player ${player.name} drew card ${drawnCard.card_name || drawnCard.id}`);
     
     // Return the drawn card for UI feedback
     console.log('GameStateManager: drawCard method completed');
     return drawnCard;
+  }
+  
+  // Select a card from available cards (with distribution weighting)
+  selectCard(availableCards) {
+    if (!availableCards || availableCards.length === 0) {
+      return null;
+    }
+    
+    // Check if cards have distribution_level for weighted selection
+    const hasDistribution = availableCards.some(card => card.distribution_level);
+    
+    if (!hasDistribution) {
+      // Simple random selection
+      const randomIndex = Math.floor(Math.random() * availableCards.length);
+      return availableCards[randomIndex];
+    }
+    
+    // Weighted selection based on distribution_level
+    // Low = more common, High = less common
+    const weights = availableCards.map(card => {
+      switch(card.distribution_level) {
+        case 'High': return 1;   // Rare
+        case 'Medium': return 3; // Uncommon
+        case 'Low': return 6;    // Common
+        default: return 3;       // Default to uncommon
+      }
+    });
+    
+    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    let random = Math.random() * totalWeight;
+    
+    for (let i = 0; i < availableCards.length; i++) {
+      random -= weights[i];
+      if (random <= 0) {
+        return availableCards[i];
+      }
+    }
+    
+    // Fallback to last card
+    return availableCards[availableCards.length - 1];
   }
   
   // Play a card from a player's hand
@@ -888,26 +944,42 @@ class GameStateManager {
     // Validate inputs
     if (!playerId || !cardId) {
       console.error('GameStateManager: Invalid parameters for playCard');
-      return null;
+      return false;
     }
     
     // Find the player
     const player = this.players.find(p => p.id === playerId);
     if (!player || !player.cards) {
       console.error('GameStateManager: Player not found or has no cards');
-      return null;
+      return false;
     }
     
     // Find the card in the player's hand
-    const cardIndex = player.cards.findIndex(card => card.id === cardId);
+    const cardIndex = player.cards.findIndex(card => card.id === cardId || card.card_id === cardId);
     if (cardIndex === -1) {
       console.error('GameStateManager: Card not found in player\'s hand');
-      return null;
+      return false;
+    }
+    
+    const card = player.cards[cardIndex];
+    
+    // Validate card can be played
+    if (!this.canPlayCard(card, player)) {
+      console.log(`GameStateManager: Card ${card.card_name || card.id} cannot be played right now`);
+      return false;
     }
     
     // Remove the card from the player's hand
-    const playedCard = { ...player.cards[cardIndex] };
+    const playedCard = { ...card };
     player.cards.splice(cardIndex, 1);
+    
+    // Process card effects using new metadata
+    this.processCardEffects(playedCard, player);
+    
+    // Handle duration effects
+    if (playedCard.duration && playedCard.duration !== 'Immediate') {
+      this.addPersistentEffect(playedCard, player);
+    }
     
     // Save the updated state
     this.saveState();
@@ -919,11 +991,10 @@ class GameStateManager {
       card: playedCard
     });
     
-    console.log(`GameStateManager: Player ${player.name} played a ${playedCard.type} card`);
+    console.log(`GameStateManager: Player ${player.name} played card ${playedCard.card_name || playedCard.id}`);
     
-    // Return the played card for effects processing
     console.log('GameStateManager: playCard method completed');
-    return playedCard;
+    return true;
   }
   
   // Discard a card from a player's hand
@@ -1092,6 +1163,331 @@ class GameStateManager {
     
     // Return true if changes were made
     return updatedCount > 0;
+  }
+
+  // Enhanced card mechanics methods
+
+  // Check if a card can be played given current game state
+  canPlayCard(card, player) {
+    if (!card || !player) {
+      return false;
+    }
+
+    // Check phase restrictions
+    if (card.phase_restriction && card.phase_restriction !== 'Any') {
+      const currentPhase = this.currentPhase || 'Any';
+      if (card.phase_restriction !== currentPhase) {
+        return false;
+      }
+    }
+
+    // Check space restrictions
+    if (card.space_restriction) {
+      const currentSpace = this.getCurrentSpace();
+      if (currentSpace && card.space_restriction !== currentSpace.name) {
+        return false;
+      }
+    }
+
+    // Check work type restrictions
+    if (card.work_type_restriction) {
+      const playerWorkType = player.workType;
+      if (playerWorkType && card.work_type_restriction !== playerWorkType) {
+        return false;
+      }
+    }
+
+    // Check cost requirements
+    if (card.money_cost) {
+      const playerMoney = player.resources?.money || 0;
+      if (playerMoney < card.money_cost) {
+        return false;
+      }
+    }
+
+    // Check usage limits
+    if (card.usage_limit) {
+      const timesUsed = player.cardUsage?.[card.card_id] || 0;
+      if (timesUsed >= card.usage_limit) {
+        return false;
+      }
+    }
+
+    // Check cooldown
+    if (card.cooldown && player.cardCooldowns?.[card.card_id]) {
+      const lastUsed = player.cardCooldowns[card.card_id];
+      const turnsPassed = (this.currentTurn || 0) - lastUsed;
+      if (turnsPassed < card.cooldown) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  // Process card effects using new metadata
+  processCardEffects(card, player) {
+    console.log('GameStateManager: Processing enhanced card effects', card.card_name || card.id);
+    
+    if (!card || !player) return;
+
+    // Initialize player resources if needed
+    if (!player.resources) {
+      player.resources = { money: 0, time: 0 };
+    }
+
+    // Apply immediate effects
+    let moneyEffect = card.money_effect || 0;
+    
+    // Work cards represent scope (costs), not income - they should NOT add money
+    if (card.card_type === 'W') {
+      moneyEffect = 0; // Work cards don't add money, they represent scope commitments
+    }
+    
+    if (moneyEffect !== 0) {
+      player.resources.money = (player.resources.money || 0) + moneyEffect;
+      console.log(`GameStateManager: Applied money effect ${moneyEffect} to ${player.name}`);
+    }
+
+    if (card.time_effect && card.time_effect !== 0) {
+      player.resources.time = (player.resources.time || 0) + card.time_effect;
+      console.log(`GameStateManager: Applied time effect ${card.time_effect} to ${player.name}`);
+    }
+
+    // Apply costs
+    if (card.money_cost && card.money_cost > 0) {
+      player.resources.money = (player.resources.money || 0) - card.money_cost;
+      console.log(`GameStateManager: Applied money cost ${card.money_cost} to ${player.name}`);
+    }
+
+    // Handle card drawing
+    if (card.draw_cards && card.draw_cards > 0) {
+      const cardTypeFilter = card.card_type_filter || 'W';
+      for (let i = 0; i < card.draw_cards; i++) {
+        this.drawCard(player.id, cardTypeFilter);
+      }
+      console.log(`GameStateManager: Drew ${card.draw_cards} ${cardTypeFilter} cards for ${player.name}`);
+    }
+
+    // Handle card discarding
+    if (card.discard_cards && card.discard_cards > 0) {
+      this.discardCards(player, card.discard_cards);
+    }
+
+    // Process target and scope effects
+    this.processCardTargets(card, player);
+
+    // Track usage for limits
+    if (card.usage_limit) {
+      if (!player.cardUsage) player.cardUsage = {};
+      player.cardUsage[card.card_id] = (player.cardUsage[card.card_id] || 0) + 1;
+    }
+
+    // Set cooldown
+    if (card.cooldown) {
+      if (!player.cardCooldowns) player.cardCooldowns = {};
+      player.cardCooldowns[card.card_id] = this.currentTurn || 0;
+    }
+
+    // Ensure resources don't go negative
+    if (player.resources.money < 0) player.resources.money = 0;
+    if (player.resources.time < 0) player.resources.time = 0;
+
+    console.log('GameStateManager: Card effects processing completed');
+  }
+
+  // Process card target and scope effects
+  processCardTargets(card, sourcePlayer) {
+    if (!card.target || card.target === 'Self') {
+      return [sourcePlayer];
+    }
+
+    let targets = [];
+
+    switch(card.target) {
+      case 'All Players':
+        targets = this.players;
+        break;
+      case 'Choose Opponent':
+      case 'Opponent':
+        targets = this.players.filter(p => p.id !== sourcePlayer.id);
+        break;
+      case 'Next Player':
+        const currentIndex = this.players.findIndex(p => p.id === sourcePlayer.id);
+        const nextIndex = (currentIndex + 1) % this.players.length;
+        targets = [this.players[nextIndex]];
+        break;
+      default:
+        targets = [sourcePlayer];
+    }
+
+    // Apply scope limitations
+    if (card.scope === 'Single' && targets.length > 1) {
+      // For single scope, typically would prompt user to choose
+      // For now, just take the first target
+      targets = targets.slice(0, 1);
+    }
+
+    return targets;
+  }
+
+  // Add persistent effect for duration-based cards
+  addPersistentEffect(card, player) {
+    if (!player.persistentEffects) {
+      player.persistentEffects = [];
+    }
+    
+    const effect = {
+      cardId: card.card_id,
+      card: card,
+      turnsRemaining: card.duration_count || 1,
+      appliedTurn: this.currentTurn || 0,
+      type: card.duration
+    };
+
+    player.persistentEffects.push(effect);
+    console.log(`GameStateManager: Added persistent effect for ${card.card_name || card.id} to ${player.name}`);
+  }
+
+  // Process persistent effects at turn start/end
+  processPersistentEffects(player) {
+    if (!player.persistentEffects) return;
+
+    console.log(`GameStateManager: Processing ${player.persistentEffects.length} persistent effects for ${player.name}`);
+
+    player.persistentEffects = player.persistentEffects.filter(effect => {
+      // Apply ongoing effect
+      if (effect.card.money_effect) {
+        player.resources.money = (player.resources.money || 0) + effect.card.money_effect;
+      }
+      if (effect.card.time_effect) {
+        player.resources.time = (player.resources.time || 0) + effect.card.time_effect;
+      }
+      
+      // Decrement turns remaining for turn-based effects
+      if (effect.type === 'Turns') {
+        effect.turnsRemaining--;
+        console.log(`GameStateManager: Persistent effect ${effect.card.card_name || effect.cardId} has ${effect.turnsRemaining} turns remaining`);
+        return effect.turnsRemaining > 0;
+      }
+      
+      // Permanent effects never expire
+      return effect.type === 'Permanent';
+    });
+  }
+
+  // Process all players' persistent effects
+  processAllPersistentEffects() {
+    this.players.forEach(player => {
+      this.processPersistentEffects(player);
+    });
+  }
+
+  // Helper method to discard cards from a player's hand
+  discardCards(player, count) {
+    if (!player.cards || player.cards.length === 0) return;
+
+    const cardsToDiscard = Math.min(count, player.cards.length);
+    const discardedCards = player.cards.splice(0, cardsToDiscard);
+    
+    console.log(`GameStateManager: Discarded ${discardedCards.length} cards for ${player.name}`);
+    
+    // Dispatch event for each discarded card
+    discardedCards.forEach(card => {
+      this.dispatchEvent('cardDiscarded', {
+        playerId: player.id,
+        player: player,
+        card: card
+      });
+    });
+  }
+
+  // Get current space object
+  getCurrentSpace() {
+    const currentPlayer = this.getCurrentPlayer();
+    if (!currentPlayer) return null;
+
+    return this.spaces.find(space => space['Space Name'] === currentPlayer.position);
+  }
+
+  // Evaluate conditional logic (basic implementation)
+  evaluateCardCondition(card, player) {
+    if (!card.conditional_logic) return true;
+
+    const condition = card.conditional_logic.toLowerCase();
+    
+    // Handle common conditional patterns
+    if (condition.includes('high-profile client')) {
+      return player.hasHighProfileClient || false;
+    }
+    
+    if (condition.includes('same worktype')) {
+      return this.players.some(p => p.id !== player.id && p.workType === player.workType);
+    }
+    
+    if (condition.includes('permits this turn')) {
+      const permitMatch = condition.match(/(\d+)\+?\s*permits?/);
+      if (permitMatch) {
+        const requiredPermits = parseInt(permitMatch[1]);
+        return (player.permitsThisTurn || 0) >= requiredPermits;
+      }
+    }
+
+    // Default to true if condition cannot be evaluated
+    console.warn('GameStateManager: Could not evaluate conditional logic:', card.conditional_logic);
+    return true;
+  }
+
+  // ======================
+  // PHASE 5 ENHANCEMENTS
+  // ======================
+
+  // Set card indexes from InitializationManager
+  setCardIndexes(cardIndexes) {
+    console.log('GameStateManager: Setting advanced card indexes');
+    this.cardIndexes = cardIndexes;
+    
+    // Dispatch event to notify components
+    this.dispatchEvent('cardIndexesLoaded', {
+      changeType: 'cardIndexesLoaded',
+      metadata: cardIndexes.metadata
+    });
+  }
+
+  // Get comprehensive game state including new Phase 5 features
+  getState() {
+    return {
+      players: this.players,
+      currentPlayerIndex: this.currentPlayerIndex,
+      spaces: this.spaces,
+      diceRollData: this.diceRollData,
+      gameStarted: this._gameStarted,
+      gameEnded: this.gameEnded,
+      cardCollections: this.cardCollections,
+      cardIndexes: this.cardIndexes,
+      currentTurn: this.currentTurn || 0,
+      version: this.VERSION
+    };
+  }
+
+  // Enhanced state update method
+  updateState(updates) {
+    console.log('GameStateManager: Updating state with', Object.keys(updates));
+    
+    Object.entries(updates).forEach(([key, value]) => {
+      if (this.hasOwnProperty(key)) {
+        this[key] = value;
+      } else {
+        console.warn('GameStateManager: Unknown state property:', key);
+      }
+    });
+
+    // Save and notify
+    this.saveState();
+    this.dispatchEvent('gameStateChanged', {
+      changeType: 'stateUpdated',
+      updates: Object.keys(updates)
+    });
   }
 }
 

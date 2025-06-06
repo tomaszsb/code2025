@@ -73,30 +73,49 @@ window.PlayerInfo = class PlayerInfo extends React.Component {
   // Extract scope information from W cards
   extractScope(player) {
     if (!player || !player.cards) {
-      return [];
+      return { items: [], totalCost: 0 };
     }
     
     // Filter W cards only
-    const wCards = player.cards.filter(card => card.type === 'W');
+    const wCards = player.cards.filter(card => card.type === 'W' || card.card_type === 'W');
     
     // Extract work type and estimated cost from each W card
-    const scope = wCards.map(card => ({
-      workType: card['Work Type'] || 'Unknown',
-      estimatedCost: card['Estimated Job Costs'] || 'N/A'
-    }));
+    const scope = wCards.map(card => {
+      // Handle both unified and legacy formats
+      let workType = 'Unknown';
+      let estimatedCost = 0;
+      
+      // Try unified format first
+      if (card.work_type_restriction) {
+        workType = card.work_type_restriction;
+      } else if (card['Work Type']) {
+        workType = card['Work Type'];
+      }
+      
+      // Try unified format for cost
+      if (card.work_cost && card.work_cost > 0) {
+        estimatedCost = card.work_cost;
+      } else if (card['Estimated Job Costs']) {
+        estimatedCost = parseFloat(card['Estimated Job Costs']) || 0;
+      }
+      
+      return {
+        workType: workType,
+        estimatedCost: estimatedCost,
+        cardName: card.card_name || card.description || 'Work Card'
+      };
+    });
     
     // Calculate total estimated cost
     let totalCost = 0;
     scope.forEach(item => {
-      // Parse cost to number if possible
-      const cost = parseFloat(item.estimatedCost);
-      if (!isNaN(cost)) {
-        totalCost += cost;
-      }
+      totalCost += item.estimatedCost;
     });
     
     console.log('PlayerInfo: Extracted scope from W cards:', scope);
     console.log('PlayerInfo: Total estimated cost:', totalCost);
+    console.log('PlayerInfo: Number of W cards found:', wCards.length);
+    console.log('PlayerInfo: W cards data:', wCards);
     
     return {
       items: scope,

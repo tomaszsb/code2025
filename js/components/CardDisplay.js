@@ -554,6 +554,109 @@ window.CardDisplay = class CardDisplay extends React.Component {
     
     return colorMap[player.color] || 'player-border-purple';
   }
+
+  // Render enhanced card metadata
+  renderCardMetadata = (card) => {
+    if (!card) return null;
+
+    const metadataElements = [];
+
+    // Target information
+    if (card.target && card.target !== 'Self') {
+      metadataElements.push(
+        React.createElement('span', { 
+          key: 'target',
+          className: 'card-metadata-item card-target' 
+        }, `Target: ${card.target}`)
+      );
+    }
+
+    // Scope information
+    if (card.scope && card.scope !== 'Single') {
+      metadataElements.push(
+        React.createElement('span', { 
+          key: 'scope',
+          className: 'card-metadata-item card-scope' 
+        }, `Scope: ${card.scope}`)
+      );
+    }
+
+    // Phase restriction
+    if (card.phase_restriction && card.phase_restriction !== 'Any') {
+      metadataElements.push(
+        React.createElement('span', { 
+          key: 'phase',
+          className: 'card-metadata-item card-phase' 
+        }, `Phase: ${card.phase_restriction}`)
+      );
+    }
+
+    // Duration
+    if (card.duration && card.duration !== 'Immediate') {
+      const durationText = card.duration_count ? 
+        `${card.duration} (${card.duration_count})` : 
+        card.duration;
+      metadataElements.push(
+        React.createElement('span', { 
+          key: 'duration',
+          className: 'card-metadata-item card-duration' 
+        }, `Duration: ${durationText}`)
+      );
+    }
+
+    // Cost information
+    if (card.money_cost && card.money_cost > 0) {
+      metadataElements.push(
+        React.createElement('span', { 
+          key: 'cost',
+          className: 'card-metadata-item card-cost' 
+        }, `Cost: $${card.money_cost.toLocaleString()}`)
+      );
+    }
+
+    // Effects preview
+    const effects = [];
+    if (card.money_effect && card.money_effect !== 0) {
+      effects.push(`$${card.money_effect > 0 ? '+' : ''}${card.money_effect.toLocaleString()}`);
+    }
+    if (card.time_effect && card.time_effect !== 0) {
+      effects.push(`Time ${card.time_effect > 0 ? '+' : ''}${card.time_effect}`);
+    }
+    if (card.draw_cards && card.draw_cards > 0) {
+      effects.push(`Draw ${card.draw_cards}`);
+    }
+    if (card.discard_cards && card.discard_cards > 0) {
+      effects.push(`Discard ${card.discard_cards}`);
+    }
+
+    if (effects.length > 0) {
+      metadataElements.push(
+        React.createElement('span', { 
+          key: 'effects',
+          className: 'card-metadata-item card-effects' 
+        }, effects.join(', '))
+      );
+    }
+
+    // Conditional logic indicator
+    if (card.conditional_logic) {
+      metadataElements.push(
+        React.createElement('span', { 
+          key: 'conditional',
+          className: 'card-metadata-item card-conditional' 
+        }, 'Conditional')
+      );
+    }
+
+    // Only render if we have metadata to show
+    if (metadataElements.length === 0) {
+      return null;
+    }
+
+    return React.createElement('div', { 
+      className: 'card-metadata' 
+    }, metadataElements);
+  }
   
   // Render the card limit dialog
   renderCardLimitDialog = () => {
@@ -751,6 +854,9 @@ window.CardDisplay = class CardDisplay extends React.Component {
                         }
                       </div>
                     )}
+                    
+                    {/* Enhanced metadata display */}
+                    {this.renderCardMetadata(card)}
                   </div>
                 </div>
               );

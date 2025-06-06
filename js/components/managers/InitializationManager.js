@@ -26,11 +26,7 @@ class InitializationManager {
       dataFiles: {
         spaces: 'data/Spaces.csv',
         diceRoll: 'data/DiceRoll Info.csv',
-        wCards: 'data/W-cards-improved.csv',
-        bCards: 'data/B-cards-improved.csv',
-        iCards: 'data/I-cards-improved.csv',
-        lCards: 'data/L-cards.csv',
-        eCards: 'data/E-cards.csv'
+        cards: 'data/cards.csv'
       },
       criticalCardTypes: ['W'], // Work cards are critical for game progression
       maxRetries: 2, // Maximum retries for loading card data
@@ -278,119 +274,101 @@ class InitializationManager {
    * Loads card data with retry capability
    */
   async loadCardData() {
-    this.log('info', 'InitializationManager: Loading card data');
+    this.log('info', 'InitializationManager: Loading unified card data');
     
     try {
-      // Define card types to load
-      const cardTypes = ['W', 'B', 'I', 'L', 'E'];
+      // Single fetch for all cards
+      const response = await fetch(this.config.dataFiles.cards);
       
-      // Prepare fetch promises
-      const fetchPromises = cardTypes.map(type => 
-        fetch(this.config.dataFiles[`${type.toLowerCase()}Cards`])
-      );
-      
-      // Fetch all card files concurrently
-      const responses = await Promise.all(fetchPromises);
-      
-      // Track card loading results
-      const cardLoadingResults = {
-        success: [],
-        failed: []
-      };
-      
-      // Process each card type
-      for (let i = 0; i < cardTypes.length; i++) {
-        const cardType = cardTypes[i];
-        const response = responses[i];
-        
-        let cardData = [];
-        let loaded = false;
-        let retryCount = 0;
-        
-        // Try to load with retries if needed
-        while (!loaded && retryCount <= this.config.maxRetries) {
-          if (retryCount > 0) {
-            this.log('warn', `InitializationManager: Retrying ${cardType} cards load (attempt ${retryCount} of ${this.config.maxRetries})...`);
-          }
-          
-          if (response.ok) {
-            try {
-              // Clone the response for retry attempts
-              const clonedResponse = retryCount === 0 ? response : 
-                await fetch(this.config.dataFiles[`${cardType.toLowerCase()}Cards`]);
-                
-              if (clonedResponse.ok) {
-                const cardCsvText = await clonedResponse.text();
-                cardData = window.parseCSV(cardCsvText, 'cards');
-                
-                if (cardData && cardData.length > 0) {
-                  // Store the card data
-                  this.loadedData.cards[cardType] = cardData;
-                  this.log('info', `InitializationManager: Loaded ${cardData.length} ${cardType} cards`);
-                  cardLoadingResults.success.push(cardType);
-                  loaded = true;
-                } else {
-                  this.log('warn', `InitializationManager: No valid data found in ${cardType}-cards.csv`);
-                  retryCount++;
-                }
-              } else {
-                this.log('warn', `InitializationManager: Retry failed for ${cardType}-cards.csv: ${clonedResponse.status}`);
-                retryCount++;
-              }
-            } catch (cardError) {
-              this.log('warn', `InitializationManager: Error parsing ${cardType}-cards.csv:`, cardError);
-              retryCount++;
-            }
-          } else {
-            this.log('warn', `InitializationManager: Failed to load ${cardType}-cards.csv: ${response.status} ${response.statusText}`);
-            retryCount++;
-          }
-        }
-        
-        // If still not loaded after retries, record the failure
-        if (!loaded) {
-          cardLoadingResults.failed.push(cardType);
-          this.log('error', `InitializationManager: Failed to load ${cardType} cards after ${this.config.maxRetries} retries`);
-        }
+      if (!response.ok) {
+        throw new Error(`Failed to load cards: ${response.status}`);
       }
       
-      // Check for critical card types
-      const missingCriticalCards = this.config.criticalCardTypes.filter(
-        type => cardLoadingResults.failed.includes(type)
-      );
+      // Parse unified card data
+      const csvText = await response.text();
+      const allCards = window.parseCardsCSV(csvText);
       
-      // Store result
+      // Organize cards by type for backward compatibility
+      const cardsByType = {
+        W: window.filterCardsByType(allCards, 'W'),
+        B: window.filterCardsByType(allCards, 'B'),
+        I: window.filterCardsByType(allCards, 'I'),
+        L: window.filterCardsByType(allCards, 'L'),
+        E: window.filterCardsByType(allCards, 'E')
+      };
+      
+      // Store both formats
+      this.loadedData.cards = cardsByType;        // Backward compatibility
+      this.loadedData.allCards = allCards;        // New unified format
+      this.loadedData.cardIndex = this.buildCardIndex(allCards); // Basic lookup (legacy)
+      this.loadedData.cardIndexes = window.buildCardIndexes(allCards); // Advanced Phase 5 indexes
+      
+      // Validation
+      const totalLoaded = Object.values(cardsByType).reduce((sum, cards) => sum + cards.length, 0);
+      this.log('info', `InitializationManager: Loaded ${totalLoaded} cards from unified file`);
+      
+      // Provide card indexes to GameStateManager for Phase 5 features
+      if (window.GameStateManager && this.loadedData.cardIndexes) {
+        window.GameStateManager.setCardIndexes(this.loadedData.cardIndexes);
+        this.log('info', 'InitializationManager: Advanced card indexes provided to GameStateManager');
+      }
+
+      // Store results
       this.stageResults.loadCardData = {
-        success: missingCriticalCards.length === 0,
-        loaded: cardLoadingResults.success,
-        failed: cardLoadingResults.failed,
-        missingCriticalCards
+        success: true,
+        totalCards: totalLoaded,
+        cardsByType: Object.fromEntries(
+          Object.entries(cardsByType).map(([type, cards]) => [type, cards.length])
+        ),
+        advancedIndexes: this.loadedData.cardIndexes ? {
+          comboCards: this.loadedData.cardIndexes.metadata.comboCards,
+          chainCards: this.loadedData.cardIndexes.metadata.chainCards,
+          totalIndexes: Object.keys(this.loadedData.cardIndexes).length - 1 // -1 for metadata
+        } : null
       };
       
-      // Handle missing critical cards
-      if (missingCriticalCards.length > 0) {
-        throw new Error(`Cannot start game: Critical card types (${missingCriticalCards.join(', ')}) failed to load.`);
-      }
-      
-      // Handle non-critical missing cards with warning
-      if (cardLoadingResults.failed.length > 0) {
-        this.log('warn', `InitializationManager: Some non-critical card types failed to load: ${cardLoadingResults.failed.join(', ')}`);
-        this.showNonCriticalCardWarning(cardLoadingResults.failed);
-      }
     } catch (error) {
-      // Update stage result
-      if (this.stageResults.loadCardData) {
-        this.stageResults.loadCardData.error = error.message;
-      } else {
-        this.stageResults.loadCardData = {
-          success: false,
-          error: error.message
-        };
-      }
-      
-      // Re-throw to halt initialization
+      this.stageResults.loadCardData = { success: false, error: error.message };
       throw error;
     }
+  }
+  
+  /**
+   * Build card index for fast lookups
+   * Creates multiple indexes for efficient card querying
+   */
+  buildCardIndex(cards) {
+    const index = {
+      byId: {},
+      byType: {},
+      byPhase: {},
+      byTarget: {}
+    };
+    
+    cards.forEach(card => {
+      index.byId[card.card_id] = card;
+      
+      if (!index.byType[card.card_type]) {
+        index.byType[card.card_type] = [];
+      }
+      index.byType[card.card_type].push(card);
+      
+      if (card.phase_restriction) {
+        if (!index.byPhase[card.phase_restriction]) {
+          index.byPhase[card.phase_restriction] = [];
+        }
+        index.byPhase[card.phase_restriction].push(card);
+      }
+      
+      if (card.target) {
+        if (!index.byTarget[card.target]) {
+          index.byTarget[card.target] = [];
+        }
+        index.byTarget[card.target].push(card);
+      }
+    });
+    
+    return index;
   }
   
   /**

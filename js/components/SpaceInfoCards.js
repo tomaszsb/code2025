@@ -33,40 +33,43 @@ window.SpaceInfoCards = {
     // Log the button state for debugging
     console.log(`SpaceInfoCards: Button ${buttonId} used status:`, isButtonUsed);
     
-    // Only render for valid card types
-    const validCardTypes = {
-      'Work Type Card': 'W',
-      'Work Type': 'W',
-      'W Card': 'W',
-      'W Cards': 'W',
-      'W': 'W',
-      'Bank Card': 'B',
-      'Bank': 'B',
-      'B Card': 'B',
-      'B Cards': 'B',
-      'B': 'B',
-      'Investor Card': 'I',
-      'Investor': 'I',
-      'I Card': 'I',
-      'I Cards': 'I',
-      'I': 'I',
-      'Life Card': 'L',
-      'Life': 'L',
-      'L Card': 'L',
-      'L Cards': 'L',
-      'L': 'L',
-      'Expeditor Card': 'E',
-      'Expeditor': 'E',
-      'E Card': 'E',
-      'E Cards': 'E',
-      'E': 'E'
+    // Enhanced card type mapping with categories
+    const cardTypeMapping = {
+      'Work Type Card': { type: 'W', category: 'work' },
+      'Work Type': { type: 'W', category: 'work' },
+      'W Card': { type: 'W', category: 'work' },
+      'W Cards': { type: 'W', category: 'work' },
+      'W': { type: 'W', category: 'work' },
+      'Bank Card': { type: 'B', category: 'financing' },
+      'Bank': { type: 'B', category: 'financing' },
+      'B Card': { type: 'B', category: 'financing' },
+      'B Cards': { type: 'B', category: 'financing' },
+      'B': { type: 'B', category: 'financing' },
+      'Investor Card': { type: 'I', category: 'financing' },
+      'Investor': { type: 'I', category: 'financing' },
+      'I Card': { type: 'I', category: 'financing' },
+      'I Cards': { type: 'I', category: 'financing' },
+      'I': { type: 'I', category: 'financing' },
+      'Life Event': { type: 'L', category: 'events' },
+      'Life Card': { type: 'L', category: 'events' },
+      'Life': { type: 'L', category: 'events' },
+      'L Card': { type: 'L', category: 'events' },
+      'L Cards': { type: 'L', category: 'events' },
+      'L': { type: 'L', category: 'events' },
+      'Expeditor Card': { type: 'E', category: 'efficiency' },
+      'Expeditor': { type: 'E', category: 'efficiency' },
+      'E Card': { type: 'E', category: 'efficiency' },
+      'E Cards': { type: 'E', category: 'efficiency' },
+      'E': { type: 'E', category: 'efficiency' }
     };
     
-    const cardCode = validCardTypes[cardType];
-    if (!cardCode) {
+    const cardMapping = cardTypeMapping[cardType];
+    if (!cardMapping) {
       console.log('SpaceInfoCards: No valid card type found for:', cardType);
       return null;
     }
+    
+    const cardCode = cardMapping.type;
     
     // Check for dice roll conditions
     const conditionalRollPattern = /if\s+you\s+roll\s+(?:a|an)?\s*(\d+)/i;
@@ -222,6 +225,115 @@ window.SpaceInfoCards = {
         {isButtonUsed ? 'Cards Drawn' : `Draw ${cardAmount} ${displayCardType}(s)`}
       </button>
     );
+  },
+
+  getAvailableCards: function(cardType, phase = null, restrictions = {}) {
+    const gameData = this.getGameData();
+    if (!gameData || !gameData.allCards) {
+      console.warn('SpaceInfoCards.getAvailableCards: No unified card data available');
+      return [];
+    }
+
+    let filters = { card_type: cardType };
+    if (phase) filters.phase_restriction = phase;
+    
+    // Apply additional restrictions
+    Object.assign(filters, restrictions);
+
+    return window.queryCards(gameData.allCards, filters);
+  },
+
+  canPlayCard: function(card, gameState) {
+    if (!card || !gameState) {
+      return false;
+    }
+
+    // Check phase restrictions
+    if (card.phase_restriction && card.phase_restriction !== 'Any') {
+      const currentPhase = gameState.currentPhase || 'Any';
+      if (card.phase_restriction !== currentPhase) {
+        return false;
+      }
+    }
+
+    // Check space restrictions
+    if (card.space_restriction) {
+      const currentSpace = gameState.currentSpace;
+      if (currentSpace && card.space_restriction !== currentSpace) {
+        return false;
+      }
+    }
+
+    // Check work type restrictions
+    if (card.work_type_restriction) {
+      const playerWorkType = gameState.currentPlayer?.workType;
+      if (playerWorkType && card.work_type_restriction !== playerWorkType) {
+        return false;
+      }
+    }
+
+    // Check cost requirements
+    if (card.money_cost) {
+      const playerMoney = gameState.currentPlayer?.money || 0;
+      if (playerMoney < card.money_cost) {
+        return false;
+      }
+    }
+
+    // Check conditional logic
+    if (card.conditional_logic) {
+      // This would need more complex evaluation based on game state
+      // For now, assume true if no specific conditions are unmet
+    }
+
+    return true;
+  },
+
+  validateCardPlayability: function(card, gameState) {
+    const issues = [];
+
+    if (!this.canPlayCard(card, gameState)) {
+      if (card.phase_restriction && card.phase_restriction !== 'Any') {
+        const currentPhase = gameState.currentPhase || 'Any';
+        if (card.phase_restriction !== currentPhase) {
+          issues.push(`Can only be played during ${card.phase_restriction} phase`);
+        }
+      }
+
+      if (card.money_cost) {
+        const playerMoney = gameState.currentPlayer?.money || 0;
+        if (playerMoney < card.money_cost) {
+          issues.push(`Requires $${card.money_cost}, but player has $${playerMoney}`);
+        }
+      }
+
+      if (card.space_restriction) {
+        issues.push(`Can only be played on ${card.space_restriction} spaces`);
+      }
+
+      if (card.work_type_restriction) {
+        issues.push(`Requires ${card.work_type_restriction} work type`);
+      }
+    }
+
+    return {
+      canPlay: issues.length === 0,
+      issues: issues
+    };
+  },
+
+  getGameData: function() {
+    // Try to get game data from InitializationManager first
+    if (window.InitializationManager && window.InitializationManager.loadedData) {
+      return window.InitializationManager.loadedData;
+    }
+    
+    // Fallback to GameState if available
+    if (window.GameState && window.GameState.gameData) {
+      return window.GameState.gameData;
+    }
+    
+    return null;
   }
 };
 

@@ -80,11 +80,11 @@ The game architecture follows these key patterns:
    - Executes player movement
    - Dispatches turn change events
 
-2. **SpaceSelectionManager** (`js/components/managers/SpaceSelectionManager.js`):
-   - Handles space selection logic
-   - Manages available moves display
-   - Processes space clicks
-   - Updates visual cues for available moves
+2. **SpaceSelectionManager** (`js/components/SpaceSelectionManager.js`):
+   - Handles space selection logic and visual highlighting
+   - Manages available moves display and instructions panel
+   - Processes space clicks and user interactions
+   - Loads tutorial data from CSV "START - Quick play guide" entries
 
 3. **SpaceExplorerManager** (`js/components/managers/SpaceExplorerManager.js`):
    - Controls the Space Explorer panel behavior
@@ -110,22 +110,16 @@ The game architecture follows these key patterns:
    - Handles movement based on dice results
    - Dispatches dice roll events
 
-7. **NegotiationManager** (`js/components/managers/NegotiationManager.js`):
-   - Handles negotiation mechanics
-   - Determines when negotiation is allowed
-   - Processes negotiation results
+7. **TurnManager** (`js/components/TurnManager.js`):
+   - Manages player turns and negotiation mechanics
+   - Handles end turn operations and negotiation processing
+   - Integrates with MovementEngine for turn completion
 
-8. **MoveLogicManager** (`js/utils/move-logic/MoveLogicManager.js`):
-   - Manages player movement options, special space logic, and game flow
-   - Uses browser-friendly window global objects instead of ES modules
-   - Follows proper object prototype inheritance pattern
-   - Integrates with GameStateManager events system for state updates
-   - Implements caching system for frequently accessed moves
-   - Handles special case spaces with custom movement logic
-   - Properly processes dice roll requirements for certain spaces
-   - Applies card effects during movement
-   - Maintains backward compatibility through compatibility layer
-   - Ensures proper cleanup of resources and event listeners
+8. **MovementEngine** (`js/utils/movement/MovementEngine.js`):
+   - Handles all movement logic and calculations
+   - Processes CSV-driven movement rules and special paths
+   - Manages complex space handling (PM-DECISION-CHECK, visit tracking)
+   - Integrates with GameStateManager for state updates
 
 ### Card Components
 
@@ -157,8 +151,8 @@ The card system consists of modular components with specific responsibilities:
 
 ### Utility Files
 
-1. **MoveLogicManager** (`js/utils/MoveLogicManager.js`):
-   - Main entry point file for the MoveLogicManager component
+1. **MovementEngine** (`js/utils/movement/MovementEngine.js`):
+   - Main movement processing engine
    - Creates and initializes the manager instance
    - Sets up backward compatibility for legacy code
    - Ensures correct loading order of module files
@@ -274,47 +268,15 @@ The game tracks spaces each player has visited in their `visitedSpaces` array. T
 
 ## Technical Implementation Details
 
-### MoveLogicManager Module Structure
+### Movement System Architecture
 
-```javascript
-// Main manager implementation and initialization
-(function() {
-  // Define the MoveLogicManager class
-  function MoveLogicManager() {
-    // Call the parent constructor
-    window.MoveLogicUIUpdates.call(this);
-    
-    console.log('MoveLogicManager: Constructor initialized');
-    
-    // State tracking
-    this.initialized = false;
-    this.moveCache = new Map(); // Cache for frequently accessed moves
-    
-    // Store event handlers for proper cleanup
-    this.eventHandlers = {
-      gameStateChanged: this.handleGameStateChangedEvent.bind(this),
-      turnChanged: this.handleTurnChangedEvent.bind(this),
-      spaceChanged: this.handleSpaceChangedEvent.bind(this),
-      diceRolled: this.handleDiceRolledEvent.bind(this)
-    };
-    
-    // Register event listeners with GameStateManager
-    this.registerEventListeners();
-    
-    this.initialized = true;
-    console.log('MoveLogicManager: Constructor completed');
-  }
-  
-  // Inherit from MoveLogicUIUpdates
-  MoveLogicManager.prototype = Object.create(window.MoveLogicUIUpdates.prototype);
-  MoveLogicManager.prototype.constructor = MoveLogicManager;
-  
-  // Method implementations...
-  
-  // Expose the class to the global scope
-  window.MoveLogicManager = MoveLogicManager;
-})();
-```
+The current movement system uses MovementEngine.js which processes all movement logic through CSV-driven rules. The engine handles:
+
+- Space-based movement validation
+- Visit type resolution  
+- Special path handling (PM-DECISION-CHECK spaces)
+- Dice roll requirements
+- Card effect integration
 
 ### SpaceInfo Component Event Handling
 
@@ -460,51 +422,13 @@ When adding new card types to the CSV files:
 2. Include all required fields for that card type
 3. Ensure the CSV data is properly formatted for parsing
 
-### Customizing Move Logic
+### Customizing Movement Logic
 
-To modify or add new special case space handling:
+To modify movement behavior for specific spaces:
 
-1. Update the appropriate method in MoveLogicSpecialCases.js:
-   ```javascript
-   // Add a new special case space handler
-   MoveLogicSpecialCases.prototype.handleMyNewSpecialSpace = function(gameState, player, currentSpace) {
-     console.log('MoveLogicSpecialCases: Handling MY-NEW-SPECIAL-SPACE special case');
-     
-     // Implementation...
-     
-     return availableMoves;
-   };
-   ```
-
-2. Add the new space name to the specialCaseSpaces array in the constructor:
-   ```javascript
-   this.specialCaseSpaces = [
-     'ARCH-INITIATION',
-     'PM-DECISION-CHECK',
-     'REG-FDNY-FEE-REVIEW',
-     'MY-NEW-SPECIAL-SPACE'  // New special case space
-   ];
-   ```
-
-3. Update the handleSpecialCaseSpace method to dispatch to your new handler:
-   ```javascript
-   MoveLogicSpecialCases.prototype.handleSpecialCaseSpace = function(gameState, player, currentSpace) {
-     // Implementation for each special case
-     switch (currentSpace.name) {
-       case 'ARCH-INITIATION':
-         return this.handleArchInitiation(gameState, player, currentSpace);
-       case 'PM-DECISION-CHECK':
-         return this.handlePmDecisionCheck(gameState, player, currentSpace);
-       case 'REG-FDNY-FEE-REVIEW':
-         return this.handleFdnyFeeReview(gameState, player, currentSpace);
-       case 'MY-NEW-SPECIAL-SPACE':  // Add case for new special space
-         return this.handleMyNewSpecialSpace(gameState, player, currentSpace);
-       default:
-         console.log('MoveLogicSpecialCases: No handler for space:', currentSpace.name);
-         return window.MoveLogicBase.prototype.getSpaceDependentMoves.call(this, gameState, player, currentSpace);
-     }
-   };
-   ```
+1. Update MovementEngine.js to handle special cases
+2. Modify space data in Spaces.csv with appropriate Path values
+3. Test the new movement logic thoroughly
 
 ### Customizing Dice Roll Behavior
 
@@ -521,27 +445,13 @@ The board layout can be further customized by adjusting:
 2. The space dimensions and gap sizes in `board.css`
 3. The container sizes in `main.css`
 
-### Working with MoveLogicManager
+### Working with the Movement System
 
-When maintaining or extending the MoveLogicManager component:
+The current movement system is handled by MovementEngine.js which processes movement through CSV-driven rules. When extending movement functionality:
 
-1. **File Order Dependencies**:
-   - The files must be loaded in the correct order (as specified in Index.html)
-   - MoveLogicBase.js → MoveLogicSpecialCases.js → MoveLogicUIUpdates.js → MoveLogicManager.js → MoveLogicBackwardCompatibility.js → utils/MoveLogicManager.js
-
-2. **Adding New Functionality**:
-   - Add basic logic to MoveLogicBase.js
-   - Add special case handling to MoveLogicSpecialCases.js
-   - Add UI-related methods to MoveLogicUIUpdates.js
-   - Add event handling or state management to MoveLogicManager.js
-
-3. **Best Practices**:
-   - Always bind event handlers and store references for cleanup
-   - Use the cache system for frequently accessed moves
-   - Follow the established naming conventions
-   - Add proper logging at the beginning and end of each method
-   - Clear cached data when relevant game state changes
-   - Ensure all event listeners are properly removed during cleanup
+1. **Adding New Spaces**: Update Spaces.csv with appropriate Path values
+2. **Special Movement Logic**: Modify MovementEngine.js for complex movement cases
+3. **Testing**: Verify movement logic works correctly with new spaces or rules
 
 ## Troubleshooting
 
@@ -582,11 +492,10 @@ When maintaining or extending the MoveLogicManager component:
    - Ensure that dependencies (CardTypeUtils, CardActions) load before other card components
    - Verify event handlers are properly attached
 
-8. **MoveLogicManager issues**:
-   - Check that all required modules are loaded in the correct order
-   - Verify that event listeners are properly registered with GameStateManager
-   - Check the cache invalidation logic when game state changes
-   - Ensure proper cleanup of event listeners
+8. **Movement system issues**:
+   - Check that MovementEngine.js is properly loaded
+   - Verify that space data is correctly loaded from CSV
+   - Ensure special space handling works correctly
 
 ### Debugging Tips
 

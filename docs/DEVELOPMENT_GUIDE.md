@@ -71,44 +71,12 @@ This guide provides information on the next development steps for the Project Ma
    - ✅ Implemented a logging level system (error, warn, info, debug) via URL parameter (?logLevel=debug)
    - ✅ Added UI toggle for debug mode in Index-debug.html
 
-4. **Move Logic Complexity**: 
-   - ✅ Refactored MoveLogic.js into MoveLogicManager following the manager pattern
-   - ✅ Implemented consistent patterns for special case handling
-   - ✅ Added comprehensive documentation in MoveLogicManager.md
-   - ✅ Fixed issues with movement functionality for all spaces (fixed May 2, 2025)
-   - ✅ Card effects now properly affect game state during movement (fixed April 30, 2025)
-   - ✅ Implemented improved visit type resolution for consistent handling (fixed May 2, 2025)
-   - ✅ Implemented fully data-driven approach using CSV files instead of hardcoded special cases (fixed May 4, 2025)
-   - ✅ Added original space moves to PM-DECISION-CHECK to allow returning to main path (fixed May 4, 2025)
-   - ✅ Enhanced PM-DECISION-CHECK UI to show original space moves directly in Available Moves section (fixed May 6, 2025)
-   - ✅ Fixed original space move selection handling to properly process return to main path (fixed May 6, 2025)
-   - ✅ Merged MoveLogicDirectFix.js into MoveLogicPmDecisionCheck.js (fixed May 7, 2025)
-   - ✅ Removed MoveLogicDirectFix.js from loading sequence to eliminate initialization issues (fixed May 7, 2025)
-   - ✅ Refactored MoveLogicPmDecisionCheck.js to follow closed system principles (fixed May 7, 2025)
-   - ✅ Implemented deterministic initialization pattern with proper error reporting (fixed May 7, 2025)
-   - ✅ Fixed critical initialization order issues between MoveLogic components (fixed May 8, 2025)
-   - ✅ Implemented event-based dependency management with proper initialization sequence (fixed May 8, 2025)
-   - ✅ Added method overwrite protection with property descriptors for critical methods (fixed May 9, 2025)
-   - ✅ Implemented self-healing GameStateManager detection with MutationObserver (fixed May 9, 2025)
-   - ✅ Implemented clear Single Responsibility Principle in PM-DECISION-CHECK handling (fixed May 10, 2025)
-   - ✅ Refactored PM-DECISION-CHECK into focused functions with clear responsibilities (fixed May 10, 2025)
-   - ✅ Enhanced originalSpaceId storage for PM-DECISION-CHECK with consistent persistence approach (fixed May 14, 2025)
-   - ✅ Implemented distinct visit tracking for Main Path and Quest Side visits (fixed May 13, 2025)
-   - ✅ Updated terminology to "Initial/Subsequent" for Main Path and "Maiden/Return" for Quest Side (fixed May 13, 2025)
-   - ✅ Eliminated redundant mainPathVisitStatus tracking to streamline decision logic (fixed May 14, 2025)
-   - ✅ Simplified tracking system by using standard game visitType for main path visits (fixed May 14, 2025)
-   - ✅ Standardized property storage in MoveLogicSpecialCases.js to align with simplified approach (fixed May 10, 2025)
-   - ✅ Removed all fallback mechanisms to strictly enforce closed system principles (fixed May 14, 2025)
-   - ✅ Enhanced error reporting to make initialization dependencies clearer (fixed May 14, 2025)
-   - ✅ Fixed PM-DECISION-CHECK return to original space issue with direct UI solution (fixed May 15, 2025)
-   - ✅ Implemented visit-type-aware return button that only appears for subsequent visits (fixed May 15, 2025)
-   - ✅ Added intelligent detection of the return space based on player history (fixed May 15, 2025)
-   - ✅ Implemented new modular movement system with separate core, logic, and UI components (fixed May 16, 2025)
-   - ✅ Fixed critical initialization issues in movement system with immediate execution and error handling (fixed May 16, 2025)
-   - ✅ Renamed movement system files to PascalCase for consistency with implementation guide (fixed May 16, 2025)
-   - ✅ Added extensive safety checks to prevent "Cannot read properties of undefined" errors (fixed May 16, 2025)
-   - ✅ Enhanced TurnManager integration for proper movement state persistence (fixed May 16, 2025)
-   - ✅ Improved dice roll data loading with multiple fallback approaches (fixed May 16, 2025)
+4. **Movement System Modernization**: 
+   - ✅ Replaced MoveLogicManager with MovementEngine.js for CSV-driven movement processing
+   - ✅ Implemented data-driven approach eliminating hardcoded special cases  
+   - ✅ Simplified movement logic with unified MovementSystemSimplified.js
+   - ✅ Enhanced PM-DECISION-CHECK handling with visit tracking
+   - ✅ Consolidated movement functionality for maintainability
 
 5. **Component Modularity**:
    - ✅ Refactored SpaceInfo.js into smaller, focused modules (SpaceInfoDice.js, SpaceInfoCards.js, SpaceInfoMoves.js, SpaceInfoUtils.js)

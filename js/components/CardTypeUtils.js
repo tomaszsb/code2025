@@ -281,31 +281,33 @@ class CardTypeUtilsManager {
     
     switch (cardType) {
       case 'W': 
-        const workType = card['Work Type'] || '';
+        const workType = card.card_name || card.work_type_restriction || '';
         console.log('CardTypeUtilsManager: Work Type primary field:', workType);
         return workType;
         
       case 'B': 
-        const cardName = card['Card Name'] || '';
+        const cardName = card.card_name || '';
         console.log('CardTypeUtilsManager: Bank primary field:', cardName);
         return cardName;
         
       case 'I': 
         let investorAmount = '';
-        if (card['Amount']) {
+        if (card.investment_amount) {
           // Format amount as currency string
-          investorAmount = this.formatCurrency(card['Amount']);
+          investorAmount = this.formatCurrency(card.investment_amount);
+        } else if (card.card_name) {
+          investorAmount = card.card_name;
         }
         console.log('CardTypeUtilsManager: Investor primary field:', investorAmount);
         return investorAmount;
         
       case 'L': 
-        const lifeCardName = card['Card Name'] || '';
+        const lifeCardName = card.card_name || '';
         console.log('CardTypeUtilsManager: Life primary field:', lifeCardName);
         return lifeCardName;
         
       case 'E': 
-        const expeditorCardName = card['Card Name'] || '';
+        const expeditorCardName = card.card_name || '';
         console.log('CardTypeUtilsManager: Expeditor primary field:', expeditorCardName);
         return expeditorCardName;
         
@@ -334,23 +336,23 @@ class CardTypeUtilsManager {
     
     switch (cardType) {
       case 'W': 
-        secondaryField = card['Job Description'] || '';
+        secondaryField = card.description || card.work_type_restriction || '';
         break;
         
       case 'B': 
-        secondaryField = card['Effect'] || '';
+        secondaryField = card.description || '';
         break;
         
       case 'I': 
-        secondaryField = card['Description'] || '';
+        secondaryField = card.description || '';
         break;
         
       case 'L': 
-        secondaryField = card['Effect'] || '';
+        secondaryField = card.description || '';
         break;
         
       case 'E': 
-        secondaryField = card['Effect'] || '';
+        secondaryField = card.description || '';
         break;
         
       default:
@@ -395,54 +397,62 @@ class CardTypeUtilsManager {
       case 'W':
         console.log('CardTypeUtilsManager: Returning Work Type fields');
         return [
-          createField('Work Type', card['Work Type']),
-          createField('Description', card['Job Description']),
-          createField('Estimated Cost', card['Estimated Job Costs'] ? 
-            this.formatCurrency(card['Estimated Job Costs']) : 
-            '')
+          createField('Card Name', card.card_name),
+          createField('Description', card.description),
+          createField('Work Type', card.work_type_restriction),
+          createField('Work Cost', card.work_cost ? 
+            this.formatCurrency(card.work_cost) : 
+            ''),
+          createField('Phase', card.phase_restriction),
+          createField('Duration', card.duration)
         ].filter(field => field.value.trim() !== '');
         
       case 'B':
         console.log('CardTypeUtilsManager: Returning Bank fields');
         return [
-          createField('Card Name', card['Card Name']),
-          createField('Distribution Level', card['Distribution Level']),
-          createField('Amount', card['Amount'] ? 
-            this.formatCurrency(card['Amount']) : 
+          createField('Card Name', card.card_name),
+          createField('Description', card.description),
+          createField('Loan Amount', card.loan_amount ? 
+            this.formatCurrency(card.loan_amount) : 
             ''),
-          createField('Loan Percentage', card['Loan Percentage Cost'] ? 
-            `${card['Loan Percentage Cost']}%` : 
+          createField('Interest Rate', card.loan_rate ? 
+            `${card.loan_rate}%` : 
             ''),
-          createField('Effect', card['Effect'])
+          createField('Timing', card.activation_timing),
+          createField('Duration', card.duration)
         ].filter(field => field.value.trim() !== '');
         
       case 'I':
         console.log('CardTypeUtilsManager: Returning Investor fields');
         return [
-          createField('Distribution Level', card['Distribution Level']),
-          createField('Amount', card['Amount'] ? 
-            this.formatCurrency(card['Amount']) : 
+          createField('Card Name', card.card_name),
+          createField('Description', card.description),
+          createField('Investment Amount', card.investment_amount ? 
+            this.formatCurrency(card.investment_amount) : 
             ''),
-          createField('Description', card['Description'])
+          createField('Timing', card.activation_timing),
+          createField('Duration', card.duration)
         ].filter(field => field.value.trim() !== '');
         
       case 'L':
         console.log('CardTypeUtilsManager: Returning Life fields');
         return [
-          createField('Card Name', card['Card Name']),
-          createField('Effect', card['Effect']),
-          createField('Flavor Text', card['Flavor Text']),
-          createField('Category', card['Category'])
+          createField('Card Name', card.card_name),
+          createField('Description', card.description),
+          createField('Flavor Text', card.flavor_text),
+          createField('Time Effect', card.time_effect),
+          createField('Duration', card.duration)
         ].filter(field => field.value.trim() !== '');
         
       case 'E':
         console.log('CardTypeUtilsManager: Returning Expeditor fields');
         return [
-          createField('Card Name', card['Card Name']),
-          createField('Effect', card['Effect']),
-          createField('Flavor Text', card['Flavor Text']),
-          createField('Color', card['Color']),
-          createField('Phase', card['Phase'])
+          createField('Card Name', card.card_name),
+          createField('Description', card.description),
+          createField('Flavor Text', card.flavor_text),
+          createField('Phase', card.phase_restriction),
+          createField('Duration', card.duration),
+          createField('Immediate Effect', card.immediate_effect)
         ].filter(field => field.value.trim() !== '');
         
       default:
@@ -477,6 +487,39 @@ class CardTypeUtilsManager {
     // Find the player in the game state
     const player = window.GameStateManager.players.find(p => p.id === playerId);
     return player?.color || '#f9f9f9';
+  }
+  
+  /**
+   * Check if a card is available in the current game phase
+   * @param {Object} card - The card object
+   * @returns {boolean} True if card is available in current phase
+   */
+  isCardAvailableInCurrentPhase(card) {
+    if (!card) return false;
+    
+    // If card has no phase restriction, it's always available
+    if (!card.phase_restriction || card.phase_restriction === 'Any') {
+      return true;
+    }
+    
+    // Get current phase from GameStateManager
+    const currentPhase = window.GameStateManager?.currentPhase || 'Initiation';
+    
+    console.log('CardTypeUtils: Checking card availability', {
+      cardId: card.id,
+      cardPhase: card.phase_restriction,
+      currentPhase: currentPhase
+    });
+    
+    return card.phase_restriction === currentPhase;
+  }
+  
+  /**
+   * Get the current game phase
+   * @returns {string} The current game phase
+   */
+  getCurrentPhase() {
+    return window.GameStateManager?.currentPhase || 'Initiation';
   }
   
   /**
@@ -576,7 +619,9 @@ class CardTypeUtilsBackwardCompatibility {
       
       // Add new methods from the manager to the compatibility layer
       getCardClass: (cardType) => this.manager.getCardClass(cardType),
-      getPlayerColorClass: (playerId) => this.manager.getPlayerColorClass(playerId)
+      getPlayerColorClass: (playerId) => this.manager.getPlayerColorClass(playerId),
+      isCardAvailableInCurrentPhase: (card) => this.manager.isCardAvailableInCurrentPhase(card),
+      getCurrentPhase: () => this.manager.getCurrentPhase()
     };
     
     console.log('CardTypeUtilsBackwardCompatibility: Compatibility layer initialized');

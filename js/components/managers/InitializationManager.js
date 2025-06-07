@@ -195,11 +195,11 @@ class InitializationManager {
       // Phase 2: Load both legacy and structured dice roll files
       const fetchPromises = [
         fetch(this.config.dataFiles.spaces),
-        fetch(this.config.dataFiles.diceRoll),
-        fetch('data/DiceRoll_Structured.csv') // Phase 2: Try to load structured format
+        fetch(this.config.dataFiles.diceRoll)
+        // Structured dice roll format temporarily disabled - file not available
       ];
       
-      const [spacesResponse, diceRollResponse, structuredDiceResponse] = await Promise.all(fetchPromises);
+      const [spacesResponse, diceRollResponse] = await Promise.all(fetchPromises);
       
       // Check response for spaces data
       if (!spacesResponse.ok) {
@@ -227,25 +227,9 @@ class InitializationManager {
         throw new Error('No valid dice roll data found in CSV file');
       }
       
-      // Phase 2: Try to load structured dice data
-      let structuredDiceData = null;
-      if (structuredDiceResponse.ok) {
-        try {
-          const structuredDiceCsvText = await structuredDiceResponse.text();
-          structuredDiceData = window.parseCSV(structuredDiceCsvText, 'generic');
-          this.log('info', `InitializationManager: Loaded ${structuredDiceData.length} structured dice outcomes`);
-        } catch (structuredError) {
-          this.log('warn', 'InitializationManager: Structured dice data failed to parse, using legacy only:', structuredError);
-          structuredDiceData = null;
-        }
-      } else {
-        this.log('info', 'InitializationManager: No structured dice data found, using legacy format only');
-      }
-      
       // Store data
       this.loadedData.spaces = spacesData;
       this.loadedData.diceRoll = diceRollData;
-      this.loadedData.structuredDiceRoll = structuredDiceData; // Phase 2: Store structured data
       
       this.log('info', `InitializationManager: Loaded ${spacesData.length} spaces and ${diceRollData.length} dice roll outcomes`);
       
@@ -253,9 +237,7 @@ class InitializationManager {
       this.stageResults.loadCoreData = {
         success: true,
         spacesCount: spacesData.length,
-        diceRollCount: diceRollData.length,
-        structuredDiceCount: structuredDiceData ? structuredDiceData.length : 0,
-        phase2Enabled: structuredDiceData !== null
+        diceRollCount: diceRollData.length
       };
     } catch (error) {
       // Store result
@@ -466,6 +448,22 @@ class InitializationManager {
         React.createElement(window.App),
         rootElement
       );
+      
+      // Initialize animation systems
+      if (window.CardAnimationManager && typeof window.CardAnimationManager.init === 'function') {
+        window.CardAnimationManager.init();
+        this.log('info', 'InitializationManager: Card animation system initialized');
+      }
+      
+      if (window.GameStateAnimationManager && typeof window.GameStateAnimationManager.init === 'function') {
+        window.GameStateAnimationManager.init();
+        this.log('info', 'InitializationManager: Game state animation system initialized');
+      }
+      
+      if (window.PlayerMovementVisualizer && typeof window.PlayerMovementVisualizer.init === 'function') {
+        window.PlayerMovementVisualizer.init();
+        this.log('info', 'InitializationManager: Player movement visualizer initialized');
+      }
       
       // Store result
       this.stageResults.renderGame = {

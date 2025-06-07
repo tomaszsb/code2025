@@ -296,6 +296,64 @@ class CardManager {
     });
   }
   
+  // Enhanced card drawing with animations
+  handleDrawCardsWithAnimation = async (cardType, amount, currentPlayer, cardDisplayRef) => {
+    console.log('CardManager: Drawing cards with animation -', amount, cardType, 'cards');
+    
+    if (!currentPlayer) {
+      console.log('CardManager: No current player found');
+      return [];
+    }
+    
+    // Initialize animation system if needed
+    if (window.CardAnimationManager && typeof window.CardAnimationManager.init === 'function') {
+      window.CardAnimationManager.init();
+    }
+    
+    const drawnCards = [];
+    
+    // Draw cards one by one with animations
+    for (let i = 0; i < amount; i++) {
+      try {
+        // Use GameStateManager to draw card (which will dispatch cardDrawn event)
+        const drawnCard = window.GameStateManager.drawCard(currentPlayer.id, cardType);
+        
+        if (drawnCard) {
+          drawnCards.push(drawnCard);
+          
+          // Animate the card draw if animation system is available
+          if (window.CardAnimationManager && typeof window.CardAnimationManager.animateCardDraw === 'function') {
+            await window.CardAnimationManager.animateCardDraw(cardType, drawnCard, {
+              duration: 1200
+            });
+          }
+          
+          // Small delay between multiple card draws
+          if (i < amount - 1) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        }
+      } catch (error) {
+        console.error('CardManager: Error drawing card with animation:', error);
+      }
+    }
+    
+    // Trigger hand reorganization animation if multiple cards drawn
+    if (drawnCards.length > 1 && cardDisplayRef) {
+      try {
+        if (window.CardAnimationManager && typeof window.CardAnimationManager.animateHandReorganization === 'function') {
+          await window.CardAnimationManager.animateHandReorganization(cardDisplayRef, {
+            cardSpacing: 15
+          });
+        }
+      } catch (error) {
+        console.error('CardManager: Error animating hand reorganization:', error);
+      }
+    }
+    
+    return drawnCards;
+  }
+
   // Handle drawing cards manually - Updated to use event system and conditional dice rolls
   handleDrawCards = (cardType, amount, currentPlayer, cardDisplayRef) => {
     console.log('CardManager: Drawing cards manually -', amount, cardType, 'cards');
@@ -339,6 +397,12 @@ class CardManager {
         console.log('CardManager: Conditional requirements satisfied. Proceeding with card draw.');
         // Requirements are satisfied, proceed with the card draw
       }
+    }
+    
+    // Use animated version if animation system is available
+    if (window.CardAnimationManager) {
+      this.handleDrawCardsWithAnimation(cardType, amount, currentPlayer, cardDisplayRef);
+      return [];
     }
     
     const drawnCards = [];

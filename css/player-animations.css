@@ -1,4 +1,4 @@
-/* player-animations.css - Contains styles for player token animations */
+/* player-animations.css - Enhanced player movement visualization system */
 console.log('player-animations.css file is beginning to be used');
 
 .player-token {
@@ -408,6 +408,438 @@ console.log('player-animations.css file is beginning to be used');
   100% {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
+  }
+}
+
+/* ====== ENHANCED MOVEMENT VISUALIZATION SYSTEM ====== */
+
+/* Movement trail system */
+.movement-trail-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.movement-trail {
+  position: absolute;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+  border-radius: 2px;
+  animation: trailFlow 2s linear infinite;
+  opacity: 0.7;
+}
+
+.movement-trail.recent {
+  height: 4px;
+  opacity: 0.9;
+  animation: trailFlow 1.5s linear infinite;
+}
+
+.movement-trail.active {
+  height: 5px;
+  opacity: 1;
+  box-shadow: 0 0 8px currentColor;
+  animation: trailFlow 1s linear infinite;
+}
+
+/* Trail particles */
+.trail-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: particleMove 3s ease-out forwards;
+  opacity: 0.8;
+}
+
+.trail-particle.spark {
+  animation: sparkMove 2s ease-out forwards;
+  box-shadow: 0 0 6px currentColor;
+}
+
+/* Flying player token for smooth movement */
+.player-token-flying {
+  position: fixed;
+  z-index: 1000;
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  filter: brightness(1.2);
+}
+
+.player-token-flying.long-distance {
+  transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Position history breadcrumbs */
+.position-history-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.position-breadcrumb {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.4;
+  animation: breadcrumbFade 5s linear forwards;
+}
+
+.position-breadcrumb.recent {
+  width: 10px;
+  height: 10px;
+  opacity: 0.6;
+  animation: breadcrumbFade 3s linear forwards;
+}
+
+.position-breadcrumb.current {
+  width: 12px;
+  height: 12px;
+  opacity: 0.8;
+  animation: breadcrumbPulse 2s ease-in-out infinite;
+}
+
+/* Turn transition animations */
+.turn-transition-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.05));
+  z-index: 500;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.turn-transition-overlay.active {
+  opacity: 1;
+}
+
+.turn-handoff-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px 30px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  animation: handoffSlide 1s ease-out;
+}
+
+.handoff-from-player,
+.handoff-to-player {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.handoff-player-token {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin: 0 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.handoff-arrow {
+  font-size: 24px;
+  color: #4caf50;
+  animation: arrowBounce 0.5s ease-in-out infinite alternate;
+}
+
+/* Enhanced player movement effects */
+.player-token.moving {
+  animation: tokenMoving 0.8s ease-out;
+  z-index: 100;
+}
+
+.player-token.arriving {
+  animation: tokenArriving 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.player-token.departure-ghost {
+  animation: departureGhost 2s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Path prediction visualization */
+.path-prediction-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.predicted-path {
+  position: absolute;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 193, 7, 0.6), transparent);
+  border-radius: 1px;
+  animation: pathPrediction 3s ease-in-out infinite;
+}
+
+.predicted-destination {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 3px dashed #ffc107;
+  border-radius: 50%;
+  animation: destinationPulse 2s ease-in-out infinite;
+  transform: translate(-50%, -50%);
+}
+
+/* Movement speed indicators */
+.player-token.speed-slow {
+  transition: all 1.2s ease-out;
+}
+
+.player-token.speed-normal {
+  transition: all 0.8s ease-out;
+}
+
+.player-token.speed-fast {
+  transition: all 0.4s ease-out;
+}
+
+.player-token.speed-instant {
+  transition: all 0.1s ease-out;
+}
+
+/* Distance-based movement effects */
+.player-token.move-distance-1 {
+  animation: shortMove 0.6s ease-out;
+}
+
+.player-token.move-distance-2-3 {
+  animation: mediumMove 1s ease-out;
+}
+
+.player-token.move-distance-4-plus {
+  animation: longMove 1.4s ease-out;
+}
+
+/* Animation keyframes */
+@keyframes trailFlow {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes particleMove {
+  0% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+
+@keyframes sparkMove {
+  0% {
+    opacity: 1;
+    transform: scale(0.5);
+    box-shadow: 0 0 3px currentColor;
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.5);
+    box-shadow: 0 0 12px currentColor;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.2);
+    box-shadow: 0 0 6px currentColor;
+  }
+}
+
+@keyframes breadcrumbFade {
+  0% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+@keyframes breadcrumbPulse {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes handoffSlide {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8) rotateY(90deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1) rotateY(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes arrowBounce {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes tokenMoving {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.15);
+    filter: brightness(1.3) drop-shadow(0 0 8px currentColor);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+@keyframes tokenArriving {
+  0% {
+    transform: scale(0.3) translateY(-20px);
+    opacity: 0;
+    filter: brightness(2);
+  }
+  60% {
+    transform: scale(1.3) translateY(0px);
+    opacity: 1;
+    filter: brightness(1.5);
+  }
+  100% {
+    transform: scale(1) translateY(0px);
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
+@keyframes departureGhost {
+  0% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
+
+@keyframes pathPrediction {
+  0%, 100% {
+    opacity: 0.3;
+    background-position: -100% 0;
+  }
+  50% {
+    opacity: 0.8;
+    background-position: 100% 0;
+  }
+}
+
+@keyframes destinationPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+@keyframes shortMove {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes mediumMove {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.2);
+    filter: brightness(1.2);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+@keyframes longMove {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  30% {
+    transform: scale(1.3);
+    filter: brightness(1.4) drop-shadow(0 0 10px currentColor);
+  }
+  70% {
+    transform: scale(1.1);
+    filter: brightness(1.2);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
   }
 }
 

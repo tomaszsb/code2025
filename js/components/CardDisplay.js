@@ -35,7 +35,11 @@ window.CardDisplay = class CardDisplay extends React.Component {
       // Add state for card limit enforcement
       showCardLimitDialog: false,
       cardTypeCounts: {},
-      cardsOverLimit: []
+      cardsOverLimit: [],
+      // Add state for combo system
+      comboOpportunities: [],
+      showComboBuilder: false,
+      selectedCombo: null
     };
   }
 
@@ -80,12 +84,27 @@ window.CardDisplay = class CardDisplay extends React.Component {
     });
   }
 
+  // Show card limit help
+  showCardLimitHelp = () => {
+    alert(`Card Limit Help:
+
+• Each card type has a limit of ${CARD_TYPE_LIMIT} cards
+• Work cards (W) are automatically added to your project
+• Other cards (B, I, L, E) can be played when needed
+• Click individual cards to discard them
+• Use "Discard All" to quickly remove excess cards
+• Choose cards strategically - keep the most valuable ones!`);
+  }
+
   componentDidMount() {
     // Load player's cards if any exist
     this.loadPlayerCards();
     
     // Add event listener for game state updates
     window.addEventListener('gameStateUpdated', this.handleGameStateUpdate);
+    
+    // Initialize combo detection
+    this.detectComboOpportunities();
   }
   
   componentWillUnmount() {
@@ -97,6 +116,8 @@ window.CardDisplay = class CardDisplay extends React.Component {
   handleGameStateUpdate = () => {
     // Reload the player's cards when game state is updated
     this.loadPlayerCards();
+    // Re-detect combo opportunities when cards change
+    this.detectComboOpportunities();
   }
 
   componentDidUpdate(prevProps) {
@@ -528,6 +549,145 @@ window.CardDisplay = class CardDisplay extends React.Component {
       selectedCardId: null
     });
   }
+
+  // ======================
+  // COMBO DETECTION METHODS
+  // ======================
+
+  // Detect combo opportunities among current cards
+  detectComboOpportunities = () => {
+    const { cards } = this.state;
+    
+    if (!cards || cards.length < 2) {
+      this.setState({ comboOpportunities: [] });
+      return;
+    }
+
+    const opportunities = [];
+    
+    // Check for known combo patterns
+    const cardTypes = cards.map(card => card.type);
+    const typeCounts = this.countCardTypes(cardTypes);
+
+    // Bank + Investor combo (Finance synergy)
+    if (typeCounts.B >= 1 && typeCounts.I >= 1) {
+      opportunities.push({
+        type: 'finance_synergy',
+        name: 'Finance Combo',
+        cards: this.getCardsByTypes(cards, ['B', 'I']),
+        description: 'Bank + Investor: Enhanced financial terms',
+        bonus: { money: 75000 },
+        cssClass: 'finance'
+      });
+    }
+
+    // Work + Life combo (Work-life balance)
+    if (typeCounts.W >= 1 && typeCounts.L >= 1) {
+      opportunities.push({
+        type: 'work_life_synergy',
+        name: 'Work-Life Balance',
+        cards: this.getCardsByTypes(cards, ['W', 'L']),
+        description: 'Work + Life: Balanced approach bonus',
+        bonus: { money: 25000, time: 2 },
+        cssClass: 'work-life'
+      });
+    }
+
+    // Triple type combo
+    const uniqueTypes = Object.keys(typeCounts).filter(type => typeCounts[type] > 0);
+    if (uniqueTypes.length >= 3) {
+      opportunities.push({
+        type: 'triple_synergy',
+        name: 'Triple Coordination',
+        cards: this.getCardsByTypes(cards, uniqueTypes.slice(0, 3)),
+        description: 'Three different card types working together',
+        bonus: { money: 75000 },
+        cssClass: 'synergy'
+      });
+    }
+
+    // Full spectrum combo (all 5 types)
+    if (uniqueTypes.length === 5) {
+      opportunities.push({
+        type: 'full_spectrum',
+        name: 'Project Mastery',
+        cards: cards,
+        description: 'All card types in perfect harmony',
+        bonus: { money: 200000, time: 5 },
+        cssClass: 'spectrum'
+      });
+    }
+
+    // Same-type mass combo (3+ of same type)
+    Object.entries(typeCounts).forEach(([type, count]) => {
+      if (count >= 3) {
+        opportunities.push({
+          type: 'mass_synergy',
+          name: `${window.CardTypeUtils?.getCardTypeName(type) || type} Focus`,
+          cards: this.getCardsByTypes(cards, [type]),
+          description: `${count} ${type}-type cards amplifying each other`,
+          bonus: { multiplier: 1 + (count * 0.3) },
+          cssClass: 'synergy'
+        });
+      }
+    });
+
+    this.setState({ 
+      comboOpportunities: opportunities,
+      showComboBuilder: opportunities.length > 0  // Auto-show when combos are available
+    });
+  }
+
+  // Count card types
+  countCardTypes = (cardTypes) => {
+    const counts = { W: 0, B: 0, I: 0, L: 0, E: 0 };
+    cardTypes.forEach(type => {
+      if (counts.hasOwnProperty(type)) {
+        counts[type]++;
+      }
+    });
+    return counts;
+  }
+
+  // Get cards of specific types
+  getCardsByTypes = (cards, types) => {
+    return cards.filter(card => types.includes(card.type));
+  }
+
+  // Check if a card is part of any combo opportunity
+  getCardComboStatus = (card) => {
+    const { comboOpportunities = [] } = this.state;
+    
+    for (let opportunity of comboOpportunities) {
+      const isPartOfCombo = opportunity.cards.some(comboCard => comboCard.id === card.id);
+      if (isPartOfCombo) {
+        return {
+          hasCombo: true,
+          comboType: opportunity.type,
+          comboName: opportunity.name,
+          cssClass: opportunity.cssClass
+        };
+      }
+    }
+    
+    return { hasCombo: false };
+  }
+
+  // Check for chain opportunities
+  detectChainOpportunities = (card) => {
+    if (!card.chain_effect) return null;
+
+    // Simple chain detection - look for chain effect patterns
+    if (card.chain_effect.includes('draw:') || card.chain_effect.includes('if:')) {
+      return {
+        hasChain: true,
+        chainType: 'trigger',
+        description: 'This card can trigger chain reactions'
+      };
+    }
+
+    return null;
+  }
   
   // Get a CSS class name for the player color
   getPlayerColorClass = (playerId) => {
@@ -673,52 +833,86 @@ window.CardDisplay = class CardDisplay extends React.Component {
     })).filter(item => item.card);
     
     return (
-      <div className="card-limit-dialog">
-        <div className="card-limit-dialog-content">
-          <h3 className="card-limit-dialog-title">Card Limit Exceeded</h3>
-          <p className="card-limit-dialog-subtitle">
-            You have exceeded the limit of {CARD_TYPE_LIMIT} cards per type. 
-            Please discard the excess cards.
-          </p>
-          
-          <div className="card-limit-cards-grid">
-            {excessCards.map(item => (
-              <div 
-                key={item.card.id || item.index}
-                className={`dialog-card`}
-                onClick={() => this.handleDialogDiscard(item.index)}
-              >
-                <div 
-                  className={`card-header card-header-${item.card.type.toLowerCase()}`}
-                >
-                  {window.CardTypeUtils.getCardTypeName(item.card.type)}
-                </div>
-                
-                <div className="card-content">
-                  {window.CardTypeUtils.getCardPrimaryField(item.card) && (
-                    <div className="card-field">{window.CardTypeUtils.getCardPrimaryField(item.card)}</div>
-                  )}
-                  
-                  {window.CardTypeUtils.getCardSecondaryField(item.card) && (
-                    <div className="card-description">
-                      {window.CardTypeUtils.getCardSecondaryField(item.card).length > 60 
-                        ? `${window.CardTypeUtils.getCardSecondaryField(item.card).substring(0, 60)}...` 
-                        : window.CardTypeUtils.getCardSecondaryField(item.card)
-                      }
-                    </div>
-                  )}
-                </div>
+      <div className="card-limit-dialog-overlay">
+        <div className="card-limit-dialog">
+          <div className="card-limit-dialog-content">
+            <div className="dialog-header">
+              <h3 className="card-limit-dialog-title">⚠️ Card Limit Exceeded</h3>
+              <p className="card-limit-dialog-subtitle">
+                You have exceeded the limit of <strong>{CARD_TYPE_LIMIT} cards per type</strong>. 
+                <br />Select cards to discard or use the quick actions below.
+              </p>
+            </div>
+            
+            <div className="dialog-stats">
+              <div className="stat-item">
+                <span className="stat-label">Total Excess:</span>
+                <span className="stat-value">{excessCards.length}</span>
               </div>
-            ))}
-          </div>
-          
-          <div className="dialog-buttons">
-            <button 
-              className="dialog-confirm-btn" 
-              onClick={() => this.handleDiscardCardsOverLimit(cardsOverLimit)}
-            >
-              Discard All Excess Cards
-            </button>
+              <div className="stat-item">
+                <span className="stat-label">Card Limit:</span>
+                <span className="stat-value">{CARD_TYPE_LIMIT}</span>
+              </div>
+            </div>
+            
+            <div className="card-limit-cards-grid">
+              {excessCards.map(item => (
+                <div 
+                  key={item.card.id || item.index}
+                  className={`dialog-card clickable-card`}
+                  onClick={() => this.handleDialogDiscard(item.index)}
+                  title="Click to discard this card"
+                >
+                  <div className="discard-indicator">❌</div>
+                  <div 
+                    className={`card-header card-header-${item.card.type.toLowerCase()}`}
+                  >
+                    {window.CardTypeUtils.getCardTypeName(item.card.type)}
+                  </div>
+                  
+                  <div className="card-content">
+                    {window.CardTypeUtils.getCardPrimaryField(item.card) && (
+                      <div className="card-field card-name">{window.CardTypeUtils.getCardPrimaryField(item.card)}</div>
+                    )}
+                    
+                    {window.CardTypeUtils.getCardSecondaryField(item.card) && (
+                      <div className="card-description">
+                        {window.CardTypeUtils.getCardSecondaryField(item.card).length > 40 
+                          ? `${window.CardTypeUtils.getCardSecondaryField(item.card).substring(0, 40)}...` 
+                          : window.CardTypeUtils.getCardSecondaryField(item.card)
+                        }
+                      </div>
+                    )}
+                    
+                    {/* Show card-specific info */}
+                    {item.card.type === 'B' && item.card.loan_amount && (
+                      <div className="card-quick-info">💰 {window.CardTypeUtils.formatCurrency(item.card.loan_amount)}</div>
+                    )}
+                    {item.card.type === 'I' && item.card.investment_amount && (
+                      <div className="card-quick-info">📈 {window.CardTypeUtils.formatCurrency(item.card.investment_amount)}</div>
+                    )}
+                    {item.card.type === 'W' && item.card.work_cost && (
+                      <div className="card-quick-info">🔧 {window.CardTypeUtils.formatCurrency(item.card.work_cost)}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="dialog-buttons">
+              <button 
+                className="dialog-action-btn dialog-discard-all-btn" 
+                onClick={() => this.handleDiscardCardsOverLimit(cardsOverLimit)}
+              >
+                🗑️ Discard All Excess Cards
+              </button>
+              <button 
+                className="dialog-action-btn dialog-help-btn" 
+                onClick={() => this.showCardLimitHelp()}
+              >
+                ❓ Help
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -784,7 +978,15 @@ window.CardDisplay = class CardDisplay extends React.Component {
     
     return (
       <div className={`card-display-container ${playerColorClass}`}>
-        <h3>Cards ({filteredCards.length})</h3>
+        <div className="card-display-header">
+          <h3>Cards ({filteredCards.length})</h3>
+          
+          {/* Current phase indicator */}
+          <div className="current-phase-indicator">
+            <span className="phase-label">Current Phase:</span>
+            <span className="phase-value">{window.CardTypeUtils.getCurrentPhase()}</span>
+          </div>
+        </div>
         
         {/* Card type count indicators */}
         {this.renderCardTypeCounts()}
@@ -828,30 +1030,96 @@ window.CardDisplay = class CardDisplay extends React.Component {
               // Add warning class if card type exceeds limit
               const isOverLimit = cardTypeCounts[card.type] > CARD_TYPE_LIMIT;
               
+              // Check if card is available in current phase
+              const isPhaseAvailable = window.CardTypeUtils.isCardAvailableInCurrentPhase(card);
+              
+              // Check for combo opportunities
+              const comboStatus = this.getCardComboStatus(card);
+              const chainStatus = this.detectChainOpportunities(card);
+              
+              // Build CSS classes for combo/chain indicators and phase availability
+              let comboClasses = '';
+              if (comboStatus.hasCombo) {
+                comboClasses += ' combo-available';
+              }
+              if (chainStatus && chainStatus.hasChain) {
+                comboClasses += ' chain-trigger';
+              }
+              if (!isPhaseAvailable) {
+                comboClasses += ' phase-disabled';
+              }
+              
               return (
                 <div 
                   key={card.id || index}
                   className={`card card-type-${card.type.toLowerCase()} 
                     ${selectedCardIndex === actualIndex ? 'selected' : ''} 
                     ${isDiscardMode ? 'discard-highlight' : ''} 
-                    ${isOverLimit ? 'card-exceed-limit' : ''}`}
-                  onClick={() => this.handleCardClick(actualIndex)}
+                    ${isOverLimit ? 'card-exceed-limit' : ''}${comboClasses}`}
+                  onClick={() => isPhaseAvailable ? this.handleCardClick(actualIndex) : null}
+                  title={!isPhaseAvailable ? `This card is only available during the ${card.phase_restriction} phase` : ''}
                 >
+                  {/* Combo indicator */}
+                  {comboStatus.hasCombo && (
+                    <div className={`combo-indicator ${comboStatus.cssClass}`}>
+                      {comboStatus.comboName}
+                    </div>
+                  )}
+                  
                   <div className={`card-header card-header-${card.type.toLowerCase()}`}>
                     {window.CardTypeUtils.getCardTypeName(card.type)}
+                    {/* Phase restriction indicator */}
+                    {card.phase_restriction && card.phase_restriction !== 'Any' && (
+                      <div className={`phase-indicator ${isPhaseAvailable ? 'phase-available' : 'phase-unavailable'}`}>
+                        📅 {card.phase_restriction}
+                      </div>
+                    )}
                   </div>
                   
                   <div className="card-content">
                     {window.CardTypeUtils.getCardPrimaryField(card) && (
-                      <div className="card-field">{window.CardTypeUtils.getCardPrimaryField(card)}</div>
+                      <div className="card-field card-name">{window.CardTypeUtils.getCardPrimaryField(card)}</div>
                     )}
                     
                     {window.CardTypeUtils.getCardSecondaryField(card) && (
                       <div className="card-description">
-                        {window.CardTypeUtils.getCardSecondaryField(card).length > 60 
-                          ? `${window.CardTypeUtils.getCardSecondaryField(card).substring(0, 60)}...` 
+                        {window.CardTypeUtils.getCardSecondaryField(card).length > 50 
+                          ? `${window.CardTypeUtils.getCardSecondaryField(card).substring(0, 50)}...` 
                           : window.CardTypeUtils.getCardSecondaryField(card)
                         }
+                      </div>
+                    )}
+                    
+                    {/* Add key card information based on type and phase */}
+                    {card.type === 'B' && card.loan_amount && (
+                      <div className="card-amount">
+                        {window.CardTypeUtils.getCurrentPhase() === 'Initiation' ? (
+                          <span className="seed-money">🌱 {window.CardTypeUtils.formatCurrency(card.loan_amount)} (Seed Money)</span>
+                        ) : (
+                          <span>💰 {window.CardTypeUtils.formatCurrency(card.loan_amount)}</span>
+                        )}
+                      </div>
+                    )}
+                    
+                    {card.type === 'I' && card.investment_amount && (
+                      <div className="card-amount">
+                        {window.CardTypeUtils.getCurrentPhase() === 'Initiation' ? (
+                          <span className="seed-money">🌱 {window.CardTypeUtils.formatCurrency(card.investment_amount)} (Seed Money)</span>
+                        ) : (
+                          <span>📈 {window.CardTypeUtils.formatCurrency(card.investment_amount)}</span>
+                        )}
+                      </div>
+                    )}
+                    
+                    {card.type === 'W' && card.work_cost && (
+                      <div className="card-amount">
+                        🔧 {window.CardTypeUtils.formatCurrency(card.work_cost)}
+                      </div>
+                    )}
+                    
+                    {card.immediate_effect && (
+                      <div className="card-effect">
+                        ⚡ {card.immediate_effect}
                       </div>
                     )}
                     
@@ -904,6 +1172,51 @@ window.CardDisplay = class CardDisplay extends React.Component {
         
         {/* Card limit dialog */}
         {showCardLimitDialog && this.renderCardLimitDialog()}
+        
+        {/* Combo builder UI */}
+        {this.renderComboBuilder()}
+      </div>
+    );
+  }
+
+  // Render combo builder UI
+  renderComboBuilder = () => {
+    const { comboOpportunities, showComboBuilder } = this.state;
+    
+    if (!comboOpportunities || comboOpportunities.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className={`combo-builder ${showComboBuilder ? 'visible' : ''}`}>
+        <div className="combo-builder-title">
+          ⭐ Combo Opportunities ({comboOpportunities.length})
+        </div>
+        
+        {comboOpportunities.map((combo, index) => (
+          <div key={index} className="combo-preview">
+            <div className="combo-requirements">
+              <strong>{combo.name}</strong>
+            </div>
+            <div style={{ fontSize: '12px', color: '#ccc', marginBottom: '4px' }}>
+              {combo.description}
+            </div>
+            <div className="combo-bonus">
+              {combo.bonus.money && `+$${combo.bonus.money.toLocaleString()}`}
+              {combo.bonus.time && ` +${combo.bonus.time} time`}
+              {combo.bonus.multiplier && ` ${combo.bonus.multiplier}x multiplier`}
+            </div>
+          </div>
+        ))}
+        
+        <div style={{ 
+          marginTop: '8px', 
+          fontSize: '10px', 
+          color: '#888',
+          cursor: 'pointer'
+        }} onClick={() => this.setState({ showComboBuilder: !showComboBuilder })}>
+          {showComboBuilder ? 'Hide' : 'Show'} Details
+        </div>
       </div>
     );
   }

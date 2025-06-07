@@ -21,6 +21,7 @@ class GameStateManager {
     this.diceRollData = []; // Store dice roll data for MovementEngine
     this._gameStarted = false;
     this.gameEnded = false;
+    this.currentPhase = 'Initiation'; // Default starting phase
     
     // Card collections for the game
     this.cardCollections = {

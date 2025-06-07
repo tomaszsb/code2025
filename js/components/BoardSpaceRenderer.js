@@ -15,6 +15,50 @@ window.BoardSpaceRenderer = {
     return window.MoveLogic ? window.MoveLogic.getMoveDetails(space) : null;
   },
 
+  // Determine path type for visual styling
+  getPathType: function(space) {
+    if (!space) return 'main';
+    
+    // Check for path property first
+    if (space.Path) {
+      const path = space.Path.toLowerCase();
+      if (path.includes('main')) return 'main';
+      if (path.includes('special')) return 'special';
+      if (path.includes('side')) return 'side-quest';
+    }
+    
+    // Fallback to space type categorization
+    const spaceName = space.name ? space.name.toLowerCase() : '';
+    const spaceType = space.type ? space.type.toLowerCase() : '';
+    
+    // Special path detection
+    if (spaceName.includes('cheat') || spaceName.includes('decision')) {
+      return 'special';
+    }
+    
+    // Side quest detection
+    if (spaceName.includes('side') || spaceName.includes('optional')) {
+      return 'side-quest';
+    }
+    
+    // Main path by default
+    return 'main';
+  },
+
+  // Calculate progress percentage for phase visualization
+  getPhaseProgress: function(space, currentPlayer) {
+    if (!space || !currentPlayer) return 0;
+    
+    // Simple progress calculation based on space type and player position
+    const phaseOrder = ['setup', 'funding', 'design', 'regulatory', 'construction'];
+    const spaceType = space.type ? space.type.toLowerCase() : '';
+    const currentPhaseIndex = phaseOrder.indexOf(spaceType);
+    
+    if (currentPhaseIndex === -1) return 0;
+    
+    return Math.min(100, (currentPhaseIndex / (phaseOrder.length - 1)) * 100);
+  },
+
   // Check if a space has dice roll options
   hasDiceRollOptions: function(space, diceRollData) {
     this.logMethodCall('hasDiceRollOptions');
@@ -90,6 +134,16 @@ window.BoardSpaceRenderer = {
     }
     if (hasDiceRoll) classes.push('has-dice-roll');
     
+    // Add path-based styling
+    const pathType = this.getPathType(space);
+    if (pathType) classes.push(`path-${pathType}`);
+    
+    // Add visit status classes
+    if (space.visitType) {
+      const visitType = space.visitType.toLowerCase();
+      classes.push(visitType === 'first' ? 'first-visit' : 'subsequent-visit');
+    }
+    
     // Format the visit type text
     let visitTypeText = '';
     if (space.visitType) {
@@ -122,6 +176,18 @@ window.BoardSpaceRenderer = {
         className={classes.join(' ')}
         onClick={() => onSpaceClick && onSpaceClick(space.id)}
       >
+        {/* Space type indicator */}
+        {space.type && (
+          <div className="space-type-indicator">
+            {space.type.toUpperCase()}
+          </div>
+        )}
+        
+        {/* Phase progress indicator */}
+        {space.type && (
+          <div className={`phase-progress ${space.type.toLowerCase()}`}></div>
+        )}
+        
         <div className="space-content">
           <div className="space-name">{space.name}</div>
           {visitTypeText && <div className="visit-type">{visitTypeText}</div>}
@@ -137,6 +203,16 @@ window.BoardSpaceRenderer = {
           {isSelectedMove && (
             <div className="destination-tag">
               Destination
+            </div>
+          )}
+          
+          {/* Progress indicator for current player */}
+          {players.length > 0 && (
+            <div className="progress-indicator">
+              <div 
+                className="progress-bar" 
+                style={{ width: `${this.getPhaseProgress(space, window.GameState.getCurrentPlayer())}%` }}
+              ></div>
             </div>
           )}
         </div>

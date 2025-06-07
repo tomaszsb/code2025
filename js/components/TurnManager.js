@@ -107,7 +107,28 @@ class TurnManager {
    */
   handleEndTurn = () => {
     console.log('TurnManager: Ending current turn');
-    const { selectedMove, availableMoves, hasSelectedMove } = this.gameBoard.state;
+    
+    // Show loading feedback - find button by class
+    const endTurnButton = document.querySelector('.end-turn-btn');
+    const loadingId = window.InteractiveFeedback?.showLoading(endTurnButton, 'Processing turn...');
+    
+    // Add safety cleanup function
+    const cleanupButtonState = () => {
+      if (endTurnButton) {
+        endTurnButton.classList.remove('loading');
+        endTurnButton.disabled = false;
+        const originalText = endTurnButton.getAttribute('data-original-text');
+        if (originalText) {
+          endTurnButton.textContent = originalText;
+          endTurnButton.removeAttribute('data-original-text');
+        } else {
+          endTurnButton.textContent = 'End Turn'; // Fallback text
+        }
+      }
+    };
+    
+    try {
+      const { selectedMove, availableMoves, hasSelectedMove } = this.gameBoard.state;
     const currentPlayer = this.getCurrentPlayer();
     
     console.log('TurnManager: FDNY DEBUG - Initial state check:');
@@ -166,12 +187,29 @@ class TurnManager {
         } else {
           console.error('TurnManager: Move execution failed:', moveResult?.error || 'Unknown error');
           console.error('TurnManager: Cannot execute move - MovementEngine executePlayerMove failed');
+          
+          // Show error feedback
+          if (window.InteractiveFeedback) {
+            window.InteractiveFeedback.hideLoading(loadingId);
+            window.InteractiveFeedback.error('Move execution failed. Please try again.');
+          } else {
+            cleanupButtonState();
+          }
+          
           return; // Don't continue to next turn if move failed
         }
       } else {
         console.error('TurnManager: Cannot execute move - MovementEngine not ready');
         console.error('TurnManager: MovementEngine exists:', !!window.movementEngine);
         console.error('TurnManager: MovementEngine isReady:', window.movementEngine?.isReady());
+        
+        // Show error feedback
+        if (window.InteractiveFeedback) {
+          window.InteractiveFeedback.hideLoading(loadingId);
+          window.InteractiveFeedback.error('Game system not ready. Please wait and try again.');
+        } else {
+          cleanupButtonState();
+        }
         
         // REMOVED FALLBACK LOGIC: No more fallback to GameStateManager.movePlayer
         // This prevents invalid "space-X-fallback" IDs from being processed
@@ -187,6 +225,15 @@ class TurnManager {
       } else if (availableMoves && availableMoves.length > 0) {
         console.log('TurnManager: Moves available but none selected. Player must select a move before ending turn');
         console.log('TurnManager: Available moves:', availableMoves.map(m => m.name || m.id));
+        
+        // Hide loading before returning
+        if (window.InteractiveFeedback) {
+          window.InteractiveFeedback.hideLoading(loadingId);
+          window.InteractiveFeedback.warning('Please select a move before ending your turn.');
+        } else {
+          cleanupButtonState();
+        }
+        
         return; // Don't advance turn if moves are available but none selected
       } else {
         console.log('TurnManager: No move selected and no available moves data');
@@ -196,7 +243,30 @@ class TurnManager {
     // Move to next player's turn
     this.nextPlayerTurn();
     
+    // Hide loading and show success feedback
+    if (window.InteractiveFeedback) {
+      window.InteractiveFeedback.hideLoading(loadingId);
+      window.InteractiveFeedback.success('Turn completed successfully!');
+    } else {
+      cleanupButtonState();
+    }
+    
     console.log('TurnManager: Turn ended, next player:', window.GameStateManager.currentPlayerIndex);
+    
+    } catch (error) {
+      console.error('TurnManager: Error in handleEndTurn:', error);
+      
+      // Ensure button state is cleaned up even on unexpected errors
+      if (window.InteractiveFeedback) {
+        window.InteractiveFeedback.hideLoading(loadingId);
+        window.InteractiveFeedback.error('An error occurred while processing your turn.');
+      } else {
+        cleanupButtonState();
+      }
+      
+      // Re-throw to maintain error visibility
+      throw error;
+    }
   }
   
   /**

@@ -242,7 +242,7 @@ window.GameStateAnimations = {
     const phaseNames = {
       'setup': 'Project Setup',
       'funding': 'Securing Funding',
-      'design': 'Design & Planning',
+      'design': 'Design Phase',
       'regulatory': 'Regulatory Approval',
       'construction': 'Construction Phase',
       'completion': 'Project Completion'

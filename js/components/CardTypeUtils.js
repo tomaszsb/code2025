@@ -497,13 +497,22 @@ class CardTypeUtilsManager {
   isCardAvailableInCurrentPhase(card) {
     if (!card) return false;
     
-    // If card has no phase restriction, it's always available
-    if (!card.phase_restriction || card.phase_restriction === 'Any') {
+    // If card has no phase restriction or is marked as "Any", it's always available
+    // Also treat legacy color values as "Any" until CSV is fixed
+    const anyPhaseValues = ['Any', 'Any Phase', '', 'Red', 'All Colors', 'Green', 'Blue', 'Yellow'];
+    if (!card.phase_restriction || anyPhaseValues.includes(card.phase_restriction)) {
+      console.log('CardTypeUtils: Card available in any phase', {
+        cardId: card.id,
+        cardPhase: card.phase_restriction
+      });
       return true;
     }
     
+    // Accept any phase restriction value for now (will be cleaned up in CSV)
+    // Remove color-based logic and just check against valid phase names
+    
     // Get current phase from GameStateManager
-    const currentPhase = window.GameStateManager?.currentPhase || 'Initiation';
+    const currentPhase = window.GameStateManager?.currentPhase || 'SETUP';
     
     console.log('CardTypeUtils: Checking card availability', {
       cardId: card.id,
@@ -519,7 +528,7 @@ class CardTypeUtilsManager {
    * @returns {string} The current game phase
    */
   getCurrentPhase() {
-    return window.GameStateManager?.currentPhase || 'Initiation';
+    return window.GameStateManager?.currentPhase || 'SETUP';
   }
   
   /**

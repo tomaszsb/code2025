@@ -175,3 +175,59 @@ Game rules and content are externalized to CSV files for easy modification witho
 - **Advanced Indexing**: Multi-dimensional card indexes for O(1) lookups
 - **Fast Combo Detection**: Real-time combo opportunity identification
 - **Scalable Architecture**: Efficient processing for large card datasets
+
+## Enhanced Animation & Visualization System (Phase 2)
+
+### Card Animation System
+**`js/components/CardAnimations.js`** provides comprehensive card interactions:
+- **Card Draw Animations**: Cards slide in from deck with elastic easing and 3D rotation
+- **Card Play Animations**: Cards move to play area with particle effects and 360° rotation
+- **Discard Animations**: Smooth removal with directional movement and dissolve effects
+- **Hand Management**: Automatic card arrangement with staggered entry animations
+- **Type-Specific Effects**: Color-coded glow effects for each card type (W, B, I, L, E)
+
+### Player Movement Visualization
+**`js/components/PlayerMovementVisualizer.js`** handles advanced movement effects:
+- **Movement Trails**: Animated paths showing player movement between spaces
+- **Trail Particles**: Sparking particle effects along movement paths
+- **Position Breadcrumbs**: Visual history of recent player positions
+- **Movement Prediction**: Dashed lines showing possible destinations
+- **Distance-Based Effects**: Different animations for different movement distances
+
+### Enhanced Player Tokens
+- **Smooth Movement**: Speed-based transitions (normal, fast, slow, instant)
+- **Arrival Effects**: Enhanced scaling and brightness effects when arriving
+- **Departure Ghosts**: Temporary ghost tokens remain at origin during movement
+- **Active Player Highlighting**: Pulsing animations for current player
+
+### Turn Transition System
+**Enhanced TurnManager integration**:
+- **Visual Handoff Overlay**: Professional transition screen showing player change
+- **Player Token Display**: Color-coded tokens with player names in transitions
+- **Smooth Timing**: 2.4-second animated transitions with proper fade in/out
+- **Movement Integration**: Coordinates with PlayerMovementVisualizer
+
+### CSS Animation Framework
+**`css/player-animations.css`** provides comprehensive styling:
+- **20+ Animation Keyframes**: For movement, transitions, and effects
+- **Particle Systems**: Floating and dissolve particle effects
+- **Glow Systems**: Type-specific and interaction-based glow effects
+- **Loading States**: Professional spinner animations for async operations
+
+### Animation Integration
+- **Event Coordination**: Proper event handling between all movement components
+- **Performance Optimized**: Efficient cleanup and memory management
+- **Responsive Design**: Animations work across different screen sizes
+- **Accessibility**: Reduced motion options for accessibility compliance
+
+## Recent Critical Fixes
+
+### App.js State Management Fix
+- **Issue**: Empty page after "Start New Game" due to incorrect state references
+- **Solution**: Updated App.js to use GameStateManager instead of legacy GameState
+- **Added**: Proper event listeners for game state changes and re-render triggers
+
+### GameStateManager Initialization
+- **Added**: `gameStarted` getter property for proper state access
+- **Fixed**: Initialization flag setting when first player is added
+- **Enhanced**: Event-driven state updates for UI synchronization

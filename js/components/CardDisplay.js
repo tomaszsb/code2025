@@ -103,6 +103,11 @@ window.CardDisplay = class CardDisplay extends React.Component {
     // Add event listener for game state updates
     window.addEventListener('gameStateUpdated', this.handleGameStateUpdate);
     
+    // Add event listener for GameStateManager phase changes
+    if (window.GameStateManager) {
+      window.GameStateManager.addEventListener('gameStateChanged', this.handlePhaseChange);
+    }
+    
     // Initialize combo detection
     this.detectComboOpportunities();
   }
@@ -110,6 +115,11 @@ window.CardDisplay = class CardDisplay extends React.Component {
   componentWillUnmount() {
     // Remove event listener to prevent memory leaks
     window.removeEventListener('gameStateUpdated', this.handleGameStateUpdate);
+    
+    // Remove GameStateManager event listener
+    if (window.GameStateManager) {
+      window.GameStateManager.removeEventListener('gameStateChanged', this.handlePhaseChange);
+    }
   }
   
   // Handle game state updates
@@ -118,6 +128,15 @@ window.CardDisplay = class CardDisplay extends React.Component {
     this.loadPlayerCards();
     // Re-detect combo opportunities when cards change
     this.detectComboOpportunities();
+  }
+
+  // Handle phase changes
+  handlePhaseChange = (event) => {
+    if (event.data && event.data.changeType === 'phaseChanged') {
+      console.log('CardDisplay: Phase changed, forcing re-render');
+      // Force a re-render to update phase indicators and card availability
+      this.forceUpdate();
+    }
   }
 
   componentDidUpdate(prevProps) {
@@ -689,6 +708,19 @@ window.CardDisplay = class CardDisplay extends React.Component {
     return null;
   }
   
+  // Check if a phase restriction value is a valid CSV phase name
+  isValidPhase = (phaseRestriction) => {
+    if (!phaseRestriction) return false;
+    
+    // Valid CSV phase names from Spaces.csv
+    const validPhases = ['SETUP', 'OWNER', 'FUNDING', 'DESIGN', 'CONSTRUCTION', 'REGULATORY', 'END'];
+    
+    // Also accept universal variations (removed color references)
+    const validVariations = ['Any', 'Any Phase', 'Regulatory Review'];
+    
+    return validPhases.includes(phaseRestriction.toUpperCase()) || validVariations.includes(phaseRestriction);
+  }
+
   // Get a CSS class name for the player color
   getPlayerColorClass = (playerId) => {
     if (!playerId || !window.GameState?.players) {
@@ -1069,7 +1101,7 @@ window.CardDisplay = class CardDisplay extends React.Component {
                   <div className={`card-header card-header-${card.type.toLowerCase()}`}>
                     {window.CardTypeUtils.getCardTypeName(card.type)}
                     {/* Phase restriction indicator */}
-                    {card.phase_restriction && card.phase_restriction !== 'Any' && (
+                    {card.phase_restriction && card.phase_restriction !== 'Any' && this.isValidPhase(card.phase_restriction) && (
                       <div className={`phase-indicator ${isPhaseAvailable ? 'phase-available' : 'phase-unavailable'}`}>
                         📅 {card.phase_restriction}
                       </div>
@@ -1093,7 +1125,7 @@ window.CardDisplay = class CardDisplay extends React.Component {
                     {/* Add key card information based on type and phase */}
                     {card.type === 'B' && card.loan_amount && (
                       <div className="card-amount">
-                        {window.CardTypeUtils.getCurrentPhase() === 'Initiation' ? (
+                        {window.CardTypeUtils.getCurrentPhase() === 'SETUP' ? (
                           <span className="seed-money">🌱 {window.CardTypeUtils.formatCurrency(card.loan_amount)} (Seed Money)</span>
                         ) : (
                           <span>💰 {window.CardTypeUtils.formatCurrency(card.loan_amount)}</span>
@@ -1103,7 +1135,7 @@ window.CardDisplay = class CardDisplay extends React.Component {
                     
                     {card.type === 'I' && card.investment_amount && (
                       <div className="card-amount">
-                        {window.CardTypeUtils.getCurrentPhase() === 'Initiation' ? (
+                        {window.CardTypeUtils.getCurrentPhase() === 'SETUP' ? (
                           <span className="seed-money">🌱 {window.CardTypeUtils.formatCurrency(card.investment_amount)} (Seed Money)</span>
                         ) : (
                           <span>📈 {window.CardTypeUtils.formatCurrency(card.investment_amount)}</span>

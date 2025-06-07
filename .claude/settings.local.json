@@ -30,7 +30,9 @@
       "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n -A 3 -B 3 \"Negotiate.*button|negotiate.*Button\" /mnt/d/unravel/current_game/code2025/js/components/ --type js)",
       "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n -A 5 \"Negotiate\" /mnt/d/unravel/current_game/code2025/Index.html)",
       "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"Negotiate\" /mnt/d/unravel/current_game/code2025/js/components/TurnManager.js)",
-      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n -A 5 -B 5 \"canNegotiate\\|Negotiate.*button\" /mnt/d/unravel/current_game/code2025/js/components/ --type js)"
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n -A 5 -B 5 \"canNegotiate\\|Negotiate.*button\" /mnt/d/unravel/current_game/code2025/js/components/ --type js)",
+      "Bash(cut:*)",
+      "WebFetch(domain:docs.anthropic.com)"
     ],
     "deny": []
   }

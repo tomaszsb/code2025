@@ -77,7 +77,7 @@ window.CardDetailView = class CardDetailView extends React.Component {
                   <p>💼 Work cards are automatically added to your project when drawn.</p>
                   <p>📊 Use the card limit interface if you have too many cards.</p>
                   <p>⚙️ Work cards cannot be played manually - they represent ongoing project work.</p>
-                  <p>💡 <strong>Tip:</strong> Use Bank/Investor cards to secure funding. In Initiation phase, these provide interest-free seed money!</p>
+                  <p>💡 <strong>Tip:</strong> Use Bank/Investor cards to secure funding. In SETUP phase, these provide interest-free seed money!</p>
                 </div>
               </div>
             )}
@@ -85,10 +85,10 @@ window.CardDetailView = class CardDetailView extends React.Component {
             {cardCopy.type === 'B' && (
               <div className="card-detail-actions">
                 <div className="action-info">
-                  {currentPhase === 'Initiation' ? (
+                  {currentPhase === 'SETUP' ? (
                     <div>
-                      <p>🌱 <strong>Initiation Phase:</strong> Bank cards provide <strong>interest-free seed money</strong> from the owner.</p>
-                      <p>💡 No interest or fees apply during project initiation.</p>
+                      <p>🌱 <strong>SETUP Phase:</strong> Bank cards provide <strong>interest-free seed money</strong> from the owner.</p>
+                      <p>💡 No interest or fees apply during project setup.</p>
                       <p>🎯 Use "End Turn" to finalize the funding.</p>
                       <p>⚠️ <strong>Note:</strong> Once funds are transferred, they must be used for the project. Any leftover funds will be returned at game end.</p>
                     </div>
@@ -106,7 +106,7 @@ window.CardDetailView = class CardDetailView extends React.Component {
                 
                 <div className="loan-terms-info">
                   <p className="terms-note">
-                    {currentPhase === 'Initiation' 
+                    {currentPhase === 'SETUP' 
                       ? '📋 Terms: Interest-free seed funding from owner' 
                       : '📋 Loan terms will be applied when you end your turn'
                     }
@@ -118,10 +118,10 @@ window.CardDetailView = class CardDetailView extends React.Component {
             {cardCopy.type === 'I' && (
               <div className="card-detail-actions">
                 <div className="action-info">
-                  {currentPhase === 'Initiation' ? (
+                  {currentPhase === 'SETUP' ? (
                     <div>
-                      <p>🌱 <strong>Initiation Phase:</strong> Investor cards provide <strong>fee-free seed funding</strong> from the owner.</p>
-                      <p>💡 No fees or equity requirements apply during project initiation.</p>
+                      <p>🌱 <strong>SETUP Phase:</strong> Investor cards provide <strong>fee-free seed funding</strong> from the owner.</p>
+                      <p>💡 No fees or equity requirements apply during project setup.</p>
                       <p>🎯 Use "End Turn" to finalize the funding.</p>
                       <p>⚠️ <strong>Note:</strong> Once funds are transferred, they must be used for the project. Any leftover funds will be returned at game end.</p>
                     </div>
@@ -139,7 +139,7 @@ window.CardDetailView = class CardDetailView extends React.Component {
                 
                 <div className="loan-terms-info">
                   <p className="terms-note">
-                    {currentPhase === 'Initiation' 
+                    {currentPhase === 'SETUP' 
                       ? '📋 Terms: Fee-free seed funding from owner' 
                       : '📋 Investment terms will be applied when you end your turn'
                     }

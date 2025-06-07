@@ -21,7 +21,7 @@ class GameStateManager {
     this.diceRollData = []; // Store dice roll data for MovementEngine
     this._gameStarted = false;
     this.gameEnded = false;
-    this.currentPhase = 'Initiation'; // Default starting phase
+    this.currentPhase = 'SETUP'; // Default starting phase
     
     // Card collections for the game
     this.cardCollections = {
@@ -307,6 +307,13 @@ class GameStateManager {
     };
     
     this._gameStarted = true;
+    
+    // If this is the first player being added after a new game, mark as properly initialized
+    if (!this.isProperlyInitialized && this.players.length === 1) {
+      this.isProperlyInitialized = true;
+      console.log('GameStateManager: Marked as properly initialized after first player added');
+    }
+    
     this.saveState();
     
     // Dispatch event
@@ -504,6 +511,9 @@ class GameStateManager {
     // Update space visit types based on player's visit history
     this.updateSpaceVisitTypes();
     
+    // Update current phase based on the new space
+    this.updateCurrentPhase(newSpace);
+    
     this.saveState();
     
     // Dispatch event
@@ -595,7 +605,8 @@ class GameStateManager {
         players: serializablePlayers,
         currentPlayerIndex: this.currentPlayerIndex,
         gameStarted: this._gameStarted,
-        gameEnded: this.gameEnded
+        gameEnded: this.gameEnded,
+        currentPhase: this.currentPhase
       };
       
       // Check serialized data before saving
@@ -706,6 +717,7 @@ class GameStateManager {
       this.currentPlayerIndex = savedState.currentPlayerIndex || 0;
       this._gameStarted = false; // Still let PlayerSetup handle this
       this.gameEnded = savedState.gameEnded || false;
+      this.currentPhase = savedState.currentPhase || 'SETUP';
       
       console.log('GameStateManager: Loaded from consolidated storage format');
     } else {
@@ -1489,6 +1501,42 @@ class GameStateManager {
       changeType: 'stateUpdated',
       updates: Object.keys(updates)
     });
+  }
+
+  // Update current phase based on space
+  updateCurrentPhase(space) {
+    if (!space) return;
+    
+    const previousPhase = this.currentPhase;
+    let newPhase = this.currentPhase;
+    
+    // Extract phase from space data - using the Phase column from CSV directly
+    if (space.type && space.type !== 'Default') {
+      newPhase = space.type.toUpperCase();
+    } else if (space.Phase) {
+      newPhase = space.Phase.toUpperCase();
+    }
+    
+    // Use CSV phase names directly - no mapping to standard project management phases
+    
+    // Update current phase if it changed
+    if (newPhase !== previousPhase) {
+      console.log(`GameStateManager: Phase changed from ${previousPhase} to ${newPhase} at space ${space.name}`);
+      this.currentPhase = newPhase;
+      
+      // Dispatch phase change event
+      this.dispatchEvent('gameStateChanged', {
+        changeType: 'phaseChanged',
+        previousPhase: previousPhase,
+        currentPhase: newPhase,
+        triggerSpace: space.name
+      });
+    }
+  }
+
+  // Getter for gameStarted property
+  get gameStarted() {
+    return this._gameStarted;
   }
 }
 

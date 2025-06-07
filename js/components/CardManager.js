@@ -937,14 +937,17 @@ class CardManager {
 
   getPlayerPhase(player) {
     // Determine player's current phase based on their position/progress
-    if (!player.currentSpace) return 'initiation';
+    if (!player.currentSpace) return 'SETUP';
     
     // Simple phase determination - could be enhanced
     const spaceName = player.currentSpace.toLowerCase();
-    if (spaceName.includes('planning')) return 'planning';
-    if (spaceName.includes('execution')) return 'execution';
-    if (spaceName.includes('closure')) return 'closure';
-    return 'initiation';
+    if (spaceName.includes('owner')) return 'OWNER';
+    if (spaceName.includes('funding')) return 'FUNDING';
+    if (spaceName.includes('design') || spaceName.includes('arch') || spaceName.includes('eng')) return 'DESIGN';
+    if (spaceName.includes('regulatory') || spaceName.includes('dob') || spaceName.includes('fdny')) return 'REGULATORY';
+    if (spaceName.includes('construction')) return 'CONSTRUCTION';
+    if (spaceName.includes('finish') || spaceName.includes('end')) return 'END';
+    return 'SETUP';
   }
 
   selectTargetsFromCandidates(candidates, maxCount, card) {

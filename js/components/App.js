@@ -6,8 +6,41 @@ window.App = class App extends React.Component {
         super(props);
         this.state = {
             loading: false,
-            error: null
+            error: null,
+            gameStarted: false,
+            isInitialized: false
         };
+    }
+
+    componentDidMount() {
+        // Listen for game state changes to trigger re-renders
+        if (window.GameStateManager) {
+            window.GameStateManager.addEventListener('gameStateChanged', this.handleGameStateChange);
+        }
+        
+        // Check initial state
+        this.checkGameState();
+    }
+
+    componentWillUnmount() {
+        // Clean up event listener
+        if (window.GameStateManager) {
+            window.GameStateManager.removeEventListener('gameStateChanged', this.handleGameStateChange);
+        }
+    }
+
+    handleGameStateChange = (event) => {
+        console.log('App: Game state changed', event.data);
+        this.checkGameState();
+    }
+
+    checkGameState = () => {
+        if (window.GameStateManager) {
+            this.setState({
+                gameStarted: window.GameStateManager.gameStarted,
+                isInitialized: window.GameStateManager.isProperlyInitialized
+            });
+        }
     }
     
     componentDidCatch(error, errorInfo) {
@@ -18,7 +51,7 @@ window.App = class App extends React.Component {
     }
     
     render() {
-        const { error, loading } = this.state;
+        const { error, loading, gameStarted, isInitialized } = this.state;
         
         if (loading) {
             return (
@@ -39,14 +72,15 @@ window.App = class App extends React.Component {
             );
         }
         
-        // Check if the game should start or show setup
-        // Add null check for GameState and proper initialization check
-        if (GameState && GameState.isProperlyInitialized && GameState.gameStarted) {
+        // Check if the game should start or show setup using GameStateManager
+        console.log('App render: gameStarted=', gameStarted, 'isInitialized=', isInitialized);
+        
+        if (window.GameStateManager && isInitialized && gameStarted) {
             return <GameBoard />;
         } else {
             // Show PlayerSetup which will handle saved games
             // It will check if there's a saved game and offer to continue or start new
-            return <PlayerSetup onSetupComplete={() => this.forceUpdate()} />;
+            return <PlayerSetup onSetupComplete={this.checkGameState} />;
         }
     }
 }

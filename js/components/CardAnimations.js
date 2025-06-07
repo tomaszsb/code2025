@@ -28,7 +28,9 @@ window.CardAnimationManager = {
     console.log('CardAnimationManager: Starting card draw animation', cardType);
     
     const animationId = 'draw-' + Date.now();
-    const duration = options.duration || 1500;
+    const duration = options.duration || 1200;
+    const sourceElement = options.sourceElement; // Deck position
+    const targetElement = options.targetElement; // Hand position
     
     // Show toast notification
     this.showCardDrawToast(cardType, cardData);
@@ -39,9 +41,26 @@ window.CardAnimationManager = {
       const overlay = document.querySelector('.card-animation-overlay');
       overlay.appendChild(cardElement);
       
+      // Set initial position (from deck or default)
+      if (sourceElement) {
+        const sourceRect = sourceElement.getBoundingClientRect();
+        cardElement.style.left = sourceRect.left + 'px';
+        cardElement.style.top = sourceRect.top + 'px';
+        cardElement.style.transform = 'scale(0.3) rotateY(180deg)';
+      }
+      
       // Start animation
       setTimeout(() => {
         cardElement.classList.add('card-draw-active');
+        
+        // If we have a target, animate to it
+        if (targetElement) {
+          const targetRect = targetElement.getBoundingClientRect();
+          cardElement.style.transition = `all ${duration}ms cubic-bezier(0.68, -0.55, 0.265, 1.55)`;
+          cardElement.style.left = targetRect.left + 'px';
+          cardElement.style.top = targetRect.top + 'px';
+          cardElement.style.transform = 'scale(1) rotateY(0deg)';
+        }
       }, 50);
       
       // Complete animation
@@ -101,7 +120,9 @@ window.CardAnimationManager = {
       return Promise.resolve();
     }
     
-    const duration = options.duration || 800;
+    const duration = options.duration || 900;
+    const cardType = options.cardType || 'unknown';
+    const showEffects = options.showEffects !== false;
     
     return new Promise((resolve) => {
       // Get positions
@@ -110,36 +131,57 @@ window.CardAnimationManager = {
       
       // Create flying card
       const flyingCard = cardElement.cloneNode(true);
-      flyingCard.className = 'card flying-card';
+      flyingCard.className = 'card flying-card card-playing';
       flyingCard.style.position = 'fixed';
       flyingCard.style.left = cardRect.left + 'px';
       flyingCard.style.top = cardRect.top + 'px';
       flyingCard.style.width = cardRect.width + 'px';
       flyingCard.style.height = cardRect.height + 'px';
       flyingCard.style.zIndex = '2000';
+      flyingCard.style.pointerEvents = 'none';
       
       document.body.appendChild(flyingCard);
       
-      // Hide original card
-      cardElement.style.opacity = '0';
+      // Add glow effect based on card type
+      if (showEffects) {
+        flyingCard.classList.add('card-play-glow', `card-type-${cardType.toLowerCase()}`);
+        this.createPlayEffects(flyingCard, cardType);
+      }
+      
+      // Hide original card with fade
+      cardElement.style.transition = 'opacity 200ms ease-out';
+      cardElement.style.opacity = '0.3';
       
       // Animate to target
       setTimeout(() => {
         flyingCard.style.transition = `all ${duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
         flyingCard.style.left = targetRect.left + (targetRect.width / 2) - (cardRect.width / 2) + 'px';
         flyingCard.style.top = targetRect.top + (targetRect.height / 2) - (cardRect.height / 2) + 'px';
-        flyingCard.style.transform = 'scale(0.8) rotateY(180deg)';
-        flyingCard.style.opacity = '0';
-      }, 50);
+        flyingCard.style.transform = 'scale(1.1) rotateY(360deg)';
+        
+        // Pulse effect
+        setTimeout(() => {
+          flyingCard.style.transform = 'scale(0.9) rotateY(360deg)';
+          flyingCard.style.opacity = '0';
+        }, duration * 0.7);
+      }, 100);
+      
+      // Create impact effect at target
+      if (showEffects) {
+        setTimeout(() => {
+          this.createImpactEffect(targetElement, cardType);
+        }, duration * 0.8);
+      }
       
       // Clean up
       setTimeout(() => {
         if (flyingCard.parentNode) {
           flyingCard.parentNode.removeChild(flyingCard);
         }
+        cardElement.style.transition = '';
         cardElement.style.opacity = '';
         resolve();
-      }, duration + 100);
+      }, duration + 200);
     });
   },
   
@@ -152,15 +194,35 @@ window.CardAnimationManager = {
       return Promise.resolve();
     }
     
-    const duration = options.duration || 600;
+    const duration = options.duration || 700;
+    const direction = options.direction || 'down'; // 'down', 'left', 'right'
+    const showEffects = options.showEffects !== false;
     
     return new Promise((resolve) => {
       cardElement.classList.add('card-discarding');
       
+      // Add discard effect particles
+      if (showEffects) {
+        this.createDiscardEffects(cardElement);
+      }
+      
       setTimeout(() => {
-        cardElement.style.transform = 'scale(0.8) translateY(20px) rotateZ(15deg)';
+        let transform;
+        switch (direction) {
+          case 'left':
+            transform = 'scale(0.7) translateX(-100px) translateY(30px) rotateZ(-25deg)';
+            break;
+          case 'right':
+            transform = 'scale(0.7) translateX(100px) translateY(30px) rotateZ(25deg)';
+            break;
+          default:
+            transform = 'scale(0.8) translateY(50px) rotateZ(15deg)';
+        }
+        
+        cardElement.style.transform = transform;
         cardElement.style.opacity = '0';
-        cardElement.style.transition = `all ${duration}ms ease-out`;
+        cardElement.style.transition = `all ${duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
+        cardElement.style.filter = 'blur(2px)';
       }, 50);
       
       setTimeout(() => {
@@ -233,6 +295,137 @@ window.CardAnimationManager = {
     return animations.reduce((promise, animation) => {
       return promise.then(() => animation());
     }, Promise.resolve());
+  },
+  
+  // Create play effects (particles, glow)
+  createPlayEffects: function(cardElement, cardType) {
+    const colors = {
+      'W': '#4285f4',
+      'B': '#ea4335', 
+      'I': '#fbbc05',
+      'L': '#34a853',
+      'E': '#8e44ad'
+    };
+    
+    const color = colors[cardType] || '#ccc';
+    cardElement.style.boxShadow = `0 0 20px ${color}, 0 0 40px ${color}`;
+    
+    // Create particle effect
+    for (let i = 0; i < 6; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'card-play-particle';
+      particle.style.position = 'absolute';
+      particle.style.width = '4px';
+      particle.style.height = '4px';
+      particle.style.background = color;
+      particle.style.borderRadius = '50%';
+      particle.style.left = '50%';
+      particle.style.top = '50%';
+      particle.style.zIndex = '2001';
+      
+      cardElement.appendChild(particle);
+      
+      setTimeout(() => {
+        const angle = (i * 60) * Math.PI / 180;
+        const distance = 30 + Math.random() * 20;
+        const x = Math.cos(angle) * distance;
+        const y = Math.sin(angle) * distance;
+        
+        particle.style.transition = 'all 600ms ease-out';
+        particle.style.transform = `translate(${x}px, ${y}px)`;
+        particle.style.opacity = '0';
+      }, 100);
+    }
+  },
+  
+  // Create impact effect at target
+  createImpactEffect: function(targetElement, cardType) {
+    const colors = {
+      'W': '#4285f4',
+      'B': '#ea4335', 
+      'I': '#fbbc05',
+      'L': '#34a853',
+      'E': '#8e44ad'
+    };
+    
+    const color = colors[cardType] || '#ccc';
+    const rect = targetElement.getBoundingClientRect();
+    
+    const ripple = document.createElement('div');
+    ripple.className = 'card-impact-ripple';
+    ripple.style.position = 'fixed';
+    ripple.style.left = rect.left + rect.width / 2 + 'px';
+    ripple.style.top = rect.top + rect.height / 2 + 'px';
+    ripple.style.width = '10px';
+    ripple.style.height = '10px';
+    ripple.style.background = color;
+    ripple.style.borderRadius = '50%';
+    ripple.style.transform = 'translate(-50%, -50%)';
+    ripple.style.opacity = '0.7';
+    ripple.style.zIndex = '1999';
+    ripple.style.pointerEvents = 'none';
+    
+    document.body.appendChild(ripple);
+    
+    setTimeout(() => {
+      ripple.style.transition = 'all 400ms ease-out';
+      ripple.style.width = '60px';
+      ripple.style.height = '60px';
+      ripple.style.opacity = '0';
+    }, 50);
+    
+    setTimeout(() => {
+      if (ripple.parentNode) {
+        ripple.parentNode.removeChild(ripple);
+      }
+    }, 500);
+  },
+  
+  // Create discard effects
+  createDiscardEffects: function(cardElement) {
+    // Create dissolve particles
+    for (let i = 0; i < 8; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'card-discard-particle';
+      particle.style.position = 'absolute';
+      particle.style.width = '3px';
+      particle.style.height = '3px';
+      particle.style.background = '#666';
+      particle.style.borderRadius = '50%';
+      particle.style.left = Math.random() * 100 + '%';
+      particle.style.top = Math.random() * 100 + '%';
+      particle.style.zIndex = '2001';
+      
+      cardElement.appendChild(particle);
+      
+      setTimeout(() => {
+        particle.style.transition = 'all 500ms ease-out';
+        particle.style.transform = `translateY(${20 + Math.random() * 20}px)`;
+        particle.style.opacity = '0';
+      }, i * 50);
+    }
+  },
+  
+  // Enhanced hand reorganization with stagger effects
+  animateHandEntry: function(cardElement, index, totalCards, options = {}) {
+    const delay = (options.staggerDelay || 100) * index;
+    const duration = options.duration || 500;
+    
+    return new Promise((resolve) => {
+      cardElement.style.opacity = '0';
+      cardElement.style.transform = 'translateY(20px) scale(0.9)';
+      
+      setTimeout(() => {
+        cardElement.style.transition = `all ${duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
+        cardElement.style.opacity = '1';
+        cardElement.style.transform = 'translateY(0) scale(1)';
+        
+        setTimeout(() => {
+          cardElement.style.transition = '';
+          resolve();
+        }, duration);
+      }, delay);
+    });
   },
   
   // Clear all active animations

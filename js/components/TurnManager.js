@@ -310,6 +310,7 @@ class TurnManager {
   
   /**
    * Update to the next player's turn and update all necessary state
+   * Enhanced with movement visualization and smooth transitions
    */
   nextPlayerTurn = () => {
     console.log('TurnManager: Transitioning to next player');
@@ -318,57 +319,63 @@ class TurnManager {
     const previousPlayer = this.getCurrentPlayer();
     const previousPlayerIndex = window.GameStateManager.currentPlayerIndex;
     
-    // Move to next player's turn - this will trigger a turnChanged event via GameStateManager
-    window.GameStateManager.nextPlayerTurn();
-    
-    // Get the new current player
-    const newCurrentPlayer = window.GameStateManager.getCurrentPlayer();
-    const newPlayerPosition = newCurrentPlayer ? newCurrentPlayer.position : null;
-    
-    console.log(`TurnManager: Player change from ${previousPlayerIndex} to ${window.GameStateManager.currentPlayerIndex}`);
-    
-    // Get the space the player landed on
-    const newSpace = this.gameBoard.state.spaces.find(s => s.id === newPlayerPosition);
-    
-    // Create player and space snapshots
-    const playerSnapshot = this.createPlayerSnapshot(newCurrentPlayer);
-    const spaceSnapshot = newSpace ? { ...newSpace } : null;
-    
-    // Update state
-    this.gameBoard.setState({
-      players: [...window.GameStateManager.players],
-      currentPlayerIndex: window.GameStateManager.currentPlayerIndex,
-      selectedSpace: newPlayerPosition, // Always set to new player's position
-      selectedMove: null,               // Clear the selected move
-      hasSelectedMove: false,           // Reset flag for the next player's turn
-      showDiceRoll: false,              // Hide dice roll component
-      diceRollSpace: null,              // Clear dice roll space info
-      hasRolledDice: false,             // Reset dice roll status
-      diceOutcomes: null,               // Reset dice outcomes
-      lastDiceRoll: null,               // Reset last dice roll
-      currentPlayerOnLanding: playerSnapshot, // Store snapshot of player status
-      currentSpaceOnLanding: spaceSnapshot,   // Store snapshot of space
-      exploredSpace: newSpace          // Set explored space to new player's space
-    });
-    
-    // Update available moves for new player
-    if (this.gameBoard.spaceSelectionManager) {
-      this.gameBoard.spaceSelectionManager.updateAvailableMoves();
-    }
-    
-    // Dispatch custom active player changed event through GameStateManager
-    if (window.GameStateManager && typeof window.GameStateManager.dispatchEvent === 'function') {
-      window.GameStateManager.dispatchEvent('activePlayerChanged', {
-        previousPlayer: previousPlayer ? { ...previousPlayer } : null,
-        currentPlayer: newCurrentPlayer ? { ...newCurrentPlayer } : null,
-        currentPlayerIndex: window.GameStateManager.currentPlayerIndex
+    // Create enhanced turn transition with animation
+    this.createEnhancedTurnTransition(previousPlayer, () => {
+      // Move to next player's turn - this will trigger a turnChanged event via GameStateManager
+      window.GameStateManager.nextPlayerTurn();
+      
+      // Get the new current player
+      const newCurrentPlayer = window.GameStateManager.getCurrentPlayer();
+      const newPlayerPosition = newCurrentPlayer ? newCurrentPlayer.position : null;
+      
+      console.log(`TurnManager: Player change from ${previousPlayerIndex} to ${window.GameStateManager.currentPlayerIndex}`);
+      
+      // Get the space the player landed on
+      const newSpace = this.gameBoard.state.spaces.find(s => s.id === newPlayerPosition);
+      
+      // Create player and space snapshots
+      const playerSnapshot = this.createPlayerSnapshot(newCurrentPlayer);
+      const spaceSnapshot = newSpace ? { ...newSpace } : null;
+      
+      // Update state
+      this.gameBoard.setState({
+        players: [...window.GameStateManager.players],
+        currentPlayerIndex: window.GameStateManager.currentPlayerIndex,
+        selectedSpace: newPlayerPosition, // Always set to new player's position
+        selectedMove: null,               // Clear the selected move
+        hasSelectedMove: false,           // Reset flag for the next player's turn
+        showDiceRoll: false,              // Hide dice roll component
+        diceRollSpace: null,              // Clear dice roll space info
+        hasRolledDice: false,             // Reset dice roll status
+        diceOutcomes: null,               // Reset dice outcomes
+        lastDiceRoll: null,               // Reset last dice roll
+        currentPlayerOnLanding: playerSnapshot, // Store snapshot of player status
+        currentSpaceOnLanding: spaceSnapshot,   // Store snapshot of space
+        exploredSpace: newSpace          // Set explored space to new player's space
       });
-    }
-    
-    // Enhanced active player highlight
-    this.enhanceActivePlayerHighlight();
-    
-    console.log(`TurnManager: Next player ${newCurrentPlayer ? newCurrentPlayer.name : 'unknown'} is now active on space ${newSpace?.name || 'unknown'}`);
+      
+      // Update available moves for new player
+      if (this.gameBoard.spaceSelectionManager) {
+        this.gameBoard.spaceSelectionManager.updateAvailableMoves();
+      }
+      
+      // Dispatch custom active player changed event through GameStateManager
+      if (window.GameStateManager && typeof window.GameStateManager.dispatchEvent === 'function') {
+        window.GameStateManager.dispatchEvent('activePlayerChanged', {
+          previousPlayer: previousPlayer ? { ...previousPlayer } : null,
+          currentPlayer: newCurrentPlayer ? { ...newCurrentPlayer } : null,
+          currentPlayerIndex: window.GameStateManager.currentPlayerIndex
+        });
+      }
+      
+      // Enhanced active player highlight with smooth transition
+      this.enhanceActivePlayerHighlight();
+      
+      // Don't call PlayerMovementVisualizer.handleTurnTransition here as we're already handling 
+      // the transition with createEnhancedTurnTransition above
+      
+      console.log(`TurnManager: Next player ${newCurrentPlayer ? newCurrentPlayer.name : 'unknown'} is now active on space ${newSpace?.name || 'unknown'}`);
+    });
   }
   
   /**
@@ -555,7 +562,146 @@ class TurnManager {
   }
   
   /**
-   * Clean up resources when the component is unmounted
+   * Create enhanced turn transition with smooth animations
+   * @param {Object} previousPlayer - The player whose turn just ended
+   * @param {Function} callback - Callback to execute after transition animation
+   */
+  createEnhancedTurnTransition = (previousPlayer, callback) => {
+    console.log('TurnManager: Creating enhanced turn transition');
+    
+    // Create transition overlay for smooth visual handoff
+    const overlay = document.createElement('div');
+    overlay.className = 'turn-transition-overlay';
+    
+    // Get next player info for transition
+    const nextPlayerIndex = (window.GameStateManager.currentPlayerIndex + 1) % window.GameStateManager.players.length;
+    const nextPlayer = window.GameStateManager.players[nextPlayerIndex];
+    
+    if (previousPlayer && nextPlayer) {
+      // Create turn handoff indicator
+      const indicator = document.createElement('div');
+      indicator.className = 'turn-handoff-indicator';
+      
+      indicator.innerHTML = `
+        <div class="handoff-from-player">
+          <span style="font-weight: bold; color: ${previousPlayer.color}">${previousPlayer.name}</span>
+          <div class="handoff-player-token" style="background-color: ${previousPlayer.color}"></div>
+        </div>
+        <div class="handoff-arrow">⤵</div>
+        <div class="handoff-to-player">
+          <div class="handoff-player-token" style="background-color: ${nextPlayer.color}"></div>
+          <span style="font-weight: bold; color: ${nextPlayer.color}">${nextPlayer.name}</span>
+        </div>
+        <div style="margin-top: 15px; font-size: 16px; color: #333; font-weight: bold;">
+          ${nextPlayer.name}'s Turn!
+        </div>
+      `;
+      
+      overlay.appendChild(indicator);
+    }
+    
+    document.body.appendChild(overlay);
+    
+    // Animate transition in
+    setTimeout(() => {
+      overlay.classList.add('active');
+    }, 50);
+    
+    // Execute callback during transition (doubled timing)
+    setTimeout(() => {
+      if (callback) callback();
+    }, 600);
+    
+    // Remove transition overlay (doubled timing)
+    setTimeout(() => {
+      overlay.classList.remove('active');
+      setTimeout(() => {
+        if (overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
+        }
+      }, 1000);
+    }, 2400);
+  }
+
+  /**
+   * Enhanced player token animation for movement
+   * @param {Object} player - Player object
+   * @param {string} fromSpaceId - Origin space ID
+   * @param {string} toSpaceId - Destination space ID
+   */
+  animatePlayerMovement = (player, fromSpaceId, toSpaceId) => {
+    console.log('TurnManager: Animating player movement', { player: player.name, from: fromSpaceId, to: toSpaceId });
+    
+    // Delegate to PlayerMovementVisualizer if available
+    if (window.PlayerMovementVisualizer) {
+      window.PlayerMovementVisualizer.handlePlayerMovement({
+        player: player,
+        fromSpace: fromSpaceId,
+        toSpace: toSpaceId
+      });
+    }
+    
+    // Additional token enhancement
+    const playerTokens = document.querySelectorAll('.player-token');
+    playerTokens.forEach(token => {
+      if (token.style.backgroundColor === player.color) {
+        // Add movement speed class based on distance
+        const distance = this.calculateMovementDistance(fromSpaceId, toSpaceId);
+        if (distance <= 2) {
+          token.classList.add('speed-normal');
+        } else if (distance <= 4) {
+          token.classList.add('speed-fast');
+        } else {
+          token.classList.add('speed-slow');
+        }
+        
+        // Clean up speed classes after animation
+        setTimeout(() => {
+          token.classList.remove('speed-normal', 'speed-fast', 'speed-slow');
+        }, 1500);
+      }
+    });
+  }
+
+  /**
+   * Calculate movement distance between spaces
+   * @param {string} fromSpaceId - Origin space ID
+   * @param {string} toSpaceId - Destination space ID
+   * @returns {number} Distance between spaces
+   */
+  calculateMovementDistance = (fromSpaceId, toSpaceId) => {
+    if (!fromSpaceId || !toSpaceId) return 1;
+    
+    // Extract numeric parts for basic distance calculation
+    const fromNum = parseInt(fromSpaceId.replace(/\D/g, '')) || 0;
+    const toNum = parseInt(toSpaceId.replace(/\D/g, '')) || 0;
+    
+    return Math.abs(toNum - fromNum);
+  }
+
+  /**
+   * Show movement prediction visualization
+   * @param {Object} player - Current player
+   * @param {Array} availableMoves - Array of available move destinations
+   */
+  showMovementPrediction = (player, availableMoves) => {
+    if (window.PlayerMovementVisualizer && availableMoves && availableMoves.length > 0) {
+      const currentSpace = player.position || player.currentSpace;
+      window.PlayerMovementVisualizer.showMovementPrediction(player, currentSpace, availableMoves);
+    }
+  }
+
+  /**
+   * Clear movement prediction visualization
+   */
+  clearMovementPrediction = () => {
+    if (window.PlayerMovementVisualizer) {
+      window.PlayerMovementVisualizer.clearMovementPrediction();
+    }
+  }
+
+  /**
+   * Enhanced cleanup when component unmounts
    */
   cleanup = () => {
     console.log('TurnManager: Cleaning up resources');
@@ -564,6 +710,14 @@ class TurnManager {
     if (this.activePlayerHighlightTimer) {
       clearTimeout(this.activePlayerHighlightTimer);
       this.activePlayerHighlightTimer = null;
+    }
+    
+    // Clear movement predictions
+    this.clearMovementPrediction();
+    
+    // Clear any visual effects
+    if (window.PlayerMovementVisualizer) {
+      window.PlayerMovementVisualizer.clearAllEffects();
     }
     
     // Remove all event listeners

@@ -1579,4 +1579,366 @@
   }
 }
 
+/* ====== ENHANCED CARD ANIMATION KEYFRAMES ====== */
+
+/* Card play glow effects */
+.card-play-glow {
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+  animation: playGlow 0.6s ease-out;
+}
+
+.card-type-w.card-play-glow {
+  box-shadow: 0 0 20px rgba(66, 133, 244, 0.8);
+}
+
+.card-type-b.card-play-glow {
+  box-shadow: 0 0 20px rgba(234, 67, 53, 0.8);
+}
+
+.card-type-i.card-play-glow {
+  box-shadow: 0 0 20px rgba(251, 188, 5, 0.8);
+}
+
+.card-type-l.card-play-glow {
+  box-shadow: 0 0 20px rgba(52, 168, 83, 0.8);
+}
+
+.card-type-e.card-play-glow {
+  box-shadow: 0 0 20px rgba(142, 68, 173, 0.8);
+}
+
+/* Card play particle effects */
+.card-play-particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 2001;
+  animation: particleFloat 0.6s ease-out forwards;
+}
+
+.card-discard-particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 2001;
+  animation: particleDissolve 0.5s ease-out forwards;
+}
+
+/* Card impact ripple */
+.card-impact-ripple {
+  border-radius: 50%;
+  pointer-events: none;
+  animation: impactRipple 0.4s ease-out forwards;
+}
+
+/* Enhanced card draw animations */
+.animated-card.card-draw {
+  animation: cardDrawEntry 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.animated-card.card-draw-active {
+  animation: cardDrawFlip 0.8s ease-out forwards;
+}
+
+.animated-card.card-draw-complete {
+  animation: cardDrawExit 0.3s ease-in forwards;
+}
+
+/* Hand entry stagger animations */
+.card.entering-hand {
+  animation: handEntry 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Card movement trails */
+.card-movement-trail {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.8), transparent);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: trailFade 0.8s ease-out forwards;
+}
+
+/* Enhanced card hover states */
+.card:hover {
+  transform: translateY(-8px) scale(1.02);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.card:hover::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, transparent, rgba(255, 215, 0, 0.3), transparent);
+  border-radius: inherit;
+  z-index: -1;
+  animation: borderShimmer 2s ease-in-out infinite;
+}
+
+/* Card selection glow */
+.card.selected {
+  animation: selectionGlow 1s ease-in-out infinite alternate;
+}
+
+/* Card reorganization animations */
+.cards-container.reorganizing .card {
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Enhanced keyframe animations */
+@keyframes playGlow {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.9);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  }
+}
+
+@keyframes particleFloat {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--particle-x, 30px), var(--particle-y, -30px)) scale(0.3);
+  }
+}
+
+@keyframes particleDissolve {
+  0% {
+    opacity: 0.8;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, 20px) scale(0.5);
+  }
+}
+
+@keyframes impactRipple {
+  0% {
+    transform: translate(-50%, -50%) scale(0.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3);
+    opacity: 0;
+  }
+}
+
+@keyframes cardDrawEntry {
+  0% {
+    transform: translate(-50%, -50%) scale(0.3) rotateY(180deg);
+    opacity: 0;
+  }
+  60% {
+    transform: translate(-50%, -50%) scale(1.2) rotateY(10deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1) rotateY(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes cardDrawFlip {
+  0% {
+    transform: translate(-50%, -50%) scale(1) rotateY(0deg);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1) rotateY(180deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1) rotateY(360deg);
+  }
+}
+
+@keyframes cardDrawExit {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+  }
+}
+
+@keyframes handEntry {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes trailFade {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+}
+
+@keyframes borderShimmer {
+  0% {
+    transform: rotate(0deg);
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: rotate(360deg);
+    opacity: 0.3;
+  }
+}
+
+@keyframes selectionGlow {
+  0% {
+    box-shadow: 0 0 15px rgba(33, 150, 243, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 25px rgba(33, 150, 243, 1);
+  }
+}
+
+/* Card draw toast animations */
+.card-draw-toast {
+  animation: toastSlideIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.card-draw-toast.toast-exit {
+  animation: toastSlideOut 0.3s ease-in;
+}
+
+@keyframes toastSlideIn {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastSlideOut {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Enhanced loading state animations */
+.card-action-btn.loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.card-action-btn.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid #fff;
+  border-radius: 50%;
+  animation: buttonSpinner 0.8s linear infinite;
+}
+
+@keyframes buttonSpinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Card stack fan-out animation */
+.card-hand.fanning .card {
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform-origin: bottom center;
+}
+
+.card-hand.fanning .card:nth-child(1) { transform: rotate(-15deg) translateY(-10px); }
+.card-hand.fanning .card:nth-child(2) { transform: rotate(-7deg) translateY(-5px); }
+.card-hand.fanning .card:nth-child(3) { transform: rotate(0deg); }
+.card-hand.fanning .card:nth-child(4) { transform: rotate(7deg) translateY(-5px); }
+.card-hand.fanning .card:nth-child(5) { transform: rotate(15deg) translateY(-10px); }
+
+/* Card flip reveal animation */
+.card.revealing {
+  animation: cardReveal 0.8s ease-out;
+}
+
+@keyframes cardReveal {
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(90deg);
+  }
+  100% {
+    transform: rotateY(0deg);
+  }
+}
+
+/* Enhanced card interaction feedback */
+.card:active {
+  transform: translateY(-4px) scale(0.98);
+  transition: all 0.1s ease;
+}
+
+/* Card zoom preview on long hover */
+.card:hover:after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  right: -50%;
+  bottom: -50%;
+  background: radial-gradient(circle, transparent 40%, rgba(255, 215, 0, 0.1) 41%, rgba(255, 215, 0, 0.1) 60%, transparent 61%);
+  pointer-events: none;
+  opacity: 0;
+  animation: hoverPulse 2s ease-in-out infinite;
+}
+
+@keyframes hoverPulse {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
 

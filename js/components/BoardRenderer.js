@@ -5,6 +5,56 @@ console.log('BoardRenderer.js file is beginning to be used');
 window.BoardRenderer = class BoardRenderer extends React.Component {
   constructor(props) {
     super(props);
+    
+    // Initialize movement visualization integration
+    this.movementVisualization = {
+      trails: new Map(),
+      breadcrumbs: new Map()
+    };
+  }
+
+  componentDidMount() {
+    // Initialize visualization containers after component mounts
+    this.initializeVisualizationContainers();
+    
+    // Listen for movement events to enhance visualization
+    if (window.GameStateManager) {
+      window.GameStateManager.addEventListener('playerMoved', this.handlePlayerMovement);
+    }
+  }
+
+  componentWillUnmount() {
+    // Clean up event listeners
+    if (window.GameStateManager) {
+      window.GameStateManager.removeEventListener('playerMoved', this.handlePlayerMovement);
+    }
+  }
+
+  // Initialize visualization containers for movement effects
+  initializeVisualizationContainers = () => {
+    const gameBoard = document.querySelector('.game-board');
+    if (gameBoard && window.PlayerMovementVisualizer) {
+      window.PlayerMovementVisualizer.createVisualizationContainers();
+    }
+  }
+
+  // Handle player movement events for enhanced visualization
+  handlePlayerMovement = (event) => {
+    const { player, fromSpace, toSpace } = event.data;
+    
+    // Store movement data for trail rendering
+    const trailId = `${player.id}-${Date.now()}`;
+    this.movementVisualization.trails.set(trailId, {
+      player,
+      fromSpace,
+      toSpace,
+      timestamp: Date.now()
+    });
+
+    // Clean up old trails
+    setTimeout(() => {
+      this.movementVisualization.trails.delete(trailId);
+    }, 5000);
   }
 
   render() {

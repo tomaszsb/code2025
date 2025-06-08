@@ -58,8 +58,8 @@ window.DiceRoll = class DiceRoll extends React.Component {
     
     // Find exact matches for space name and visit type - no fallbacks
     const outcomes = diceRollData.filter(data => 
-      data['Space Name'] === space.name && 
-      data['Visit Type'].toLowerCase() === visitType.toLowerCase()
+      data['space_name'] === space.name && 
+      data['visit_type'].toLowerCase() === visitType.toLowerCase()
     );
     
     // If no outcomes found, set empty array and log it

@@ -753,7 +753,7 @@ class MovementEngine {
     // First time here, get actual options from First visit data
     console.log('MovementEngine: First visit to single choice space, getting original options');
     const firstVisitData = this.gameStateManager.spaces.find(s => 
-      s.name === spaceName && s['Visit Type'] === 'First'
+      s.name === spaceName && s['visit_type'] === 'First'
     );
     
     if (firstVisitData) {
@@ -778,7 +778,7 @@ class MovementEngine {
   inferSingleChoice(player, spaceData) {
     // Get the first visit data to see what the original options were
     const firstVisitData = this.gameStateManager.spaces.find(s => 
-      s.name === spaceData.name && s['Visit Type'] === 'First'
+      s.name === spaceData.name && s['visit_type'] === 'First'
     );
     
     if (!firstVisitData) {
@@ -1264,7 +1264,7 @@ class MovementEngine {
     
     // Find the space data with "First" visit type (original moves)
     const spaceData = this.gameStateManager.spaces.find(s => 
-      s.name === space.name && s['Visit Type'] === 'First'
+      s.name === space.name && s['visit_type'] === 'First'
     );
     
     if (!spaceData) {

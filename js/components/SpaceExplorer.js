@@ -253,8 +253,8 @@ class SpaceExplorer extends React.Component {
       
       // Only show outcomes that match both space name AND visit type (strict matching)
       const spaceDiceData = diceRollData.filter(data => 
-        data['Space Name'] === space.name && 
-        data['Visit Type'].toLowerCase() === visitType
+        data['space_name'] === space.name && 
+        data['visit_type'].toLowerCase() === visitType
       );
       
       if (spaceDiceData.length === 0) {

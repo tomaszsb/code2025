@@ -445,8 +445,8 @@ class DiceManager {
     // Method 1: Check if there are dice roll entries in DiceRoll Info.csv
     if (this.gameBoard.state.diceRollData) {
       const hasDiceRollInData = this.gameBoard.state.diceRollData.some(data => 
-        data['Space Name'] === currentSpace.name && 
-        data['Visit Type'] === visitType
+        data['space_name'] === currentSpace.name && 
+        data['visit_type'] === visitType
       );
       
       if (hasDiceRollInData) {
@@ -714,8 +714,8 @@ class DiceManager {
     // Get dice outcomes data
     const diceRollData = this.gameBoard.state.diceRollData || [];
     const diceOutcomes = diceRollData.filter(data => 
-      data['Space Name'] === spaceName && 
-      data['Visit Type'].toLowerCase() === visitType.toLowerCase()
+      data['space_name'] === spaceName && 
+      data['visit_type'].toLowerCase() === visitType.toLowerCase()
     );
     
     console.log('DiceManager: Available outcomes:', diceOutcomes);

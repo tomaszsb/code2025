@@ -47,7 +47,8 @@
       "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"getPlayerCards|assignCardToPlayer|playCard|discardCard|shuffleDeck\" /mnt/d/unravel/current_game/code2025/js/)",
       "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"CardManagerInterface\" /mnt/d/unravel/current_game/code2025/Index.html)",
       "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"CARD_TYPES\\.\" /mnt/d/unravel/current_game/code2025/js/)",
-      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"CARD_TYPES\" /mnt/d/unravel/current_game/code2025/js/)"
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"CARD_TYPES\" /mnt/d/unravel/current_game/code2025/js/)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }

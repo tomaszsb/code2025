@@ -456,9 +456,19 @@ class DiceManager {
       }
     }
     
-    // Method 2: Check if any card columns contain conditional text "if you roll"
+    // Method 2: Check the requires_dice_roll column in Spaces.csv
     if (!needsDiceRoll) {
-      const cardTypes = ['W card', 'B card', 'I card', 'L card', 'E Card'];
+      const requiresDiceRoll = currentSpace.requires_dice_roll;
+      if (requiresDiceRoll && requiresDiceRoll.toLowerCase() === 'yes') {
+        needsDiceRoll = true;
+        reason = `Space ${currentSpace.name} has requires_dice_roll=Yes in Spaces.csv`;
+        console.log(`DiceManager: ${reason}`);
+      }
+    }
+    
+    // Method 3: Check if any card columns contain conditional text "if you roll"
+    if (!needsDiceRoll) {
+      const cardTypes = ['w_card', 'b_card', 'i_card', 'l_card', 'e_card'];
       for (const cardType of cardTypes) {
         const cardText = currentSpace[cardType];
         if (cardText && typeof cardText === 'string' && cardText.includes('if you roll')) {
@@ -719,7 +729,7 @@ class DiceManager {
     const outcomes = {};
     
     for (const outcomeData of diceOutcomes) {
-      const dieRollType = outcomeData['Die Roll'];
+      const dieRollType = outcomeData['die_roll'];
       const outcomeValue = outcomeData[rollResult.toString()];
       
       console.log('DiceManager: Processing outcome type', dieRollType, 'value:', outcomeValue);

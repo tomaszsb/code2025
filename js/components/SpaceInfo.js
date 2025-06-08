@@ -139,11 +139,11 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     const fieldMappings = [
       { key: 'action', label: 'Action', priority: 'high' },
       { key: 'outcome', label: 'Outcome', priority: 'high' },
-      { key: 'W Card', label: 'Work Type Card', priority: 'normal', isCard: true },
-      { key: 'B Card', label: 'Bank Card', priority: 'normal', isCard: true },
-      { key: 'I Card', label: 'Investor Card', priority: 'normal', isCard: true },
-      { key: 'L card', label: 'Life Card', priority: 'normal', isCard: true },
-      { key: 'E Card', label: 'Expeditor Card', priority: 'normal', isCard: true },
+      { key: 'w_card', label: 'Work Type Card', priority: 'normal', isCard: true },
+      { key: 'b_card', label: 'Bank Card', priority: 'normal', isCard: true },
+      { key: 'i_card', label: 'Investor Card', priority: 'normal', isCard: true },
+      { key: 'l_card', label: 'Life Card', priority: 'normal', isCard: true },
+      { key: 'e_card', label: 'Expeditor Card', priority: 'normal', isCard: true },
       { key: 'Fee', label: 'Fee', priority: 'normal', isResource: true }
       // Time is handled separately now in the top right corner
     ];

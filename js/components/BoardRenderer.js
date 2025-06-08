@@ -363,11 +363,11 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
                 {instructionsData.first.action && <p><strong>Action:</strong> {instructionsData.first.action}</p>}
                 {instructionsData.first.outcome && <p><strong>Outcome:</strong> {instructionsData.first.outcome}</p>}
                 {/* Only show card fields that were included in the filtered data */}
-                {instructionsData.first["W Card"] && <p><strong>W Card:</strong> {instructionsData.first["W Card"]}</p>}
-                {instructionsData.first["B Card"] && <p><strong>B Card:</strong> {instructionsData.first["B Card"]}</p>}
-                {instructionsData.first["I Card"] && <p><strong>I Card:</strong> {instructionsData.first["I Card"]}</p>}
-                {instructionsData.first["L card"] && <p><strong>L Card:</strong> {instructionsData.first["L card"]}</p>}
-                {instructionsData.first["E Card"] && <p><strong>E Card:</strong> {instructionsData.first["E Card"]}</p>}
+                {instructionsData.first["w_card"] && <p><strong>Work Type Card:</strong> {instructionsData.first["w_card"]}</p>}
+                {instructionsData.first["b_card"] && <p><strong>Bank Card:</strong> {instructionsData.first["b_card"]}</p>}
+                {instructionsData.first["i_card"] && <p><strong>Investor Card:</strong> {instructionsData.first["i_card"]}</p>}
+                {instructionsData.first["l_card"] && <p><strong>Life Card:</strong> {instructionsData.first["l_card"]}</p>}
+                {instructionsData.first["e_card"] && <p><strong>Expeditor Card:</strong> {instructionsData.first["e_card"]}</p>}
               </div>
             )}
             
@@ -378,11 +378,11 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
                 {instructionsData.subsequent.action && <p><strong>Action:</strong> {instructionsData.subsequent.action}</p>}
                 {instructionsData.subsequent.outcome && <p><strong>Outcome:</strong> {instructionsData.subsequent.outcome}</p>}
                 {/* Only show card fields that were included in the filtered data */}
-                {instructionsData.subsequent["W Card"] && <p><strong>W Card:</strong> {instructionsData.subsequent["W Card"]}</p>}
-                {instructionsData.subsequent["B Card"] && <p><strong>B Card:</strong> {instructionsData.subsequent["B Card"]}</p>}
-                {instructionsData.subsequent["I Card"] && <p><strong>I Card:</strong> {instructionsData.subsequent["I Card"]}</p>}
-                {instructionsData.subsequent["L card"] && <p><strong>L Card:</strong> {instructionsData.subsequent["L card"]}</p>}
-                {instructionsData.subsequent["E Card"] && <p><strong>E Card:</strong> {instructionsData.subsequent["E Card"]}</p>}
+                {instructionsData.subsequent["w_card"] && <p><strong>Work Type Card:</strong> {instructionsData.subsequent["w_card"]}</p>}
+                {instructionsData.subsequent["b_card"] && <p><strong>Bank Card:</strong> {instructionsData.subsequent["b_card"]}</p>}
+                {instructionsData.subsequent["i_card"] && <p><strong>Investor Card:</strong> {instructionsData.subsequent["i_card"]}</p>}
+                {instructionsData.subsequent["l_card"] && <p><strong>Life Card:</strong> {instructionsData.subsequent["l_card"]}</p>}
+                {instructionsData.subsequent["e_card"] && <p><strong>Expeditor Card:</strong> {instructionsData.subsequent["e_card"]}</p>}
               </div>
             )}
           </div>

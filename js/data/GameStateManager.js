@@ -382,7 +382,6 @@ class GameStateManager {
     console.log('GameStateManager: nextPlayerTurn method completed');
   }
   
-  // PHASE 3: Deleted duplicate GameStateManager.extractSpaceName() - Using MovementEngine.extractSpaceName() instead
   
   // Find a space by ID - cache only (no fallbacks)
   findSpaceById(spaceId) {
@@ -527,7 +526,6 @@ class GameStateManager {
     console.log('GameStateManager: movePlayer method completed');
   }
   
-  // PHASE 3: Deleted overengineered GameStateManager.hasPlayerVisitedSpace() - Using simple MovementEngine.hasPlayerVisitedSpace() instead
   
   // PHASE 4: Simple CSV lookup - no complex fallbacks
   findSpaceByName(name) {

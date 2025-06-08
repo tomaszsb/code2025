@@ -32,7 +32,22 @@
       "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"Negotiate\" /mnt/d/unravel/current_game/code2025/js/components/TurnManager.js)",
       "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n -A 5 -B 5 \"canNegotiate\\|Negotiate.*button\" /mnt/d/unravel/current_game/code2025/js/components/ --type js)",
       "Bash(cut:*)",
-      "WebFetch(domain:docs.anthropic.com)"
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"ComponentRegistry\\.(register|get|has|getVersion|setDebugMode|listComponents|declareDependencies)\" --type js)",
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"\\.drawCard\\(\" /mnt/d/unravel/current_game/code2025/js/components/CardDisplay.js)",
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"\\.drawCard\\(\" /mnt/d/unravel/current_game/code2025/js/components/CardManager.js)",
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"\\.drawCard\\(\" /mnt/d/unravel/current_game/code2025/js/components/DiceManager.js)",
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"\\.drawCard\\(\" /mnt/d/unravel/current_game/code2025/js/data/GameStateManager.js)",
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"\\.drawCard\\(\" /mnt/d/unravel/current_game/code2025/js/components/managers/SpaceInfoManager.js)",
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"\\.drawCard\\(\" /mnt/d/unravel/current_game/code2025/js/utils/CardDrawUtil.js)",
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"CardManagerInterface\\.\" /mnt/d/unravel/current_game/code2025/js/)",
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"window\\.CardManagerInterface\" /mnt/d/unravel/current_game/code2025/js/)",
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"initialize.*CardManager\" /mnt/d/unravel/current_game/code2025/js/)",
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"\\.initialize\\(\" /mnt/d/unravel/current_game/code2025/js/)",
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"getPlayerCards|assignCardToPlayer|playCard|discardCard|shuffleDeck\" /mnt/d/unravel/current_game/code2025/js/)",
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"CardManagerInterface\" /mnt/d/unravel/current_game/code2025/Index.html)",
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"CARD_TYPES\\.\" /mnt/d/unravel/current_game/code2025/js/)",
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"CARD_TYPES\" /mnt/d/unravel/current_game/code2025/js/)"
     ],
     "deny": []
   }

@@ -33,43 +33,25 @@ window.SpaceInfoCards = {
     // Log the button state for debugging
     console.log(`SpaceInfoCards: Button ${buttonId} used status:`, isButtonUsed);
     
-    // Enhanced card type mapping with categories
-    const cardTypeMapping = {
-      'Work Type Card': { type: 'W', category: 'work' },
-      'Work Type': { type: 'W', category: 'work' },
-      'W Card': { type: 'W', category: 'work' },
-      'W Cards': { type: 'W', category: 'work' },
-      'W': { type: 'W', category: 'work' },
-      'Bank Card': { type: 'B', category: 'financing' },
-      'Bank': { type: 'B', category: 'financing' },
-      'B Card': { type: 'B', category: 'financing' },
-      'B Cards': { type: 'B', category: 'financing' },
-      'B': { type: 'B', category: 'financing' },
-      'Investor Card': { type: 'I', category: 'financing' },
-      'Investor': { type: 'I', category: 'financing' },
-      'I Card': { type: 'I', category: 'financing' },
-      'I Cards': { type: 'I', category: 'financing' },
-      'I': { type: 'I', category: 'financing' },
-      'Life Event': { type: 'L', category: 'events' },
-      'Life Card': { type: 'L', category: 'events' },
-      'Life': { type: 'L', category: 'events' },
-      'L Card': { type: 'L', category: 'events' },
-      'L Cards': { type: 'L', category: 'events' },
-      'L': { type: 'L', category: 'events' },
-      'Expeditor Card': { type: 'E', category: 'efficiency' },
-      'Expeditor': { type: 'E', category: 'efficiency' },
-      'E Card': { type: 'E', category: 'efficiency' },
-      'E Cards': { type: 'E', category: 'efficiency' },
-      'E': { type: 'E', category: 'efficiency' }
+    // MODERNIZED: Use centralized card type system for mapping
+    const parseCardTypeFromText = (text) => {
+      const typeCode = window.CardTypeUtils.findTypeByName(text);
+      if (typeCode) {
+        const typeData = window.CardTypeUtils.getTypeData(typeCode);
+        return { type: typeCode, category: typeData.category };
+      }
+      return null;
     };
     
-    const cardMapping = cardTypeMapping[cardType];
+    const cardMapping = parseCardTypeFromText(cardType);
+    console.log('SpaceInfoCards: parseCardTypeFromText result for', cardType, ':', cardMapping);
     if (!cardMapping) {
       console.log('SpaceInfoCards: No valid card type found for:', cardType);
       return null;
     }
     
     const cardCode = cardMapping.type;
+    console.log('SpaceInfoCards: Final cardCode for', cardType, 'is:', cardCode);
     
     // Check for dice roll conditions
     const conditionalRollPattern = /if\s+you\s+roll\s+(?:a|an)?\s*(\d+)/i;

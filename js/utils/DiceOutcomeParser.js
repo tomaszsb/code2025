@@ -265,17 +265,21 @@ class DiceOutcomeParser {
       return [];
     }
 
-    // Parse the legacy outcome text
-    return this._parseLegacyOutcomeText(outcomeText);
+    // Get the outcome type from the "Die Roll" column to determine card type
+    const outcomeType = legacyRow['Die Roll'];
+
+    // Parse the legacy outcome text with context
+    return this._parseLegacyOutcomeText(outcomeText, outcomeType);
   }
 
   /**
    * Parse legacy outcome text into structured outcomes
    * @param {string} outcomeText - Raw outcome text from legacy CSV
+   * @param {string} outcomeType - The outcome type from "Die Roll" column
    * @returns {Array} Array of parsed outcomes
    * @private
    */
-  _parseLegacyOutcomeText(outcomeText) {
+  _parseLegacyOutcomeText(outcomeText, outcomeType = '') {
     const outcomes = [];
     const text = outcomeText.trim();
 
@@ -283,10 +287,27 @@ class DiceOutcomeParser {
     if (text.match(/Draw \d+/)) {
       const match = text.match(/Draw (\d+)/);
       if (match) {
+        // Determine card type from outcome type
+        let cardType = 'W'; // Default fallback
+        
+        if (outcomeType.includes('W Cards')) {
+          cardType = 'W';
+        } else if (outcomeType.includes('B Cards')) {
+          cardType = 'B';
+        } else if (outcomeType.includes('I Cards')) {
+          cardType = 'I';
+        } else if (outcomeType.includes('L Cards')) {
+          cardType = 'L';
+        } else if (outcomeType.includes('E Cards') || outcomeType.includes('E cards')) {
+          cardType = 'E';
+        }
+        
+        console.log(`DiceOutcomeParser: Drawing ${match[1]} ${cardType} cards based on outcome type: ${outcomeType}`);
+        
         outcomes.push({
           type: 'cards',
           action: 'drawCards',
-          cards: { W: parseInt(match[1]) }, // Default to W cards for legacy
+          cards: { [cardType]: parseInt(match[1]) },
           description: text
         });
       }

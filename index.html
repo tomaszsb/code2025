@@ -24,7 +24,6 @@
     </script>
     
     <!-- Cache buster system - load early to monitor other scripts -->
-    <script src="js/utils/cache-buster.js"></script>
     
     <!-- React from CDN -->
     <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
@@ -43,6 +42,9 @@
     <!-- Load utilities with Babel -->
     <script type="text/babel" src="js/utils/csv-parser.js"></script>
     
+    <!-- Card Type Constants - Load Early (Phase 4) -->
+    <script type="text/babel" src="js/utils/CardTypeConstants.js"></script>
+    
     <!-- Component Registry (new) -->
     <script type="text/babel" src="js/utils/ComponentRegistry.js"></script>
     
@@ -55,11 +57,8 @@
     
     <!-- Consolidated Movement System - MOVED BEFORE GameStateManager -->
     <script type="text/babel" src="js/utils/movement/MovementEngine.js"></script>
-    <script type="text/babel" src="js/utils/movement/MovementSystemSimplified.js"></script>
     
     <script type="text/babel" src="js/data/GameStateManager.js"></script>
-    <!-- Keeping for backward compatibility -->
-    <script type="text/babel" src="js/data/game-state.js"></script>
     
     <!-- Component Interfaces (new) -->
     <script type="text/babel" src="js/interfaces/CardManagerInterface.js"></script>
@@ -89,7 +88,6 @@
     <script type="text/babel" src="js/components/PlayerMovementVisualizer.js"></script>
     <script type="text/babel" src="js/components/TooltipSystem.js"></script>
     <script type="text/babel" src="js/components/InteractiveFeedback.js"></script>
-    <script type="text/babel" src="js/components/space-explorer-logger.js"></script>
     <script type="text/babel" src="js/components/SpaceExplorer.js"></script>
     
     <!-- Load main components -->
@@ -97,7 +95,6 @@
     <script type="text/babel" src="js/components/PlayerInfo.js"></script>
     <script type="text/babel" src="js/components/SpaceInfo.js"></script>
     <!-- Load Board Components -->
-    <script type="text/babel" src="js/components/BoardConnectors.js"></script>
     <script type="text/babel" src="js/components/BoardStyleManager.js"></script>
     <script type="text/babel" src="js/components/StaticPlayerStatus.js"></script>
     <script type="text/babel" src="js/components/BoardSpaceRenderer.js"></script>

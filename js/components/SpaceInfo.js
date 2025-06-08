@@ -239,11 +239,7 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
         {/* Available moves section - from SpaceInfoMoves */}
         {this.renderAvailableMoves()}
         
-        {/* OWNER-FUND-INITIATION button - from SpaceInfoMoves */}
-        {this.renderOwnerFundInitiationButton()}
-        
-        {/* RETURN TO YOUR SPACE button - from SpaceInfoMoves */}
-        {this.renderReturnToYourSpaceButton()}
+        {/* REMOVED: OWNER-FUND-INITIATION and RETURN TO YOUR SPACE buttons - Phase 3 cleanup */}
         
         {/* Display dice outcomes if available - from SpaceInfoDice */}
         {this.renderDiceOutcomes()}

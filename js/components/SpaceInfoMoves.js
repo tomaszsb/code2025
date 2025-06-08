@@ -83,7 +83,7 @@ window.SpaceInfoMoves = {
                 }
               },
               title: destination.description || destination.name
-            }, destination.description || destination.name);
+            }, destination.name || destination.description);
           })
         ),
         React.createElement('div', { key: 'instruction', className: 'selection-instruction' }, 
@@ -431,21 +431,12 @@ window.SpaceInfoMoves = {
               }
             },
             title: this.getMoveButtonTooltip(move)
-          }, move.description || move.name);
+          }, move.name || move.description);
         })
       )
     ]);
   },
 
-  /**
-   * Renders the OWNER-FUND-INITIATION button if needed - DISABLED IN SIMPLIFIED SYSTEM
-   * @returns {JSX.Element|null} Always returns null - MovementEngine handles all moves
-   */
-  renderOwnerFundInitiationButton: function() {
-    // SIMPLIFIED SYSTEM: MovementEngine handles all movement options
-    // No additional buttons needed - this prevents duplicates
-    return null;
-  },
   
   // PHASE 3: Deleted SpaceInfoMoves.getAvailableMoves() - Business logic moved to MovementEngine in Phase 1
   
@@ -536,15 +527,6 @@ window.SpaceInfoMoves = {
     return moves;
   },
   
-  /**
-   * Renders the RETURN TO YOUR SPACE button for PM-DECISION-CHECK subsequent visits only
-   * @returns {JSX.Element|null} The RETURN TO YOUR SPACE button or null
-   */
-  renderReturnToYourSpaceButton: function() {
-    // This button is now replaced by showing original space moves directly
-    // within the available moves section, handled by getAvailableMoves
-    return null;
-  }
 };
 
 console.log('SpaceInfoMoves.js code execution finished');

@@ -16,13 +16,7 @@ window.CardDisplay = class CardDisplay extends React.Component {
       animateCardDraw: false,
       newCardType: null,
       newCardData: null,
-      cardTypeFilters: {
-        W: true, // Work Type
-        B: true, // Bank
-        I: true, // Investor
-        L: true, // Life
-        E: true  // Expeditor
-      },
+      cardTypeFilters: window.CardTypeUtils.generateFilterObject(), // All types enabled by default
       // Add state for W card discard tracking
       requiredWDiscards: 0,
       showDiscardDialog: false,
@@ -35,11 +29,8 @@ window.CardDisplay = class CardDisplay extends React.Component {
       // Add state for card limit enforcement
       showCardLimitDialog: false,
       cardTypeCounts: {},
-      cardsOverLimit: [],
-      // Add state for combo system
-      comboOpportunities: [],
-      showComboBuilder: false,
-      selectedCombo: null
+      cardsOverLimit: []
+      // REMOVED: combo system state - Phase 1B cleanup
     };
   }
 
@@ -108,8 +99,7 @@ window.CardDisplay = class CardDisplay extends React.Component {
       window.GameStateManager.addEventListener('gameStateChanged', this.handlePhaseChange);
     }
     
-    // Initialize combo detection
-    this.detectComboOpportunities();
+    // REMOVED: combo detection - Phase 1B cleanup
   }
   
   componentWillUnmount() {
@@ -126,8 +116,7 @@ window.CardDisplay = class CardDisplay extends React.Component {
   handleGameStateUpdate = () => {
     // Reload the player's cards when game state is updated
     this.loadPlayerCards();
-    // Re-detect combo opportunities when cards change
-    this.detectComboOpportunities();
+    // REMOVED: combo detection - Phase 1B cleanup
   }
 
   // Handle phase changes
@@ -430,13 +419,13 @@ window.CardDisplay = class CardDisplay extends React.Component {
     );
     
     if (result) {
-      // Update card counts after playing a card
-      const updatedCounts = this.countCardsByType(result.cards);
-      
+      // Note: Card removal is handled by GameStateManager, so don't update cards array here
+      // Just update UI state (selectedCardIndex, showCardDetail, etc.)
       this.setState({
-        ...result,
-        cardTypeCounts: updatedCounts
+        ...result
       });
+      
+      // The cards will be updated through the gameStateUpdated event handler
     }
   }
 
@@ -569,144 +558,8 @@ window.CardDisplay = class CardDisplay extends React.Component {
     });
   }
 
-  // ======================
-  // COMBO DETECTION METHODS
-  // ======================
-
-  // Detect combo opportunities among current cards
-  detectComboOpportunities = () => {
-    const { cards } = this.state;
-    
-    if (!cards || cards.length < 2) {
-      this.setState({ comboOpportunities: [] });
-      return;
-    }
-
-    const opportunities = [];
-    
-    // Check for known combo patterns
-    const cardTypes = cards.map(card => card.type);
-    const typeCounts = this.countCardTypes(cardTypes);
-
-    // Bank + Investor combo (Finance synergy)
-    if (typeCounts.B >= 1 && typeCounts.I >= 1) {
-      opportunities.push({
-        type: 'finance_synergy',
-        name: 'Finance Combo',
-        cards: this.getCardsByTypes(cards, ['B', 'I']),
-        description: 'Bank + Investor: Enhanced financial terms',
-        bonus: { money: 75000 },
-        cssClass: 'finance'
-      });
-    }
-
-    // Work + Life combo (Work-life balance)
-    if (typeCounts.W >= 1 && typeCounts.L >= 1) {
-      opportunities.push({
-        type: 'work_life_synergy',
-        name: 'Work-Life Balance',
-        cards: this.getCardsByTypes(cards, ['W', 'L']),
-        description: 'Work + Life: Balanced approach bonus',
-        bonus: { money: 25000, time: 2 },
-        cssClass: 'work-life'
-      });
-    }
-
-    // Triple type combo
-    const uniqueTypes = Object.keys(typeCounts).filter(type => typeCounts[type] > 0);
-    if (uniqueTypes.length >= 3) {
-      opportunities.push({
-        type: 'triple_synergy',
-        name: 'Triple Coordination',
-        cards: this.getCardsByTypes(cards, uniqueTypes.slice(0, 3)),
-        description: 'Three different card types working together',
-        bonus: { money: 75000 },
-        cssClass: 'synergy'
-      });
-    }
-
-    // Full spectrum combo (all 5 types)
-    if (uniqueTypes.length === 5) {
-      opportunities.push({
-        type: 'full_spectrum',
-        name: 'Project Mastery',
-        cards: cards,
-        description: 'All card types in perfect harmony',
-        bonus: { money: 200000, time: 5 },
-        cssClass: 'spectrum'
-      });
-    }
-
-    // Same-type mass combo (3+ of same type)
-    Object.entries(typeCounts).forEach(([type, count]) => {
-      if (count >= 3) {
-        opportunities.push({
-          type: 'mass_synergy',
-          name: `${window.CardTypeUtils?.getCardTypeName(type) || type} Focus`,
-          cards: this.getCardsByTypes(cards, [type]),
-          description: `${count} ${type}-type cards amplifying each other`,
-          bonus: { multiplier: 1 + (count * 0.3) },
-          cssClass: 'synergy'
-        });
-      }
-    });
-
-    this.setState({ 
-      comboOpportunities: opportunities,
-      showComboBuilder: opportunities.length > 0  // Auto-show when combos are available
-    });
-  }
-
-  // Count card types
-  countCardTypes = (cardTypes) => {
-    const counts = { W: 0, B: 0, I: 0, L: 0, E: 0 };
-    cardTypes.forEach(type => {
-      if (counts.hasOwnProperty(type)) {
-        counts[type]++;
-      }
-    });
-    return counts;
-  }
-
-  // Get cards of specific types
-  getCardsByTypes = (cards, types) => {
-    return cards.filter(card => types.includes(card.type));
-  }
-
-  // Check if a card is part of any combo opportunity
-  getCardComboStatus = (card) => {
-    const { comboOpportunities = [] } = this.state;
-    
-    for (let opportunity of comboOpportunities) {
-      const isPartOfCombo = opportunity.cards.some(comboCard => comboCard.id === card.id);
-      if (isPartOfCombo) {
-        return {
-          hasCombo: true,
-          comboType: opportunity.type,
-          comboName: opportunity.name,
-          cssClass: opportunity.cssClass
-        };
-      }
-    }
-    
-    return { hasCombo: false };
-  }
-
-  // Check for chain opportunities
-  detectChainOpportunities = (card) => {
-    if (!card.chain_effect) return null;
-
-    // Simple chain detection - look for chain effect patterns
-    if (card.chain_effect.includes('draw:') || card.chain_effect.includes('if:')) {
-      return {
-        hasChain: true,
-        chainType: 'trigger',
-        description: 'This card can trigger chain reactions'
-      };
-    }
-
-    return null;
-  }
+  // REMOVED: Combo detection methods - Phase 1B cleanup
+  // TODO: Implement combo system in future phases
   
   // Check if a phase restriction value is a valid CSV phase name
   isValidPhase = (phaseRestriction) => {
@@ -983,6 +836,7 @@ window.CardDisplay = class CardDisplay extends React.Component {
       isReplacingWCards, requiredWDiscards, requiredWReplacements,
       selectedForReplacement, discardedCount, cardTypeCounts
     } = this.state;
+    // REMOVED: combo-related state destructuring - Phase 1B cleanup
     
     const { visible, playerId } = this.props;
     
@@ -1016,7 +870,7 @@ window.CardDisplay = class CardDisplay extends React.Component {
           {/* Current phase indicator */}
           <div className="current-phase-indicator">
             <span className="phase-label">Current Phase:</span>
-            <span className="phase-value">{window.CardTypeUtils.getCurrentPhase()}</span>
+            <span className="phase-value">{window.GameStateManager?.currentPhase || 'Unknown'}</span>
           </div>
         </div>
         
@@ -1065,20 +919,12 @@ window.CardDisplay = class CardDisplay extends React.Component {
               // Check if card is available in current phase
               const isPhaseAvailable = window.CardTypeUtils.isCardAvailableInCurrentPhase(card);
               
-              // Check for combo opportunities
-              const comboStatus = this.getCardComboStatus(card);
-              const chainStatus = this.detectChainOpportunities(card);
+              // REMOVED: combo and chain status checks - Phase 1B cleanup
               
-              // Build CSS classes for combo/chain indicators and phase availability
-              let comboClasses = '';
-              if (comboStatus.hasCombo) {
-                comboClasses += ' combo-available';
-              }
-              if (chainStatus && chainStatus.hasChain) {
-                comboClasses += ' chain-trigger';
-              }
+              // Build CSS classes for phase availability
+              let additionalClasses = '';
               if (!isPhaseAvailable) {
-                comboClasses += ' phase-disabled';
+                additionalClasses += ' phase-disabled';
               }
               
               return (
@@ -1087,16 +933,11 @@ window.CardDisplay = class CardDisplay extends React.Component {
                   className={`card card-type-${card.type.toLowerCase()} 
                     ${selectedCardIndex === actualIndex ? 'selected' : ''} 
                     ${isDiscardMode ? 'discard-highlight' : ''} 
-                    ${isOverLimit ? 'card-exceed-limit' : ''}${comboClasses}`}
+                    ${isOverLimit ? 'card-exceed-limit' : ''}${additionalClasses}`}
                   onClick={() => isPhaseAvailable ? this.handleCardClick(actualIndex) : null}
                   title={!isPhaseAvailable ? `This card is only available during the ${card.phase_restriction} phase` : ''}
                 >
-                  {/* Combo indicator */}
-                  {comboStatus.hasCombo && (
-                    <div className={`combo-indicator ${comboStatus.cssClass}`}>
-                      {comboStatus.comboName}
-                    </div>
-                  )}
+                  {/* REMOVED: Combo indicator - Phase 1B cleanup */}
                   
                   <div className={`card-header card-header-${card.type.toLowerCase()}`}>
                     {window.CardTypeUtils.getCardTypeName(card.type)}
@@ -1125,7 +966,7 @@ window.CardDisplay = class CardDisplay extends React.Component {
                     {/* Add key card information based on type and phase */}
                     {card.type === 'B' && card.loan_amount && (
                       <div className="card-amount">
-                        {window.CardTypeUtils.getCurrentPhase() === 'SETUP' ? (
+                        {window.GameStateManager?.currentPhase === 'SETUP' ? (
                           <span className="seed-money">🌱 {window.CardTypeUtils.formatCurrency(card.loan_amount)} (Seed Money)</span>
                         ) : (
                           <span>💰 {window.CardTypeUtils.formatCurrency(card.loan_amount)}</span>
@@ -1135,7 +976,7 @@ window.CardDisplay = class CardDisplay extends React.Component {
                     
                     {card.type === 'I' && card.investment_amount && (
                       <div className="card-amount">
-                        {window.CardTypeUtils.getCurrentPhase() === 'SETUP' ? (
+                        {window.GameStateManager?.currentPhase === 'SETUP' ? (
                           <span className="seed-money">🌱 {window.CardTypeUtils.formatCurrency(card.investment_amount)} (Seed Money)</span>
                         ) : (
                           <span>📈 {window.CardTypeUtils.formatCurrency(card.investment_amount)}</span>
@@ -1205,53 +1046,12 @@ window.CardDisplay = class CardDisplay extends React.Component {
         {/* Card limit dialog */}
         {showCardLimitDialog && this.renderCardLimitDialog()}
         
-        {/* Combo builder UI */}
-        {this.renderComboBuilder()}
+        {/* REMOVED: Combo builder UI - Phase 1B cleanup */}
       </div>
     );
   }
 
-  // Render combo builder UI
-  renderComboBuilder = () => {
-    const { comboOpportunities, showComboBuilder } = this.state;
-    
-    if (!comboOpportunities || comboOpportunities.length === 0) {
-      return null;
-    }
-
-    return (
-      <div className={`combo-builder ${showComboBuilder ? 'visible' : ''}`}>
-        <div className="combo-builder-title">
-          ⭐ Combo Opportunities ({comboOpportunities.length})
-        </div>
-        
-        {comboOpportunities.map((combo, index) => (
-          <div key={index} className="combo-preview">
-            <div className="combo-requirements">
-              <strong>{combo.name}</strong>
-            </div>
-            <div style={{ fontSize: '12px', color: '#ccc', marginBottom: '4px' }}>
-              {combo.description}
-            </div>
-            <div className="combo-bonus">
-              {combo.bonus.money && `+$${combo.bonus.money.toLocaleString()}`}
-              {combo.bonus.time && ` +${combo.bonus.time} time`}
-              {combo.bonus.multiplier && ` ${combo.bonus.multiplier}x multiplier`}
-            </div>
-          </div>
-        ))}
-        
-        <div style={{ 
-          marginTop: '8px', 
-          fontSize: '10px', 
-          color: '#888',
-          cursor: 'pointer'
-        }} onClick={() => this.setState({ showComboBuilder: !showComboBuilder })}>
-          {showComboBuilder ? 'Hide' : 'Show'} Details
-        </div>
-      </div>
-    );
-  }
+  // REMOVED: renderComboBuilder method - Phase 1B cleanup
 }
 
 console.log('CardDisplay.js code execution finished');

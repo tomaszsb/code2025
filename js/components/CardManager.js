@@ -455,28 +455,14 @@ class CardManager {
     // The event handler will take care of updating UI
   };
   
-  // Get color for card type - Utility method, unchanged
+  // Get color for card type - MODERNIZED to use CardTypeConstants
   getCardTypeColor = (cardType) => {
-    switch (cardType) {
-      case 'W': return '#4285f4'; // Blue for Work Type
-      case 'B': return '#ea4335'; // Red for Bank
-      case 'I': return '#fbbc05'; // Yellow for Investor
-      case 'L': return '#34a853'; // Green for Life
-      case 'E': return '#8e44ad'; // Purple for Expeditor
-      default: return '#777777';  // Gray for unknown
-    }
+    return window.CardTypeUtils.getTypeColor(cardType);
   };
   
-  // Get full name for card type - Utility method, unchanged
+  // Get full name for card type - MODERNIZED to use CardTypeConstants
   getCardTypeName = (cardType) => {
-    switch (cardType) {
-      case 'W': return 'Work Type';
-      case 'B': return 'Bank';
-      case 'I': return 'Investor';
-      case 'L': return 'Life';
-      case 'E': return 'Expeditor';
-      default: return 'Unknown';
-    }
+    return window.CardTypeUtils.getTypeName(cardType);
   };
 
   // Enhanced card effect processing with new metadata fields
@@ -1303,11 +1289,7 @@ class CardManager {
     const cardTypes = comboCards.map(c => c.card_type);
     const uniqueTypes = [...new Set(cardTypes)];
 
-    // Multi-type combo bonus
-    if (uniqueTypes.length >= 3) {
-      bonus.money += 50000; // Diversity bonus
-      bonus.specialEffect = 'diversity_bonus';
-    }
+    // TODO: Introduce multi-type diversity bonus later (was 50000)
 
     // Same-type combo bonus
     if (uniqueTypes.length === 1) {
@@ -1315,11 +1297,7 @@ class CardManager {
       bonus.specialEffect = 'synergy_bonus';
     }
 
-    // Special combo patterns
-    if (uniqueTypes.includes('B') && uniqueTypes.includes('I')) {
-      bonus.money += 100000; // Finance combo
-      bonus.specialEffect = 'finance_combo';
-    }
+    // TODO: Introduce Bank+Investor combo bonus later (was 100000)
 
     console.log('CardManager: Calculated combo bonus', bonus);
     return bonus;
@@ -1579,30 +1557,9 @@ class CardManager {
     const type1 = card1.card_type;
     const type2 = card2.card_type;
 
-    // Bank + Investor synergy: Enhanced loan terms
-    if ((type1 === 'B' && type2 === 'I') || (type1 === 'I' && type2 === 'B')) {
-      return {
-        type: 'finance_synergy',
-        cards: [card1, card2],
-        effect: {
-          money: 75000, // Bonus money from improved terms
-          description: 'Bank-Investor synergy: Enhanced financial terms'
-        }
-      };
-    }
+    // TODO: Introduce Bank+Investor synergy bonus later (was 75000)
 
-    // Work + Life synergy: Work-life balance bonus
-    if ((type1 === 'W' && type2 === 'L') || (type1 === 'L' && type2 === 'W')) {
-      return {
-        type: 'work_life_synergy',
-        cards: [card1, card2],
-        effect: {
-          time: 2,
-          money: 25000,
-          description: 'Work-Life synergy: Balanced approach bonus'
-        }
-      };
-    }
+    // TODO: Introduce Work+Life synergy bonus later (was 25000 money, 2 time)
 
     // Expeditor + Any synergy: Expeditor amplifies other cards
     if (type1 === 'E' || type2 === 'E') {
@@ -1620,18 +1577,7 @@ class CardManager {
       };
     }
 
-    // Phase-based synergies
-    if (card1.phase_restriction && card2.phase_restriction && 
-        card1.phase_restriction === card2.phase_restriction) {
-      return {
-        type: 'phase_synergy',
-        cards: [card1, card2],
-        effect: {
-          money: 30000,
-          description: `${card1.phase_restriction} phase coordination bonus`
-        }
-      };
-    }
+    // TODO: Introduce phase-based synergy bonus later (was 30000)
 
     return null;
   }
@@ -1642,32 +1588,9 @@ class CardManager {
     const cardTypes = cards.map(c => c.card_type);
     const uniqueTypes = [...new Set(cardTypes)];
 
-    // Full spectrum synergy: All 5 card types
-    if (uniqueTypes.length === 5 && uniqueTypes.includes('B') && uniqueTypes.includes('W') && 
-        uniqueTypes.includes('I') && uniqueTypes.includes('L') && uniqueTypes.includes('E')) {
-      synergies.push({
-        type: 'full_spectrum_synergy',
-        cards: cards,
-        effect: {
-          money: 200000,
-          time: 5,
-          specialEffect: 'project_mastery',
-          description: 'Full spectrum mastery: All card types in harmony'
-        }
-      });
-    }
+    // TODO: Introduce full spectrum mastery bonus later (was 200000 money, 5 time)
 
-    // Triple type synergy: 3 different types
-    if (uniqueTypes.length === 3) {
-      synergies.push({
-        type: 'triple_synergy',
-        cards: cards.filter(c => uniqueTypes.includes(c.card_type)),
-        effect: {
-          money: 75000,
-          description: 'Triple coordination: Three-way synergy'
-        }
-      });
-    }
+    // TODO: Introduce triple type synergy bonus later (was 75000)
 
     // Same type mass synergy: 3+ cards of same type
     const typeCounts = {};

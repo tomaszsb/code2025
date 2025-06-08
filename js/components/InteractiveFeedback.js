@@ -102,9 +102,19 @@ window.InteractiveFeedback = {
     // Generate unique ID
     toast.id = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     
-    // Add to container
-    const container = document.querySelector('.toast-container');
-    container.appendChild(toast);
+    // Add to container (create if missing)
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+      this.createToastContainer();
+      container = document.querySelector('.toast-container');
+    }
+    
+    if (container) {
+      container.appendChild(toast);
+    } else {
+      console.error('InteractiveFeedback: Could not create toast container');
+      return;
+    }
     this.activeToasts.add(toast.id);
     
     // Show with animation

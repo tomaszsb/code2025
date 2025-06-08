@@ -748,10 +748,15 @@ class DiceManager {
         console.log('DiceManager: Found available moves:', availableMoves.map(m => m.name).join(', '));
       }
       
-      // COMPREHENSIVE FIX: If no moves found, handle multiple choice outcomes directly
-      if (availableMoves.length === 0 && nextStepValue && nextStepValue.includes(' or ')) {
-        console.log('DiceManager: No moves from DiceRollLogic, handling multiple choice directly:', nextStepValue);
-        availableMoves = this.handleMultipleChoiceOutcome(nextStepValue);
+      // COMPREHENSIVE FIX: If no moves found, handle outcomes directly
+      if (availableMoves.length === 0 && nextStepValue) {
+        if (nextStepValue.includes(' or ')) {
+          console.log('DiceManager: No moves from DiceRollLogic, handling multiple choice directly:', nextStepValue);
+          availableMoves = this.handleMultipleChoiceOutcome(nextStepValue);
+        } else {
+          console.log('DiceManager: No moves from DiceRollLogic, handling single choice directly:', nextStepValue);
+          availableMoves = this.handleSingleChoiceOutcome(nextStepValue);
+        }
       }
     }
     
@@ -760,6 +765,42 @@ class DiceManager {
     
     console.log('DiceManager: processDiceRollOutcome completed');
     return outcomes;
+  }
+  
+  // NEW METHOD: Handle single choice outcomes directly
+  handleSingleChoiceOutcome = (nextStepValue) => {
+    console.log('DiceManager: Processing single choice outcome:', nextStepValue);
+    
+    const currentPlayer = window.GameStateManager.getCurrentPlayer();
+    
+    // Extract space name (part before ' - ' if it exists)
+    let spaceName = nextStepValue;
+    if (spaceName.includes(' - ')) {
+      spaceName = spaceName.split(' - ')[0].trim();
+    }
+    
+    console.log('DiceManager: Processing single space:', spaceName);
+    
+    // Determine visit type based on player's history
+    const hasVisited = window.GameStateManager.hasPlayerVisitedSpace(spaceName, currentPlayer);
+    const visitType = hasVisited ? 'subsequent' : 'first';
+    
+    console.log('DiceManager: Single space', spaceName, 'visit type:', visitType, '(has visited:', hasVisited, ')');
+    
+    // Create proper space ID
+    const spaceId = spaceName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + visitType;
+    
+    // Create move object
+    const move = {
+      id: spaceId,
+      name: spaceName,
+      description: nextStepValue,
+      visitType: visitType,
+      fromDiceRoll: true
+    };
+    
+    console.log('DiceManager: Created single move:', move);
+    return [move];
   }
   
   // NEW METHOD: Handle multiple choice outcomes directly

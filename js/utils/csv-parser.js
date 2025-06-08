@@ -267,7 +267,6 @@ window.buildCardIndexes = function(cards) {
     byChain: {},          // Index by chain effects
     byTarget: {},         // Index by target type
     byDuration: {},       // Index by duration type
-    byCost: {},           // Index by money cost ranges
     byEffect: {},         // Index by effect types
     comboPairs: {},       // Index of cards that work well together
     chainTriggers: {},    // Index of cards that can trigger chains
@@ -315,11 +314,6 @@ window.buildCardIndexes = function(cards) {
     if (!indexes.byDuration[duration]) indexes.byDuration[duration] = [];
     indexes.byDuration[duration].push(card);
 
-    // Cost range index
-    const cost = parseInt(card.money_cost) || 0;
-    const costRange = getCostRange(cost);
-    if (!indexes.byCost[costRange]) indexes.byCost[costRange] = [];
-    indexes.byCost[costRange].push(card);
 
     // Effect type index
     const effectTypes = getEffectTypes(card);
@@ -351,14 +345,6 @@ window.buildCardIndexes = function(cards) {
   return indexes;
 };
 
-// Helper function to determine cost range
-function getCostRange(cost) {
-  if (cost === 0) return 'free';
-  if (cost <= 50000) return 'low';
-  if (cost <= 200000) return 'medium';
-  if (cost <= 500000) return 'high';
-  return 'very_high';
-}
 
 // Helper function to extract effect types from card
 function getEffectTypes(card) {
@@ -503,10 +489,6 @@ window.fastCardLookup = {
     return opportunities;
   },
 
-  // Get cards by cost range
-  getCardsByCostRange: function(indexes, range) {
-    return indexes.byCost[range] || [];
-  },
 
   // Get cards by effect type
   getCardsByEffect: function(indexes, effectType) {

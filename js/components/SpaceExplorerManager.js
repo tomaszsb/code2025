@@ -125,10 +125,8 @@ class SpaceExplorerManager {
       });
     }
     
-    // Legacy compatibility with SpaceExplorerLogger
-    if (window.logSpaceExplorerToggle && typeof window.logSpaceExplorerToggle === 'function') {
-      window.logSpaceExplorerToggle(false, '');
-    }
+    // Log space explorer closing
+    console.log('SpaceExplorerManager: Closing space explorer');
   }
   
   /**
@@ -155,10 +153,8 @@ class SpaceExplorerManager {
       });
     }
     
-    // Legacy compatibility with SpaceExplorerLogger
-    if (window.logSpaceExplorerToggle && typeof window.logSpaceExplorerToggle === 'function') {
-      window.logSpaceExplorerToggle(true, spaceName);
-    }
+    // Log space explorer opening
+    console.log(`SpaceExplorerManager: Opening space explorer for space: ${spaceName}`);
   }
   
   /**
@@ -180,10 +176,8 @@ class SpaceExplorerManager {
       });
     }
     
-    // Legacy compatibility with SpaceExplorerLogger
-    if (window.logSpaceExplorerToggle && typeof window.logSpaceExplorerToggle === 'function') {
-      window.logSpaceExplorerToggle(this.gameBoard.state.showSpaceExplorer, space ? space.name : '');
-    }
+    // Log space explorer update
+    console.log(`SpaceExplorerManager: Updating space explorer - visible: ${this.gameBoard.state.showSpaceExplorer}, space: ${space ? space.name : 'none'}`);
   }
   
   /**

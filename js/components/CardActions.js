@@ -12,25 +12,13 @@ window.CardActions = {
     // Get the selected card
     const cardToPlay = cards[selectedCardIndex];
     
-    // Remove the card from the player's hand
-    const updatedCards = [...cards];
-    updatedCards.splice(selectedCardIndex, 1);
-    
-    // Update the player's cards in the game state
-    const player = window.GameState.players.find(p => p.id === playerId);
-    
-    if (player) {
-      player.cards = updatedCards;
-      window.GameState.saveState();
-    }
-    
-    // Call the callback with the played card
+    // Call the callback with the played card - let GameStateManager handle removal
     if (callbacks.onCardPlayed) {
       callbacks.onCardPlayed(cardToPlay);
     }
     
+    // Return updated UI state - the actual card removal will be handled by GameStateManager
     return {
-      cards: updatedCards,
       selectedCardIndex: null,
       selectedCardId: null,
       showCardDetail: false

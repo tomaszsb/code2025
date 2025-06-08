@@ -283,6 +283,7 @@ window.DiceRollLogic = {
     });
     
     console.log('DiceRollLogic: Found', matchingSpaces.length, 'spaces matching:', cleanedName);
+    console.log('DiceRollLogic: Matching spaces:', matchingSpaces.map(s => ({ name: s.name, visitType: s['Visit Type'] })));
     
     if (matchingSpaces.length === 0) {
       console.error('DiceRollLogic: No spaces found with name:', cleanedName);
@@ -292,18 +293,31 @@ window.DiceRollLogic = {
     
     // Determine visit type
     const hasVisitedSpace = window.movementEngine?.hasPlayerVisitedSpace?.(currentPlayer, cleanedName) || false;
-    const targetVisitType = hasVisitedSpace ? 'subsequent' : 'first';
+    const targetVisitType = hasVisitedSpace ? 'Subsequent' : 'First';
     
-    console.log('DiceRollLogic: For', cleanedName, 'visit type should be:', targetVisitType);
+    console.log('DiceRollLogic: For', cleanedName, 'visit type should be:', targetVisitType, '(hasVisited:', hasVisitedSpace, ')');
     
     // Find the space with the right visit type, or use first one as fallback
-    const destinationSpace = matchingSpaces.find(space => 
-      space.visitType.toLowerCase() === targetVisitType.toLowerCase()
-    ) || matchingSpaces[0];
+    const destinationSpace = matchingSpaces.find(space => {
+      const spaceVisitType = space.visitType || space['Visit Type'] || '';
+      console.log('DiceRollLogic: Checking space visit type:', spaceVisitType, 'against target:', targetVisitType);
+      return spaceVisitType === targetVisitType;
+    }) || matchingSpaces[0];
     
-    console.log('DiceRollLogic: Selected destination space:', destinationSpace.id);
+    console.log('DiceRollLogic: Selected destination space:', destinationSpace ? {
+      name: destinationSpace.name,
+      visitType: destinationSpace['Visit Type'],
+      id: destinationSpace.id
+    } : 'null');
     
-    return [destinationSpace];
+    // If no id property, generate one
+    if (destinationSpace && !destinationSpace.id) {
+      const visitType = destinationSpace['Visit Type'] || 'First';
+      destinationSpace.id = cleanedName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + visitType.toLowerCase();
+      console.log('DiceRollLogic: Generated ID for space:', destinationSpace.id);
+    }
+    
+    return destinationSpace ? [destinationSpace] : [];
   }
 };
 

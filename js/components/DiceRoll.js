@@ -168,6 +168,29 @@ window.DiceRoll = class DiceRoll extends React.Component {
         if (dieRollType === 'W Cards Discard' || dieRollType === 'discard W Cards') {
           outcomes.discardWCards = outcomeValue;
           console.log('DiceRoll: Detected W cards discard requirement:', outcomeValue);
+        }
+        // Transform card type outcomes to format expected by DiceManager
+        else if (dieRollType.includes(' Cards') || dieRollType.includes(' cards')) {
+          // Extract card type (W, B, I, L, E) from outcome type
+          let cardType = '';
+          if (dieRollType.includes('W Cards')) cardType = 'W';
+          else if (dieRollType.includes('B Cards')) cardType = 'B';
+          else if (dieRollType.includes('I Cards')) cardType = 'I';
+          else if (dieRollType.includes('L Cards')) cardType = 'L';
+          else if (dieRollType.includes('E Cards') || dieRollType.includes('E cards')) cardType = 'E';
+          
+          if (cardType) {
+            // Convert "Draw 2" to just "2" for DiceManager
+            const drawMatch = outcomeValue.match(/Draw\s+(\d+)/i);
+            if (drawMatch) {
+              outcomes[`${cardType}CardOutcome`] = drawMatch[1];
+              console.log(`DiceRoll: Converted ${dieRollType} "${outcomeValue}" to ${cardType}CardOutcome = ${drawMatch[1]}`);
+            } else {
+              outcomes[`${cardType}CardOutcome`] = outcomeValue;
+            }
+          } else {
+            outcomes[dieRollType] = outcomeValue;
+          }
         } else {
           outcomes[dieRollType] = outcomeValue;
         }

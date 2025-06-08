@@ -193,14 +193,7 @@ window.StaticPlayerStatus = class StaticPlayerStatus extends React.Component {
   
   // Get card type name
   getCardTypeName(type) {
-    switch (type) {
-      case 'W': return 'Work Type';
-      case 'B': return 'Bank';
-      case 'I': return 'Investor';
-      case 'L': return 'Life';
-      case 'E': return 'Expeditor';
-      default: return 'Unknown';
-    }
+    return window.CardTypeUtils.getTypeName(type);
   }
   
   // Render card counts by type

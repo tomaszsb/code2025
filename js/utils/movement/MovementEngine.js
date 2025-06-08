@@ -330,7 +330,7 @@ class MovementEngine {
     // Find space data with matching visit type
     const spaceData = this.gameStateManager.spaces.find(s => {
       const nameMatch = s.name === space.name;
-      const visitTypeValue = s['Visit Type'] || s.visitType;
+      const visitTypeValue = s['visit_type'] || s.visitType;
       const visitMatch = visitTypeValue === visitType;
       console.log(`MovementEngine: Checking space '${s.name}' with visit type '${visitTypeValue}' - name match: ${nameMatch}, visit match: ${visitMatch}`);
       return nameMatch && visitMatch;
@@ -340,12 +340,12 @@ class MovementEngine {
     if (spaceData) {
       console.log('MovementEngine: Space data details:', {
         name: spaceData.name,
-        visitType: spaceData['Visit Type'] || spaceData.visitType,
-        space1: spaceData['Space 1'],
-        space2: spaceData['Space 2'],
-        space3: spaceData['Space 3'],
-        space4: spaceData['Space 4'],
-        space5: spaceData['Space 5']
+        visitType: spaceData['visit_type'] || spaceData.visitType,
+        space1: spaceData['space_1'],
+        space2: spaceData['space_2'],
+        space3: spaceData['space_3'],
+        space4: spaceData['space_4'],
+        space5: spaceData['space_5']
       });
     }
     
@@ -401,7 +401,7 @@ class MovementEngine {
     // Check if dice roll data exists for this space
     const visitType = this.getVisitType(player, spaceData);
     const diceData = this.gameStateManager.diceRollData.find(roll => 
-      roll['Space Name'] === spaceData.name && roll['Visit Type'] === visitType
+      roll['space_name'] === spaceData.name && roll['visit_type'] === visitType
     );
     
     if (!diceData) return false;
@@ -788,11 +788,11 @@ class MovementEngine {
     
     // Get the original choice options
     const originalChoices = [
-      firstVisitData["Space 1"],
-      firstVisitData["Space 2"],
-      firstVisitData["Space 3"],
-      firstVisitData["Space 4"],
-      firstVisitData["Space 5"]
+      firstVisitData["space_1"],
+      firstVisitData["space_2"],
+      firstVisitData["space_3"],
+      firstVisitData["space_4"],
+      firstVisitData["space_5"]
     ].filter(dest => dest && dest.toString().trim() !== "" && dest !== "null")
      .map(dest => {
        let spaceName = dest.toString();
@@ -868,11 +868,11 @@ class MovementEngine {
       if (chosenDestination) {
         // Get all possible destinations from this single choice space
         const possibleDestinations = [
-          space["Space 1"],
-          space["Space 2"], 
-          space["Space 3"],
-          space["Space 4"],
-          space["Space 5"]
+          space["space_1"],
+          space["space_2"], 
+          space["space_3"],
+          space["space_4"],
+          space["space_5"]
         ].filter(dest => dest && dest.toString().trim() !== "" && dest !== "null")
          .map(dest => {
           // Extract space name (part before " - " if it exists)
@@ -934,25 +934,25 @@ class MovementEngine {
     
     // DEBUG: Log available dice data
     const availableDiceData = this.gameStateManager.diceRollData.filter(roll => 
-      roll['Space Name'] === spaceData.name
+      roll['space_name'] === spaceData.name
     );
     console.log('MovementEngine: Available dice data for space:', spaceData.name, availableDiceData);
     
     const diceData = this.gameStateManager.diceRollData.find(roll => 
-      roll['Space Name'] === spaceData.name && roll['Visit Type'] === visitType
+      roll['space_name'] === spaceData.name && roll['visit_type'] === visitType
     );
     
     if (!diceData) {
       console.log('MovementEngine: No dice data found for', spaceData.name, visitType);
       console.log('MovementEngine: All available dice space names:', 
-        [...new Set(this.gameStateManager.diceRollData.map(d => d['Space Name']))]);
+        [...new Set(this.gameStateManager.diceRollData.map(d => d['space_name']))]);
       return [];
     }
     
     console.log('MovementEngine: Found dice data:', {
-      spaceName: diceData['Space Name'],
-      visitType: diceData['Visit Type'],
-      dieRoll: diceData['Die Roll']
+      spaceName: diceData['space_name'],
+      visitType: diceData['visit_type'],
+      dieRoll: diceData['die_roll']
     });
     
     const outcome = diceData[diceResult.toString()];
@@ -1110,11 +1110,11 @@ class MovementEngine {
     
     // Get raw destinations from Space 1-5 columns
     const rawDestinations = [
-      spaceData["Space 1"],
-      spaceData["Space 2"], 
-      spaceData["Space 3"],
-      spaceData["Space 4"],
-      spaceData["Space 5"]
+      spaceData["space_1"],
+      spaceData["space_2"], 
+      spaceData["space_3"],
+      spaceData["space_4"],
+      spaceData["space_5"]
     ].filter(dest => dest && dest.toString().trim() !== "" && dest !== "null");
     
     console.log('MovementEngine: Raw destinations found:', rawDestinations);
@@ -1145,11 +1145,11 @@ class MovementEngine {
           
           if (originalSpaceData) {
             const originalDestinations = [
-              originalSpaceData["Space 1"],
-              originalSpaceData["Space 2"], 
-              originalSpaceData["Space 3"],
-              originalSpaceData["Space 4"],
-              originalSpaceData["Space 5"]
+              originalSpaceData["space_1"],
+              originalSpaceData["space_2"], 
+              originalSpaceData["space_3"],
+              originalSpaceData["space_4"],
+              originalSpaceData["space_5"]
             ].filter(origDest => origDest && origDest.toString().trim() !== "" && origDest !== "null");
             
             console.log('MovementEngine: Original destinations found:', originalDestinations);
@@ -1276,11 +1276,11 @@ class MovementEngine {
     
     // Extract destinations from Space 1-5 columns
     const rawDestinations = [
-      spaceData["Space 1"],
-      spaceData["Space 2"], 
-      spaceData["Space 3"],
-      spaceData["Space 4"],
-      spaceData["Space 5"]
+      spaceData["space_1"],
+      spaceData["space_2"], 
+      spaceData["space_3"],
+      spaceData["space_4"],
+      spaceData["space_5"]
     ].filter(dest => dest && dest.toString().trim() !== "" && dest !== "null" && dest !== "n/a");
     
     console.log("MovementEngine: Raw destinations from original space:", rawDestinations);
@@ -1445,11 +1445,11 @@ class MovementEngine {
     
     // Extract destinations from original space
     const originalDestinations = [
-      originalSpaceData["Space 1"],
-      originalSpaceData["Space 2"], 
-      originalSpaceData["Space 3"],
-      originalSpaceData["Space 4"],
-      originalSpaceData["Space 5"]
+      originalSpaceData["space_1"],
+      originalSpaceData["space_2"], 
+      originalSpaceData["space_3"],
+      originalSpaceData["space_4"],
+      originalSpaceData["space_5"]
     ].filter(dest => dest && dest.toString().trim() !== "" && dest !== "null");
     
     console.log('MovementEngine: Original destinations:', originalDestinations);
@@ -1600,14 +1600,14 @@ class MovementEngine {
     }
     
     // Apply fixed card draws from space
-    const cardFields = ['W Card', 'B Card', 'I Card', 'L card', 'E Card'];
+    const cardFields = ['w_card', 'b_card', 'i_card', 'l_card', 'e_card'];
     cardFields.forEach(cardField => {
       const cardValue = spaceData[cardField];
       if (cardValue && cardValue.includes('Draw')) {
         const drawMatch = cardValue.match(/Draw (\d+)/);
         if (drawMatch) {
           const drawCount = parseInt(drawMatch[1]);
-          const cardKey = cardField.charAt(0); // W, B, I, L, E
+          const cardKey = cardField.charAt(0).toUpperCase(); // W, B, I, L, E
           player.cards[cardKey] = (player.cards[cardKey] || 0) + drawCount;
           console.log(`MovementEngine: Drew ${drawCount} ${cardKey} cards from space requirement`);
         }
@@ -1624,7 +1624,7 @@ class MovementEngine {
   applyDiceCardEffects(player, spaceData, diceResult) {
     const visitType = this.getVisitType(player, spaceData);
     const diceData = this.gameStateManager.diceRollData.find(roll => 
-      roll['Space Name'] === spaceData.name && roll['Visit Type'] === visitType
+      roll['space_name'] === spaceData.name && roll['visit_type'] === visitType
     );
     
     if (!diceData) return;
@@ -1638,7 +1638,7 @@ class MovementEngine {
     const drawCount = parseInt(drawMatch[1]);
     
     // Determine card type from dice roll type
-    const diceType = diceData["Die Roll"];
+    const diceType = diceData["die_roll"];
     if (diceType && diceType.includes('W')) {
       player.cards.W = (player.cards.W || 0) + drawCount;
       console.log(`MovementEngine: Drew ${drawCount} W cards from dice result`);
@@ -1935,11 +1935,11 @@ class MovementEngine {
    */
   hasEmptyMovementData(spaceData) {
     const destinations = [
-      spaceData["Space 1"],
-      spaceData["Space 2"], 
-      spaceData["Space 3"],
-      spaceData["Space 4"],
-      spaceData["Space 5"]
+      spaceData["space_1"],
+      spaceData["space_2"], 
+      spaceData["space_3"],
+      spaceData["space_4"],
+      spaceData["space_5"]
     ].filter(dest => dest && dest.toString().trim() !== "" && dest !== "null" && dest !== "n/a");
     
     return destinations.length === 0;
@@ -1960,12 +1960,12 @@ class MovementEngine {
     
     // Look for dice data that contains movement destinations (not just effects)
     const diceData = this.gameStateManager.diceRollData.filter(roll => 
-      roll['Space Name'] === spaceData.name && roll['Visit Type'] === visitType
+      roll['space_name'] === spaceData.name && roll['visit_type'] === visitType
     );
     
     // Check if any dice data contains movement destinations
     for (const data of diceData) {
-      const dieRollType = data['Die Roll'] || '';
+      const dieRollType = data['die_roll'] || '';
       
       // Check if this is a "Next Step" type dice roll (contains movement destinations)
       if (dieRollType.toLowerCase().includes('next step') || dieRollType.toLowerCase().includes('time outcomes')) {

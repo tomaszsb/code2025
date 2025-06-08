@@ -52,7 +52,7 @@ window.parseCSV = function(csvText, type = 'generic') {
       // For spaces CSV, only add rows with a valid Space Name
       // For other CSVs, add all non-empty rows
       if (type === 'spaces') {
-        if (row['Space Name'] && row['Space Name'].trim() !== '') {
+        if (row['space_name'] && row['space_name'].trim() !== '') {
           data.push(row);
         }
       } else {

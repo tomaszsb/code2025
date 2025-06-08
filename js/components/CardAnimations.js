@@ -299,15 +299,7 @@ window.CardAnimationManager = {
   
   // Create play effects (particles, glow)
   createPlayEffects: function(cardElement, cardType) {
-    const colors = {
-      'W': '#4285f4',
-      'B': '#ea4335', 
-      'I': '#fbbc05',
-      'L': '#34a853',
-      'E': '#8e44ad'
-    };
-    
-    const color = colors[cardType] || '#ccc';
+    const color = window.CardTypeUtils.getTypeColor(cardType);
     cardElement.style.boxShadow = `0 0 20px ${color}, 0 0 40px ${color}`;
     
     // Create particle effect
@@ -340,15 +332,7 @@ window.CardAnimationManager = {
   
   // Create impact effect at target
   createImpactEffect: function(targetElement, cardType) {
-    const colors = {
-      'W': '#4285f4',
-      'B': '#ea4335', 
-      'I': '#fbbc05',
-      'L': '#34a853',
-      'E': '#8e44ad'
-    };
-    
-    const color = colors[cardType] || '#ccc';
+    const color = window.CardTypeUtils.getTypeColor(cardType);
     const rect = targetElement.getBoundingClientRect();
     
     const ripple = document.createElement('div');

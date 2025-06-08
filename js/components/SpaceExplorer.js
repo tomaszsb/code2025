@@ -271,7 +271,7 @@ class SpaceExplorer extends React.Component {
         
         // Process each dice data entry for this roll
         spaceDiceData.forEach(data => {
-          const outcomeType = data['Die Roll'];
+          const outcomeType = data['die_roll'];
           const outcomeValue = data[roll.toString()];
           
           // Only add if value exists and is not 'n/a'

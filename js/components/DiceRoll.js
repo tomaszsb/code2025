@@ -158,7 +158,7 @@ window.DiceRoll = class DiceRoll extends React.Component {
     
     // Process each dice outcome data row
     for (const outcomeData of diceOutcomes) {
-      const dieRollType = outcomeData['Die Roll'];
+      const dieRollType = outcomeData['die_roll'];
       const outcomeValue = outcomeData[rollResult.toString()];
       
       console.log('DiceRoll: Processing outcome type', dieRollType, 'value:', outcomeValue);
@@ -387,7 +387,7 @@ window.DiceRoll = class DiceRoll extends React.Component {
     if (result) {
       // Find outcomes in diceOutcomes for this result
       displayOutcomes = diceOutcomes.reduce((outcomes, outcomeData) => {
-        const dieRollType = outcomeData['Die Roll'];
+        const dieRollType = outcomeData['die_roll'];
         const outcomeValue = outcomeData[result.toString()];
         
         if (outcomeValue && outcomeValue.trim() !== '' && outcomeValue !== 'n/a') {

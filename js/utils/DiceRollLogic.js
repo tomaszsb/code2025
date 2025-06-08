@@ -64,7 +64,7 @@ window.DiceRollLogic = {
     
     // Find the specific outcome for this die roll and outcome type
     const outcomeRow = allOutcomes.find(outcome => 
-      outcome['Die Roll'] === outcomeType
+      outcome['die_roll'] === outcomeType
     );
     
     if (!outcomeRow) {
@@ -180,7 +180,7 @@ window.DiceRollLogic = {
     // Collect all different outcome types in these rows
     const outcomeTypes = new Set();
     outcomes.forEach(outcome => {
-      outcomeTypes.add(outcome['Die Roll']);
+      outcomeTypes.add(outcome['die_roll']);
     });
     
     console.log('DiceRollLogic: Outcome types available:', Array.from(outcomeTypes));

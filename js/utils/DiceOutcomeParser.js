@@ -76,9 +76,9 @@ class DiceOutcomeParser {
 
     // Find all matching rows for this space/visit/dice combination
     const matchingRows = this.structuredData.filter(row =>
-      row.SpaceName === spaceName &&
-      row.VisitType === visitType &&
-      parseInt(row.DiceValue) === diceValue
+      row.space_name === spaceName &&
+      row.visit_type === visitType &&
+      parseInt(row.dice_value) === diceValue
     );
 
     for (const row of matchingRows) {
@@ -251,8 +251,8 @@ class DiceOutcomeParser {
   _parseLegacyOutcomes(spaceName, visitType, diceValue) {
     // Find matching row in legacy data
     const legacyRow = this.legacyData.find(row =>
-      row['Space Name'] === spaceName &&
-      row['Visit Type'] === visitType
+      row['space_name'] === spaceName &&
+      row['visit_type'] === visitType
     );
 
     if (!legacyRow) {
@@ -265,8 +265,8 @@ class DiceOutcomeParser {
       return [];
     }
 
-    // Get the outcome type from the "Die Roll" column to determine card type
-    const outcomeType = legacyRow['Die Roll'];
+    // Get the outcome type from the "die_roll" column to determine card type
+    const outcomeType = legacyRow['die_roll'];
 
     // Parse the legacy outcome text with context
     return this._parseLegacyOutcomeText(outcomeText, outcomeType);
@@ -275,7 +275,7 @@ class DiceOutcomeParser {
   /**
    * Parse legacy outcome text into structured outcomes
    * @param {string} outcomeText - Raw outcome text from legacy CSV
-   * @param {string} outcomeType - The outcome type from "Die Roll" column
+   * @param {string} outcomeType - The outcome type from "die_roll" column
    * @returns {Array} Array of parsed outcomes
    * @private
    */
@@ -287,20 +287,8 @@ class DiceOutcomeParser {
     if (text.match(/Draw \d+/)) {
       const match = text.match(/Draw (\d+)/);
       if (match) {
-        // Determine card type from outcome type
-        let cardType = 'W'; // Default fallback
-        
-        if (outcomeType.includes('W Cards')) {
-          cardType = 'W';
-        } else if (outcomeType.includes('B Cards')) {
-          cardType = 'B';
-        } else if (outcomeType.includes('I Cards')) {
-          cardType = 'I';
-        } else if (outcomeType.includes('L Cards')) {
-          cardType = 'L';
-        } else if (outcomeType.includes('E Cards') || outcomeType.includes('E cards')) {
-          cardType = 'E';
-        }
+        // Determine card type from outcome type using centralized utility
+        let cardType = window.CardTypeUtils.findTypeByName(outcomeType) || 'W'; // Default fallback
         
         console.log(`DiceOutcomeParser: Drawing ${match[1]} ${cardType} cards based on outcome type: ${outcomeType}`);
         
@@ -403,7 +391,7 @@ class DiceOutcomeParser {
   hasStructuredDataForSpace(spaceName) {
     if (!this.structuredData) return false;
     
-    return this.structuredData.some(row => row.SpaceName === spaceName);
+    return this.structuredData.some(row => row.space_name === spaceName);
   }
 
   /**
@@ -419,7 +407,7 @@ class DiceOutcomeParser {
     };
 
     if (this.structuredData) {
-      const uniqueSpaces = new Set(this.structuredData.map(row => row.SpaceName));
+      const uniqueSpaces = new Set(this.structuredData.map(row => row.space_name));
       stats.structuredSpaces = uniqueSpaces.size;
       stats.totalStructuredOutcomes = this.structuredData.length;
     }

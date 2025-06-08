@@ -89,6 +89,35 @@ class CardManager {
     }
   }
   
+  // Helper function to parse monetary amounts from card data
+  parseCardAmount(card, primaryField, textField) {
+    // Check unified format first
+    if (card[primaryField] && card[primaryField] > 0) {
+      return card[primaryField];
+    }
+    
+    // Check legacy Amount field
+    if (card['Amount']) {
+      if (typeof card['Amount'] === 'number') {
+        return card['Amount'];
+      } else if (typeof card['Amount'] === 'string') {
+        const cleanAmount = card['Amount'].replace(/[\$,]/g, '');
+        return parseInt(cleanAmount, 10) || 0;
+      }
+    }
+    
+    // Check for text field that might contain monetary values
+    if (card[textField]) {
+      const text = card[textField];
+      const moneyMatch = text.match(/\$(\d+(?:,\d+)*)/);
+      if (moneyMatch && moneyMatch[1]) {
+        return parseInt(moneyMatch[1].replace(/,/g, ''), 10) || 0;
+      }
+    }
+    
+    return 0;
+  }
+
   // Process card effects when a card is drawn or played
   // This method no longer directly updates player state
   processCardEffects = (card, player, isBeingPlayed = false) => {
@@ -107,29 +136,7 @@ class CardManager {
     // Process different card types
     switch (card.type) {
       case 'B': // Bank card
-        let bankAmount = 0;
-        
-        // Check unified format first
-        if (card.loan_amount && card.loan_amount > 0) {
-          bankAmount = card.loan_amount;
-        }
-        // Check legacy Amount field
-        else if (card['Amount']) {
-          if (typeof card['Amount'] === 'number') {
-            bankAmount = card['Amount'];
-          } else if (typeof card['Amount'] === 'string') {
-            const cleanAmount = card['Amount'].replace(/[\$,]/g, '');
-            bankAmount = parseInt(cleanAmount, 10);
-          }
-        }
-        // Check for Effect text that might contain monetary values
-        else if (card['Effect']) {
-          const effectText = card['Effect'];
-          const moneyMatch = effectText.match(/\$(\d+(?:,\d+)*)/);
-          if (moneyMatch && moneyMatch[1]) {
-            bankAmount = parseInt(moneyMatch[1].replace(/,/g, ''), 10);
-          }
-        }
+        const bankAmount = this.parseCardAmount(card, 'loan_amount', 'Effect');
         
         if (!isNaN(bankAmount) && bankAmount > 0) {
           console.log(`CardManager: Adding ${bankAmount.toLocaleString()} to player's wallet from Bank card`);
@@ -138,29 +145,7 @@ class CardManager {
         break;
         
       case 'I': // Investor card
-        let investorAmount = 0;
-        
-        // Check unified format first
-        if (card.investment_amount && card.investment_amount > 0) {
-          investorAmount = card.investment_amount;
-        }
-        // Check legacy Amount field
-        else if (card['Amount']) {
-          if (typeof card['Amount'] === 'number') {
-            investorAmount = card['Amount'];
-          } else if (typeof card['Amount'] === 'string') {
-            const cleanAmount = card['Amount'].replace(/[\$,]/g, '');
-            investorAmount = parseInt(cleanAmount, 10);
-          }
-        }
-        // Check for Description that might contain monetary values
-        else if (card['Description']) {
-          const descText = card['Description'];
-          const moneyMatch = descText.match(/\$(\d+(?:,\d+)*)/);
-          if (moneyMatch && moneyMatch[1]) {
-            investorAmount = parseInt(moneyMatch[1].replace(/,/g, ''), 10);
-          }
-        }
+        const investorAmount = this.parseCardAmount(card, 'investment_amount', 'Description');
         
         if (!isNaN(investorAmount) && investorAmount > 0) {
           console.log(`CardManager: Adding ${investorAmount.toLocaleString()} to player's wallet from Investor card`);

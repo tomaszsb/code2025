@@ -466,7 +466,7 @@ window.SpaceInfoMoves = {
     
     // Find the space data with "First" visit type (original moves)
     const spaceData = window.GameStateManager.spaces.find(s => 
-      s.name === space.name && s['Visit Type'] === 'First'
+      s.name === space.name && s['visit_type'] === 'First'
     );
     
     if (!spaceData) {
@@ -478,11 +478,11 @@ window.SpaceInfoMoves = {
     
     // Extract destinations from Space 1-5 columns (like in the reference file)
     const rawDestinations = [
-      spaceData["Space 1"],
-      spaceData["Space 2"], 
-      spaceData["Space 3"],
-      spaceData["Space 4"],
-      spaceData["Space 5"]
+      spaceData["space_1"],
+      spaceData["space_2"], 
+      spaceData["space_3"],
+      spaceData["space_4"],
+      spaceData["space_5"]
     ].filter(dest => dest && dest.toString().trim() !== "" && dest !== "null" && dest !== "n/a");
     
     console.log("SpaceInfoMoves: Raw destinations from original space:", rawDestinations);

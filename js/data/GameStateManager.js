@@ -99,15 +99,15 @@ class GameStateManager {
     this.isProperlyInitialized = true;
     
     // Filter out invalid spaces
-    const validSpaces = spacesData.filter(row => row['Space Name'] && row['Space Name'].trim() !== '');
+    const validSpaces = spacesData.filter(row => row['space_name'] && row['space_name'].trim() !== '');
     this.spaces = validSpaces.map((row, index) => {
-      console.log(`DEBUG: Processing space ${index}: "${row['Space Name']}" with Visit Type: "${row['Visit Type']}"`);
+      console.log(`DEBUG: Processing space ${index}: "${row['space_name']}" with visit_type: "${row['visit_type']}"`);
       // Get the space name
-      const spaceName = row['Space Name'] || `Space ${index}`;
+      const spaceName = row['space_name'] || `Space ${index}`;
       
       // Normalize the ID by removing special characters and converting to lowercase
       // Include visit type in the ID to ensure uniqueness while keeping display name the same
-      const visitType = row['Visit Type'] || 'default';
+      const visitType = row['visit_type'] || 'default';
       const normalizedId = spaceName
         .replace(/[^\w\s-]/g, '')
         .replace(/\s+/g, '-')
@@ -130,13 +130,13 @@ class GameStateManager {
       const spaceObj = {
         id: normalizedId,
         name: spaceName,
-        type: (row['Phase'] || 'Default').toUpperCase(),
+        type: (row['phase'] || 'Default').toUpperCase(),
         description: row['Event'] || '',
         nextSpaces: nextSpaces,
         visitType: (() => {
-          const visitType = row['Visit Type'] || 'First';
+          const visitType = row['visit_type'] || 'First';
           if (spaceName === 'PM-DECISION-CHECK') {
-            console.log(`DEBUG: PM-DECISION-CHECK visitType: "${visitType}" from raw: "${row['Visit Type']}"`);  
+            console.log(`DEBUG: PM-DECISION-CHECK visitType: "${visitType}" from raw: "${row['visit_type']}"`);  
           }
           return visitType;
         })(),
@@ -150,15 +150,15 @@ class GameStateManager {
         rawNegotiate: row['Negotiate'] || '',
         
         // ALSO preserve with exact CSV column names for MovementEngine
-        'Space 1': row['Space 1'] || '',
-        'Space 2': row['Space 2'] || '',
-        'Space 3': row['Space 3'] || '',
-        'Space 4': row['Space 4'] || '',
-        'Space 5': row['Space 5'] || '',
+        'Space 1': row['space_1'] || '',
+        'Space 2': row['space_2'] || '',
+        'Space 3': row['space_3'] || '',
+        'Space 4': row['space_4'] || '',
+        'Space 5': row['space_5'] || '',
         'Negotiate': row['Negotiate'] || '',
-        'RequiresDiceRoll': row['RequiresDiceRoll'] || '',
-        'Path': row['Path'] || '',
-        'Visit Type': row['Visit Type'] || '',
+        'RequiresDiceRoll': row['requires_dice_roll'] || '',
+        'Path': row['path'] || '',
+        'Visit Type': row['visit_type'] || '',
         
         // Preserve all original CSV columns
         action: row['Action'] || '',
@@ -331,8 +331,14 @@ class GameStateManager {
     
     // Look for OWNER-SCOPE-INITIATION space with First visit type
     const startSpace = this.spaces.find(space => 
-      space.name === 'OWNER-SCOPE-INITIATION' && space['Visit Type'] === 'First'
+      space.name === 'OWNER-SCOPE-INITIATION' && space.visitType === 'First'
     );
+    
+    if (!startSpace) {
+      console.error('GameStateManager: Could not find starting space OWNER-SCOPE-INITIATION with visitType First');
+      console.log('GameStateManager: Available spaces:', this.spaces.map(s => `${s.name} (${s.visitType})`));
+      throw new Error('Starting space not found in game data');
+    }
     
     console.log('GameStateManager: Found starting space:', startSpace.name);
     return startSpace.id;

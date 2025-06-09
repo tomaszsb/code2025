@@ -1,317 +1,266 @@
-Changelog
+# Changelog
+
+All notable changes to the Project Management Board Game are documented in this file.
+
+---
+
+## [2.0.0] - January 2025 - MAJOR RELEASE: Complete System Overhaul
+
+### 🎉 **MAJOR ACHIEVEMENTS**
+
+#### **Complete CSV Migration & Data Standardization**
+- **Unified Card System**: Migrated from 5 separate CSV files to single `cards.csv` with 398 cards
+- **48 Metadata Fields**: Advanced card mechanics with combo requirements, chain effects, targeting patterns
+- **Property Standardization**: All CSV data uses consistent snake_case properties (space_name, visit_type, etc.)
+- **Performance Optimization**: Advanced indexing system provides O(1) lookups for large datasets
+- **Backward Compatibility**: Maintained compatibility while implementing new unified structure
+
+#### **Advanced Card Mechanics Implementation**
+- **Combo System**: Pattern detection (B+I, 2xW+B+I) with automatic opportunity identification
+- **Chain Reactions**: Cascading card effects with conditional logic evaluation
+- **Multi-Card Interactions**: Synergy detection and conflict resolution
+- **Complex Targeting**: Advanced targeting patterns (All Players-Self, conditional targeting)
+- **Card Limits**: 6-card-per-type limit with visual indicators and forced discard system
+- **Card Sub-Systems**: CardDetailView, WorkCardDialogs, CardActions, CardTypeUtils for modular card handling
+- **Card Drawing**: CardDrawUtil with sophisticated drawing logic and validation
+
+#### **Professional UI/Animation System**
+- **Card Animations**: Cards slide in from deck with elastic easing and 3D rotation
+- **Player Movement**: Animated movement trails with particle effects and breadcrumbs
+- **Turn Transitions**: Professional handoff overlay with 2.4-second animated transitions
+- **Visual Feedback**: Enhanced button states, loading spinners, success/error animations
+- **Performance Optimized**: 20+ animation keyframes with smooth performance across devices
+- **Advanced Animation Framework**: GameStateAnimations, TooltipSystem, InteractiveFeedback components
+- **Toast Notifications**: Interactive feedback system with context-sensitive messaging
+- **Movement Prediction**: Visual indicators showing possible destinations and paths
+
+#### **Data-Driven Architecture**
+- **CSV-Driven Logic**: All game mechanics externalized to CSV files
+- **Movement Engine**: Fully data-driven movement processing with Path categorization
+- **Dice System**: Complete CSV-based dice outcomes with RequiresDiceRoll flag
+- **Configuration Management**: Game rules in structured data formats, not hardcoded
+
+#### **Manager-Based Architecture**
+- **Event System**: Comprehensive GameStateManager event system for loose coupling
+- **Manager Pattern**: Specialized managers for major systems (Card, Space, Movement, etc.)
+- **Component Modularity**: SpaceInfo broken into focused modules (Dice, Cards, Moves, Utils)
+- **Clean Interfaces**: Standardized interface pattern for cross-component communication
+- **12+ Manager Classes**: SpaceInfoManager, SpaceExplorerManager, SpaceSelectionManager, LogicSpaceManager, BoardStyleManager
+- **Modular Board System**: BoardRenderer, BoardSpaceRenderer, BoardDisplay for sophisticated multi-layer rendering
+- **Player Management**: PlayerSetup, StaticPlayerStatus, PlayerInfo for comprehensive player handling
+
+### 🔧 **TECHNICAL IMPROVEMENTS**
+
+#### **Code Quality & Cleanup**
+- **Documentation Cleanup**: Removed 32 outdated technical files, consolidated to 5 useful guides
+- **Plan Consolidation**: Combined all remaining incomplete features into FUTURE_DEVELOPMENT_PLAN.md
+- **Property Standardization**: Fixed all components to use consistent CSV property names
+- **State Management**: React setState calls use function form with spread operator to preserve state
+
+#### **Performance & Reliability**
+- **Error Handling**: Comprehensive error boundaries with detailed stack trace logging
+- **Memory Management**: Proper cleanup of event listeners and animations
+- **Performance Tracking**: Render count and timing metrics for performance monitoring
+- **State Preservation**: Fixed race conditions and state overwrites
+- **Advanced Caching**: Space caching system (byId, byName, byNormalizedName) for O(1) lookups
+- **Optimized Rendering**: Minimal DOM updates and efficient animation systems
+- **5-Stage Initialization**: Deterministic loading via InitializationManager with error recovery
+
+#### **Modern Development Practices**
+- **Event-Driven Communication**: Components communicate through GameStateManager events
+- **Separation of Concerns**: Clear division between UI, logic, and data layers
+- **Dependency Injection**: Reduced tight coupling through interface patterns
+- **One-Way Data Flow**: Predictable state updates and debugging
+
+#### **Advanced Game Engine Features**
+- **Sophisticated Dice System**: DiceOutcomeParser, DiceRollLogic with structured outcome processing
+- **Complex Movement Engine**: Path-based movement with PM-DECISION-CHECK mechanics and visit tracking
+- **Professional CSS Architecture**: 11-file CSS system with design tokens, theme variables, and component-specific styling
+- **Negotiation Mechanics**: Turn-based decision system with accept/negotiate options
+- **Debug System**: Comprehensive logging levels, component version tracking, and development modes
+- **Utility Framework**: CardTypeConstants, movement utilities, and CSV parsing optimization
+
+---
+
+## [1.8.0] - May 2025 - Movement System & CSV Improvements
+
+### Added
+- **Modular Movement System**: MovementCore.js, MovementLogic.js, MovementUIAdapter.js, MovementSystem.js
+- **CSV Format Improvements**: Phase 1 implementation with RequiresDiceRoll column and Path categorization
+- **PM-DECISION-CHECK Enhancement**: Visit-type aware "Return to Main Path" button with intelligent space detection
+
+### Fixed
+- **Initialization Issues**: MovementSystem.js uses immediate execution instead of waiting for DOMContentLoaded
+- **PM-DECISION-CHECK Behavior**: Proper handling of original space tracking and return functionality
+- **SpaceExplorer Performance**: Fixed infinite re-rendering loop with processing flags and async execution
+- **Property Storage**: Standardized to use player.properties for consistent data access
+
+### Changed
+- **Data-Driven Approach**: Fully CSV-driven movement logic eliminating hardcoded special cases
+- **Error Handling**: Enhanced safety checks and comprehensive error reporting throughout movement system
+
+---
 
-All notable changes to the Project Management Game will be documented in this file.
+## [1.7.0] - April 2025 - Component Architecture & Event System
 
-[2025-05-18]
+### Added
+- **GameStateManager Event System**: Centralized event hub for loose coupling between components
+- **SpaceInfo Modularization**: Broke component into SpaceInfoDice, SpaceInfoCards, SpaceInfoMoves, SpaceInfoUtils
+- **Manager Pattern Implementation**: SpaceInfoManager, SpaceExplorerManager, CardTypeUtilsManager
+- **Performance Tracking**: Render count and timing metrics for SpaceExplorer component
 
-Added
+### Fixed
+- **Event Listener Cleanup**: Proper resource management preventing memory leaks
+- **Component Communication**: Event-based updates replacing direct state manipulation
+- **Error Boundaries**: Enhanced error handling with detailed stack traces
 
-Created comprehensive CSV Format Improvement Plan as detailed in CSV_FORMAT_IMPROVEMENTS.md to move game logic from code to data.
+### Changed
+- **Architecture Pattern**: Shifted to manager-based pattern with clear separation of concerns
+- **Browser Compatibility**: Using window objects and prototype mixins for broader browser support
 
-Designed phased implementation approach to ensure backward compatibility while improving maintainability.
+---
 
-Added new CSV structure specifications for dice roll outcomes, movement relationships, and card requirements.
+## [1.6.0] - March 2025 - Card System & Visual Enhancements
 
-Established as first priority in DEVELOPMENT_GUIDE.md to improve game architecture.
+### Added
+- **Card Limit System**: 6-card maximum per type with visual indicators
+- **Enhanced Card Display**: Color-coded card types with improved formatting
+- **Space Explorer**: Detailed space information panel with dice outcomes and card requirements
+- **Player Animations**: Enhanced movement animations with speed-based transitions
 
-[2025-05-16]
+### Fixed
+- **Card Type Detection**: Improved fallback mechanisms for card type identification
+- **CSS Consistency**: Removed all inline styles in favor of dedicated CSS files
+- **Layout Issues**: Standardized space sizing (120px × 60px) and board layout
 
-Added
+### Changed
+- **Card Storage**: Updated to use current CSV field names with legacy fallbacks
+- **Styling Approach**: Complete migration to class-based CSS styling
 
-Implemented new modular movement system with separate components (MovementCore.js, MovementLogic.js, MovementUIAdapter.js, MovementSystem.js).
+---
 
-Added extensive error handling and safety checks throughout the movement system.
+## [1.5.0] - February 2025 - State Management & Core Systems
 
-Added TurnManager integration for proper movement state persistence.
+### Added
+- **GameStateManager**: Class-based state management with event system
+- **Turn Management**: Automated turn progression with visual indicators
+- **Save/Load System**: localStorage persistence with backward compatibility
+- **Space Lookup Caching**: Performance optimization for space data access
 
-Added multiple fallback mechanisms for loading dice roll data.
+### Fixed
+- **Memory Leaks**: Proper event listener cleanup and resource management
+- **State Consistency**: Improved reliability of game state updates
+- **Player Movement**: Enhanced movement validation and space transitions
 
-Fixed
+### Changed
+- **State Architecture**: Converted from global GameState to managed GameStateManager
+- **Event Handling**: Standardized event patterns across all components
 
-Fixed critical initialization issue in MovementSystem.js by using immediate execution instead of waiting for DOMContentLoaded.
+---
 
-Fixed PM-DECISION-CHECK return functionality to properly show main path moves.
+## [1.4.0] - January 2025 - Dice & Card Integration
 
-Fixed "Cannot read properties of undefined (reading 'getAvailableMoves')" error by adding safety checks.
+### Added
+- **Dice Roll System**: 3D animated dice with visual outcomes
+- **Card Drawing**: Automatic card drawing based on space requirements and dice results
+- **Resource Management**: Money and time tracking with visual displays
+- **Negotiation Options**: Player choice between accepting outcomes or negotiating
 
-Changed
+### Fixed
+- **Dice Logic**: Data-driven dice outcomes from DiceRoll Info.csv
+- **Card Effects**: Proper integration of card effects with game state
+- **UI Responsiveness**: Improved button states and user feedback
 
-Renamed movement system files to PascalCase for consistency with implementation guide.
+### Changed
+- **Dice Integration**: Moved from hardcoded logic to CSV-based outcomes
+- **Card Mechanics**: Enhanced card interaction patterns
 
-Enhanced error reporting to make initialization dependencies clearer.
+---
 
-Updated documentation in Project Management Game - Movement System Implementation Guide.md with detailed implementation notes.
+## [1.3.0] - December 2024 - Board & Movement
 
-[2025-05-15]
+### Added
+- **Interactive Board**: Clickable spaces with move validation
+- **Movement System**: Player movement with available move calculation
+- **Space Information**: Detailed space descriptions and actions
+- **Visual Feedback**: Available move highlighting and selection indicators
 
-Fixed
+### Fixed
+- **Board Layout**: Consistent space positioning and alignment
+- **Movement Validation**: Proper checking of legal moves
+- **Space Connectivity**: Correct space-to-space relationships
 
-Fixed PM-DECISION-CHECK space behavior with a UI-based solution in SpaceInfoMoves.js.
+### Changed
+- **Board Rendering**: Enhanced visual presentation with path indicators
+- **Movement Logic**: Improved calculation of available moves
 
-Implemented visit-type aware "Return to Main Path" button that only appears for subsequent visits to PM-DECISION-CHECK.
+---
 
-Added intelligent return space detection to ensure players return to the correct original space.
+## [1.2.0] - November 2024 - Player System
 
-Implemented proper handling of the CHEAT-BYPASS point-of-no-return case.
+### Added
+- **Player Setup**: Name and color selection
+- **Player Status**: Real-time display of player resources and cards
+- **Turn Indicators**: Visual highlighting of current player
+- **Player Movement**: Token movement around the board
 
-Improved logging and added clear debug information to assist with future enhancements.
+### Fixed
+- **Player Data**: Consistent player information storage
+- **Color Management**: Proper player color assignment and display
+- **Turn Sequence**: Reliable turn progression
 
-Simplified the approach by focusing on the UI component rather than complex move logic handlers.
+---
 
-Utilized mixin architecture to implement the fix in the most direct way possible.
+## [1.1.0] - October 2024 - Core Game Logic
 
-[2025-05-10 - Evening Update]
+### Added
+- **Game Initialization**: Staged loading system with error handling
+- **Data Loading**: CSV file parsing for spaces, cards, and dice outcomes
+- **Component System**: Modular React component architecture
+- **CSS Framework**: Comprehensive styling system
 
-In Progress
+### Fixed
+- **File Loading**: Reliable CSV data parsing and validation
+- **Component Lifecycle**: Proper initialization and cleanup
+- **Error Handling**: Graceful failure modes
 
-Investigating PM-DECISION-CHECK move issue - players don't see moves from their original space when landing on PM-DECISION-CHECK.
+---
 
-Analyzed MoveLogicPmDecisionCheck.js and MoveLogicSpecialCases.js to identify interaction issues.
+## [1.0.0] - September 2024 - Initial Release
 
-Attempted multiple approaches to fix originalSpaceId tracking and move additions.
+### Added
+- **Project Foundation**: Basic HTML/CSS/JavaScript structure
+- **React Integration**: Browser-based Babel compilation
+- **File Structure**: Organized component and utility files
+- **Basic Styling**: Core CSS framework and responsive design
+- **Game Concept**: Initial implementation of project management board game
 
-Created comprehensive documentation in PM_DECISION_CHECK_ISSUE.md for ongoing resolution work.
+---
 
-[2025-05-10 - Afternoon Update]
+## 🚀 **Future Development**
 
-Fixed
+See [FUTURE_DEVELOPMENT_PLAN.md](FUTURE_DEVELOPMENT_PLAN.md) for comprehensive roadmap including:
 
-Standardized property storage in MoveLogicSpecialCases.js to align with simplified approach used in MoveLogicPmDecisionCheck.js.
+### **Phase 1: Mobile & Accessibility (4-5 weeks)**
+- Mobile responsiveness with touch optimization
+- WCAG 2.1 AA compliance implementation
+- Theme system with light/dark modes
 
-Updated property setting and retrieval methods to only use player.properties for storage.
+### **Phase 2: Enhanced User Experience (3-4 weeks)**
+- Advanced player dashboard with trend visualization
+- Collapsible information architecture
+- Context-sensitive help system
 
-Removed multi-layered storage in MoveLogicSpecialCases.js to eliminate inconsistencies with other components.
+### **Phase 3: Code Quality & Performance (2-3 weeks)**
+- Function simplification and refactoring
+- Performance optimization and feature cleanup
+- Memory management improvements
 
-Enhanced consistency throughout the move logic system by following closed system principles.
+### **Phase 4: Visual Polish & Advanced Features (2-3 weeks)**
+- Enhanced visual effects and animations
+- Game analytics and insights
+- Tutorial and learning modes
 
-Refactored handleSpaceChangedEvent to use the simplified property access methods.
+---
 
-[2025-05-14]
-
-Fixed
-
-Removed redundant mainPathVisitStatus tracking in MoveLogicPmDecisionCheck.js.
-
-Simplified tracking by using standard game visitType for main path tracking.
-
-Improved reliability and reduced potential for inconsistent states.
-
-Streamlined original space move handling with clearer decision logic.
-
-Created clear separation between main path and side quest tracking.
-
-Enhanced tracking system to ensure compatibility with future updates.
-
-Reduced code size and complexity by removing duplicate tracking features.
-
-Updated MoveLogicPmDecisionCheck.md documentation to reflect the streamlined tracking system.
-
-Simplified property storage in MoveLogicPmDecisionCheck.js to use a single consistent method (player.properties).
-
-Eliminated redundant multi-layered storage to improve code maintainability and reliability.
-
-[2025-05-13]
-
-Fixed
-
-Implemented distinct visit tracking systems for PM-DECISION-CHECK with separate terminology.
-
-Updated terminology to "Initial/Subsequent" for Main Path tracking and "Maiden/Return" for Quest Side tracking.
-
-Added intelligent entry source detection to properly track visits from different game paths.
-
-Eliminated confusion between the two tracking systems to improve maintainability.
-
-Enhanced documentation with clear explanations of the updated tracking terminology.
-
-[2025-05-12]
-
-Fixed
-
-Enhanced MoveLogicPmDecisionCheck.js originalSpaceId storage with multi-layered redundancy to ensure persistence.
-
-Implemented robust property verification and recovery systems for critical game data.
-
-Added comprehensive storage validation to detect and recover from storage failures.
-
-Enhanced player data persistence with multiple backup mechanisms to prevent loss of side quest information.
-
-Fixed missing original space moves during subsequent PM-DECISION-CHECK visits by improving data persistence reliability.
-
-[2025-05-10]
-
-Fixed
-
-Refactored MoveLogicPmDecisionCheck.js with clear Single Responsibility Principle approach.
-
-Implemented separated functions with clear responsibilities for improved maintainability.
-
-Eliminated redundant code and improved overall flow with streamlined logic.
-
-Enhanced code maintainability by applying single responsibility to each function in PM-DECISION-CHECK handling.
-
-Improved testability with smaller, focused functions that have clear inputs and outputs.
-
-[2025-05-09]
-
-Fixed
-
-Fixed SpaceExplorer.js infinite re-rendering loop issue by implementing processing flags, asynchronous execution, and state comparison checks.
-
-Improved SpaceExplorer performance with optimized componentDidUpdate logic and prevention of redundant setState calls.
-
-Reduced memory consumption and improved render times by breaking synchronous state update cycles and implementing data-driven updates.
-
-[2025-05-09]
-
-Fixed
-
-Implemented guaranteed method attachment with protection against overwrites in MoveLogicPmDecisionCheck.js.
-
-Added innovative method overwrite protection with property descriptors for critical methods.
-
-Implemented self-healing GameStateManager detection and deferred event registration.
-
-Added comprehensive cleanup handlers for better resource management and memory usage.
-
-[2025-05-08 - Afternoon Update]
-
-Fixed
-
-Implemented direct getAvailableMoves method in MoveLogicBackwardCompatibility.js to resolve TypeError when getting available moves.
-
-Replaced non-existent manager method call with data-driven implementation using CSV-based space data.
-
-Improved special case handling by properly integrating with MoveLogicManager's special case detection.
-
-[2025-05-09]
-
-Fixed
-
-Resolved critical initialization issue in MoveLogicManager.js with GameStateManager tracking and robust dependency detection.
-
-Added retries and improved cleanup for event listeners.
-
-Dispatched MoveLogicManagerInitialized event for cross-module communication.
-
-[2025-05-08]
-
-Fixed
-
-Fully refactored initialization logic across MoveLogicManager.js, MoveLogicSpecialCases.js, and MoveLogicPmDecisionCheck.js.
-
-Replaced emergency fixes with structured, event-based dependency management.
-
-Enhanced logging, added explicit flags, and improved cleanup.
-
-Changed
-
-Refactored initialization process to follow strict dependency management.
-
-Improved code organization and cleanup of redundant logic.
-
-[2025-05-07]
-
-Fixed
-
-Removed MoveLogicDirectFix.js, merged its logic into MoveLogicPmDecisionCheck.js.
-
-Eliminated race conditions and retry loops.
-
-Improved deterministic initialization with clearer error handling.
-
-[2025-05-06]
-
-Fixed
-
-Corrected file paths for SpaceInfoUtils.js and enhanced error handling.
-
-Enhanced PM-DECISION-CHECK behavior to show original space moves in the Available Moves section.
-
-[2025-05-05]
-
-Fixed
-
-Improved "RETURN TO YOUR SPACE" button logic and UI interaction.
-
-[2025-05-04]
-
-Added
-
-Implemented "RETURN TO YOUR SPACE" feature for PM-DECISION-CHECK spaces.
-
-Added side quest tracking system to maintain original path.
-
-Added CHEAT-BYPASS option with real-world consequences.
-
-Changed
-
-Refactored MoveLogicBase.js to a fully data-driven approach using CSV data.
-
-Deprecated hardcoded special case logic in favor of DiceRollLogic-based decision making.
-
-[2025-05-01 to 2025-05-03]
-
-Fixed
-
-Improved dice roll systems to fully rely on CSV data for logic (eliminated hardcoded exceptions).
-
-Enhanced TurnManager.js to handle move selections and edge cases.
-
-Fixed MoveLogicSpecialCases.js inheritance and module loading sequence.
-
-[2025-04-30]
-
-Fixed
-
-Improved card effects to properly affect game state and dispatch events.
-
-Enhanced UI updates, time costs, and special space integration.
-
-[1.2.0] - 2025-04-20
-
-Added
-
-Space Explorer performance tracking, card limit system, and visual indicators.
-
-Changed
-
-Refactored SpaceExplorerLogger to follow manager pattern.
-
-Fixed
-
-Layout and event listener cleanup.
-
-[1.1.0] - 2025-03-15
-
-Added
-
-GameStateManager event system, space lookup caching.
-
-Changed
-
-Converted GameState to class-based manager.
-
-Fixed
-
-Memory leaks and improved state management.
-
-[1.0.0] - 2025-02-01
-
-Added
-
-Core movement system, dice rolling, card functionality, turn management.
-
-Game state persistence.
-
-Changed
-
-Enhanced board space connectivity.
-
-Fixed
-
-Layout bugs and card handling improvements.
-
-Note:
-
-For detailed upcoming plans and architectural goals, refer to DEVELOPMENT_GUIDE.md which tracks priorities, roadmap milestones, and best practices.
+*This changelog documents the complete evolution of the Project Management Board Game from initial concept to current mature, feature-rich implementation.*

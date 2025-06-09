@@ -50,6 +50,12 @@ window.GameBoard = class GameBoard extends React.Component {
     window.currentGameBoard = this;
     console.log('GameBoard: Global reference established');
     
+    // Add event listener for when spaces are loaded
+    if (window.GameStateManager) {
+      window.GameStateManager.addEventListener('spacesLoaded', this.handleSpacesLoaded.bind(this));
+      console.log('GameBoard: Added spacesLoaded event listener');
+    }
+    
     // Update available moves using SpaceSelectionManager
     this.spaceSelectionManager.updateAvailableMoves();
     
@@ -60,7 +66,7 @@ window.GameBoard = class GameBoard extends React.Component {
     const currentPlayer = this.turnManager.getCurrentPlayer();
     if (currentPlayer && currentPlayer.position) {
       // Get the current space
-      const currentSpace = this.state.spaces.find(s => s.id === currentPlayer.position);
+      const currentSpace = this.state.spaces.find(s => s.space_name === currentPlayer.position);
       
       // Create a deep copy of the player's status for the static view
       const playerSnapshot = this.turnManager.createPlayerSnapshot(currentPlayer);
@@ -107,9 +113,23 @@ window.GameBoard = class GameBoard extends React.Component {
     console.log("Game board correctly resizes when Space Explorer is visible");
   }
   
+  // Handle spaces loaded event
+  handleSpacesLoaded(event) {
+    console.log('GameBoard: Spaces loaded, updating state', event.data);
+    this.setState({
+      spaces: event.data.spaces
+    });
+  }
+  
   // Clean up any animations when unmounting
   componentWillUnmount() {
     console.log('GameBoard: Cleaning up resources on unmount');
+    
+    // Remove event listener
+    if (window.GameStateManager) {
+      window.GameStateManager.removeEventListener('spacesLoaded', this.handleSpacesLoaded.bind(this));
+      console.log('GameBoard: Removed spacesLoaded event listener');
+    }
     
     // Clear global reference
     if (window.currentGameBoard === this) {

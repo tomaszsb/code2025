@@ -336,7 +336,7 @@ window.SpaceInfoMoves = {
     const { space } = this.props;
     
     // Only show for PM-DECISION-CHECK spaces
-    if (!space || space.name !== 'PM-DECISION-CHECK') {
+    if (!space || space.space_name !== 'PM-DECISION-CHECK') {
       return null;
     }
     
@@ -457,7 +457,7 @@ window.SpaceInfoMoves = {
    * @returns {Array} - Array of move objects
    */
   getMovesForSpace: function(space) {
-    console.log("SpaceInfoMoves: Getting moves for space:", space.name);
+    console.log("SpaceInfoMoves: Getting moves for space:", space.space_name);
     
     if (!space || !window.GameStateManager || !window.GameStateManager.spaces) {
       console.log("SpaceInfoMoves: Missing space or GameStateManager");
@@ -466,11 +466,11 @@ window.SpaceInfoMoves = {
     
     // Find the space data with "First" visit type (original moves)
     const spaceData = window.GameStateManager.spaces.find(s => 
-      s.name === space.name && s['visit_type'] === 'First'
+      s.name === space.space_name && s['visit_type'] === 'First'
     );
     
     if (!spaceData) {
-      console.log("SpaceInfoMoves: No space data found for:", space.name);
+      console.log("SpaceInfoMoves: No space data found for:", space.space_name);
       return [];
     }
     

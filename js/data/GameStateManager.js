@@ -149,27 +149,28 @@ class GameStateManager {
         rawSpace5: row['Space 5'] || '',
         rawNegotiate: row['Negotiate'] || '',
         
-        // ALSO preserve with exact CSV column names for MovementEngine
-        'Space 1': row['space_1'] || '',
-        'Space 2': row['space_2'] || '',
-        'Space 3': row['space_3'] || '',
-        'Space 4': row['space_4'] || '',
-        'Space 5': row['space_5'] || '',
-        'Negotiate': row['Negotiate'] || '',
-        'RequiresDiceRoll': row['requires_dice_roll'] || '',
-        'Path': row['path'] || '',
-        'Visit Type': row['visit_type'] || '',
+        // Map CSV headers to standardized snake_case properties for consistency
+        space_1: row['space_1'] || '',
+        space_2: row['space_2'] || '',
+        space_3: row['space_3'] || '',
+        space_4: row['space_4'] || '',
+        space_5: row['space_5'] || '',
+        negotiate: row['Negotiate'] || '',  // CSV uses PascalCase
+        requires_dice_roll: row['requires_dice_roll'] || '',
+        path: row['path'] || '',
+        visit_type: row['visit_type'] || '',
+        event: row['Event'] || '',  // CSV uses PascalCase
+        action: row['Action'] || '',  // CSV uses PascalCase
+        outcome: row['Outcome'] || '',  // CSV uses PascalCase
+        time: row['Time'] || '',  // CSV uses PascalCase
+        fee: row['Fee'] || '',  // CSV uses PascalCase
         
-        // Preserve all original CSV columns
-        action: row['Action'] || '',
-        outcome: row['Outcome'] || '',
-        'W Card': row['W Card'] || '',
-        'B Card': row['B Card'] || '',
-        'I Card': row['I Card'] || '',
-        'L card': row['L card'] || '',
-        'E Card': row['E Card'] || '',
-        Time: row['Time'] || '',
-        Fee: row['Fee'] || '',
+        // Also preserve original CSV column names for backward compatibility
+        'W Card': row['w_card'] || '',
+        'B Card': row['b_card'] || '',
+        'I Card': row['i_card'] || '',
+        'L card': row['l_card'] || '',
+        'E Card': row['e_card'] || '',
         
         visit: {
           first: {
@@ -331,17 +332,17 @@ class GameStateManager {
     
     // Look for OWNER-SCOPE-INITIATION space with First visit type
     const startSpace = this.spaces.find(space => 
-      space.name === 'OWNER-SCOPE-INITIATION' && space.visitType === 'First'
+      space.space_name === 'OWNER-SCOPE-INITIATION' && space.visit_type === 'First'
     );
     
     if (!startSpace) {
-      console.error('GameStateManager: Could not find starting space OWNER-SCOPE-INITIATION with visitType First');
-      console.log('GameStateManager: Available spaces:', this.spaces.map(s => `${s.name} (${s.visitType})`));
+      console.error('GameStateManager: Could not find starting space OWNER-SCOPE-INITIATION with visit_type First');
+      console.log('GameStateManager: Available spaces:', this.spaces.map(s => `${s.space_name} (${s.visit_type})`));
       throw new Error('Starting space not found in game data');
     }
     
-    console.log('GameStateManager: Found starting space:', startSpace.name);
-    return startSpace.id;
+    console.log('GameStateManager: Found starting space:', startSpace.space_name);
+    return startSpace.space_name;
   }
   
   // Get current player
@@ -432,7 +433,7 @@ class GameStateManager {
     
     // CRITICAL FIX: Always set previousSpace to the current space NAME for MovementEngine compatibility
     if (currentSpace) {
-      player.previousSpace = currentSpace.name;
+      player.previousSpace = currentSpace.space_name;
       console.log('GameStateManager: Set previousSpace to:', player.previousSpace);
     } else {
       console.log('GameStateManager: Could not find current space for previousSpace setting');
@@ -487,17 +488,17 @@ class GameStateManager {
       return;
     }
     
-    console.log('GameStateManager: Moving to space:', newSpace.name, 'Type:', newSpace.type);
+    console.log('GameStateManager: Moving to space:', newSpace.space_name, 'Type:', newSpace.phase);
     
     // Set new position
     player.position = spaceId;
     
     // SIMPLE FIX: If moving to a space that's been visited before, use the subsequent version
-    if (newSpace && player.visitedSpaces && player.visitedSpaces.has(window.movementEngine?.extractSpaceName?.(newSpace.name) || newSpace.name)) {
+    if (newSpace && player.visitedSpaces && player.visitedSpaces.has(window.movementEngine?.extractSpaceName?.(newSpace.space_name) || newSpace.space_name)) {
       const subsequentSpaceId = spaceId.replace('-first', '-subsequent');
       const subsequentSpace = this.findSpaceById(subsequentSpaceId);
       if (subsequentSpace) {
-        console.log(`GameStateManager: Player has visited ${newSpace.name} before, moving to subsequent version:`, subsequentSpaceId);
+        console.log(`GameStateManager: Player has visited ${newSpace.space_name} before, moving to subsequent version:`, subsequentSpaceId);
         player.position = subsequentSpaceId;
       }
     }
@@ -505,10 +506,10 @@ class GameStateManager {
     // NOTE: We do NOT add the new space to visitedSpaces here
     // Spaces are only added to visitedSpaces when LEAVING them (see above)
     // This ensures correct visit type detection for first vs subsequent visits
-    console.log('GameStateManager: Player moved to', newSpace.name, 'but not adding to visitedSpaces until they leave');
+    console.log('GameStateManager: Player moved to', newSpace.space_name, 'but not adding to visitedSpaces until they leave');
     
     // Check if this is the finish space
-    if (newSpace.type === 'END') {
+    if (newSpace.phase === 'END') {
       console.log('GameStateManager: Player reached END space, game completed');
       this.gameEnded = true;
     }
@@ -841,6 +842,28 @@ class GameStateManager {
     console.log(`GameStateManager: Loaded ${diceRollData.length} dice roll outcomes`);
     
     console.log('GameStateManager: loadDiceRollData method completed');
+  }
+  
+  // Load spaces data from CSV
+  loadSpacesData(spacesData) {
+    console.log('GameStateManager: loadSpacesData method is being used');
+    
+    if (!spacesData || spacesData.length === 0) {
+      console.error('GameStateManager: No spaces data provided!');
+      return;
+    }
+    
+    // Store spaces data for GameBoard access
+    this.spaces = spacesData;
+    console.log(`GameStateManager: Loaded ${spacesData.length} spaces`);
+    
+    // Dispatch event to notify components that spaces are loaded
+    this.dispatchEvent('spacesLoaded', {
+      spacesCount: spacesData.length,
+      spaces: spacesData
+    });
+    
+    console.log('GameStateManager: loadSpacesData method completed');
   }
   
   // Draw a card of the specified type
@@ -1514,18 +1537,16 @@ class GameStateManager {
     const previousPhase = this.currentPhase;
     let newPhase = this.currentPhase;
     
-    // Extract phase from space data - using the Phase column from CSV directly
-    if (space.type && space.type !== 'Default') {
-      newPhase = space.type.toUpperCase();
-    } else if (space.Phase) {
-      newPhase = space.Phase.toUpperCase();
+    // Extract phase from space data - using the phase column from CSV directly
+    if (space.phase && space.phase !== 'Default') {
+      newPhase = space.phase.toUpperCase();
     }
     
     // Use CSV phase names directly - no mapping to standard project management phases
     
     // Update current phase if it changed
     if (newPhase !== previousPhase) {
-      console.log(`GameStateManager: Phase changed from ${previousPhase} to ${newPhase} at space ${space.name}`);
+      console.log(`GameStateManager: Phase changed from ${previousPhase} to ${newPhase} at space ${space.space_name}`);
       this.currentPhase = newPhase;
       
       // Dispatch phase change event
@@ -1533,7 +1554,7 @@ class GameStateManager {
         changeType: 'phaseChanged',
         previousPhase: previousPhase,
         currentPhase: newPhase,
-        triggerSpace: space.name
+        triggerSpace: space.space_name
       });
     }
   }

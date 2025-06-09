@@ -105,8 +105,8 @@ window.StaticPlayerStatus = class StaticPlayerStatus extends React.Component {
         totalCards: player.cards ? player.cards.length : 0
       },
       spaceInfo: {
-        name: space.name,
-        type: space.type
+        name: space.space_name,
+        type: space.phase
       }
     });
     
@@ -138,13 +138,15 @@ window.StaticPlayerStatus = class StaticPlayerStatus extends React.Component {
       return { items: [], totalCost: 0 };
     }
     
-    // Filter W cards only
-    const wCards = player.cards ? player.cards.filter(card => card.type === 'W') : [];
+    // Filter W cards only - check both card.type and card.card_type
+    const wCards = player.cards ? player.cards.filter(card => 
+      card.type === 'W' || card.card_type === 'W'
+    ) : [];
     
-    // Extract work type and estimated cost from each W card
+    // Extract work type and estimated cost from each W card - use current field names
     const scope = wCards.map(card => ({
-      workType: card['Work Type'] || 'Unknown',
-      estimatedCost: card['Estimated Job Costs'] || 'N/A'
+      workType: card.work_type_restriction || card['Work Type'] || 'General Construction',
+      estimatedCost: card.work_cost || card['Estimated Job Costs'] || 'N/A'
     }));
     
     // Calculate total estimated cost

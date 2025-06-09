@@ -60,8 +60,8 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
   
   componentDidUpdate(prevProps) {
     // Log space changes
-    if (prevProps.space?.id !== this.props.space?.id) {
-      console.log('SpaceInfo: Space changed from', prevProps.space?.name, 'to', this.props.space?.name);
+    if (prevProps.space?.space_name !== this.props.space?.space_name) {
+      console.log('SpaceInfo: Space changed from', prevProps.space?.space_name, 'to', this.props.space?.space_name);
     }
   }
   
@@ -165,8 +165,8 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
           </div>
         )}
         
-        <h3>{space.name}</h3>
-        <div className="space-type">{space.type}</div>
+        <h3>{space.space_name}</h3>
+        <div className="space-type">{space.phase}</div>
         
         {/* Add Roll Dice button inside the space info card */}
         {onRollDice && (

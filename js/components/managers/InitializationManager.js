@@ -374,7 +374,7 @@ class InitializationManager {
       // CRITICAL FIX: Ensure MovementEngine is properly initialized after all data is loaded
       if (!window.movementEngine) {
         console.log('InitializationManager: Creating MovementEngine instance');
-        window.movementEngine = new window.MovementEngine(window.GameState);
+        window.movementEngine = new window.MovementEngine(window.GameStateManager);
       }
       
       // Initialize MovementEngine with complete data
@@ -395,6 +395,9 @@ class InitializationManager {
       } else {
         this.log('warn', 'InitializationManager: DiceRollLogic not found. Dice roll functionality will not be available.');
       }
+      
+      // Load spaces data into game state
+      window.GameState.loadSpacesData(this.loadedData.spaces);
       
       // Load card data into game state
       for (const [cardType, cardData] of Object.entries(this.loadedData.cards)) {

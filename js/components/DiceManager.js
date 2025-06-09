@@ -257,6 +257,8 @@ class DiceManager {
   
   // Separate method to update available moves after dice roll
   updateAvailableMovesAfterDiceRoll(outcomes, currentPlayer) {
+    console.log('DiceManager: updateAvailableMovesAfterDiceRoll called with outcomes:', outcomes, 'player:', currentPlayer?.name);
+    
     // Skip if gameBoard is not initialized
     if (!this.gameBoard || !this.gameBoard.state) {
       console.log('DiceManager: gameBoard or state not initialized in updateAvailableMovesAfterDiceRoll');
@@ -275,8 +277,10 @@ class DiceManager {
     }
     // Case 2: Get standard moves from MovementLogic via GameStateManager
     else if (currentPlayer && window.GameStateManager) {
+      console.log('DiceManager: No dice outcome moves, calling GameStateManager.getAvailableMoves');
       // First try to get moves from getAvailableMoves (which should now work since hasRolledDice=true)
       const standardMoves = window.GameStateManager.getAvailableMoves(currentPlayer);
+      console.log('DiceManager: GameStateManager.getAvailableMoves returned:', standardMoves);
       
       // Check if standardMoves is an array (not a dice roll requirement object)
       if (Array.isArray(standardMoves) && standardMoves.length > 0) {
@@ -373,7 +377,7 @@ class DiceManager {
   
   // Handle move selection from dice roll outcomes
   handleDiceRollMoveSelect = (space) => {
-    console.log('DiceManager: Move selected from dice roll outcomes:', space.name);
+    console.log('DiceManager: Move selected from dice roll outcomes:', space.space_name);
     
     // Get current player position to maintain correct space card - using GameStateManager
     const currentPlayer = window.GameStateManager.getCurrentPlayer();
@@ -446,7 +450,7 @@ class DiceManager {
     if (this.gameBoard.state.diceRollData) {
       const hasDiceRollInData = this.gameBoard.state.diceRollData.some(data => 
         data['space_name'] === currentSpace.name && 
-        data['visit_type'] === visitType
+        data['visit_type'].toLowerCase() === visitType.toLowerCase()
       );
       
       if (hasDiceRollInData) {
@@ -626,7 +630,7 @@ class DiceManager {
     if (selectedSpace && selectedSpace.name) {
       // If a space is selected, use it
       spaceName = selectedSpace.name;
-      visitType = selectedSpace.visitType || (this.gameBoard.spaceSelectionManager?.isVisitingFirstTime() ? 'first' : 'subsequent');
+      visitType = selectedSpace.visitType || (this.gameBoard.spaceSelectionManager?.isVisitingFirstTime() ? 'First' : 'Subsequent');
       spaceId = selectedSpace.id;
     } else {
       // If no space is selected, use the current player's position
@@ -636,7 +640,7 @@ class DiceManager {
         const currentSpace = window.GameStateManager.findSpaceById(spaceId);
         if (currentSpace) {
           spaceName = currentSpace.name;
-          visitType = currentSpace.visitType || 'first';
+          visitType = currentSpace.visitType || 'First';
           console.log('DiceManager: Using current player position for dice roll:', spaceName, 'Visit type:', visitType);
           
           // Check and store conditional card requirements if present
@@ -650,23 +654,23 @@ class DiceManager {
           }
         } else {
           spaceName = "ARCH-INITIATION";
-          visitType = 'first';
+          visitType = 'First';
           console.log('DiceManager: Falling back to ARCH-INITIATION for dice roll');
         }
       } else {
         spaceName = "ARCH-INITIATION";
-        visitType = 'first';
+        visitType = 'First';
       }
     }
     
     // Make sure we always have a valid visit type
-    if (!visitType || (visitType !== 'first' && visitType !== 'subsequent')) {
+    if (!visitType || (visitType !== 'First' && visitType !== 'Subsequent')) {
       if (spaceId && (spaceId.endsWith('-first') || spaceId.includes('-first-'))) {
-        visitType = 'first';
+        visitType = 'First';
       } else if (spaceId && (spaceId.endsWith('-subsequent') || spaceId.includes('-subsequent-'))) {
-        visitType = 'subsequent';
+        visitType = 'Subsequent';
       } else {
-        visitType = 'first';
+        visitType = 'First';
       }
     }
     

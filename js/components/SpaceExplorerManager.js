@@ -166,18 +166,18 @@ class SpaceExplorerManager {
     this.gameBoard.setState({
       exploredSpace: space
     });
-    console.log('SpaceExplorerManager: Updated explored space to:', space ? space.name : 'none');
+    console.log('SpaceExplorerManager: Updated explored space to:', space ? space.space_name : 'none');
     
     // Dispatch event using GameStateManager if available
     if (window.GameStateManager && space) {
       window.GameStateManager.dispatchEvent('spaceExplorerToggled', {
         visible: this.gameBoard.state.showSpaceExplorer,
-        spaceName: space.name
+        spaceName: space.space_name
       });
     }
     
     // Log space explorer update
-    console.log(`SpaceExplorerManager: Updating space explorer - visible: ${this.gameBoard.state.showSpaceExplorer}, space: ${space ? space.name : 'none'}`);
+    console.log(`SpaceExplorerManager: Updating space explorer - visible: ${this.gameBoard.state.showSpaceExplorer}, space: ${space ? space.space_name : 'none'}`);
   }
   
   /**

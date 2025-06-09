@@ -20,16 +20,16 @@ window.BoardSpaceRenderer = {
     if (!space) return 'main';
     
     // Check for path property first
-    if (space.Path) {
-      const path = space.Path.toLowerCase();
+    if (space.path) {
+      const path = space.path.toLowerCase();
       if (path.includes('main')) return 'main';
       if (path.includes('special')) return 'special';
       if (path.includes('side')) return 'side-quest';
     }
     
     // Fallback to space type categorization
-    const spaceName = space.name ? space.name.toLowerCase() : '';
-    const spaceType = space.type ? space.type.toLowerCase() : '';
+    const spaceName = space.space_name ? space.space_name.toLowerCase() : '';
+    const spaceType = space.phase ? space.phase.toLowerCase() : '';
     
     // Special path detection
     if (spaceName.includes('cheat') || spaceName.includes('decision')) {
@@ -51,7 +51,7 @@ window.BoardSpaceRenderer = {
     
     // Simple progress calculation based on space type and player position
     const phaseOrder = ['setup', 'funding', 'design', 'regulatory', 'construction'];
-    const spaceType = space.type ? space.type.toLowerCase() : '';
+    const spaceType = space.phase ? space.phase.toLowerCase() : '';
     const currentPhaseIndex = phaseOrder.indexOf(spaceType);
     
     if (currentPhaseIndex === -1) return 0;
@@ -65,58 +65,59 @@ window.BoardSpaceRenderer = {
     if (!diceRollData || diceRollData.length === 0 || !space) return false;
     
     // Check if there are entries for this space in the dice roll data
-    return diceRollData.some(data => data['Space Name'] === space.name);
+    return diceRollData.some(data => data['space_name'] === space.space_name);
   },
 
   // Render a single board space
   renderSpace: function(space, index, props) {
     this.logMethodCall('renderSpace');
+    console.log(`BoardSpaceRenderer: Rendering space ${space.space_name} at index ${index}`);
     const { players, selectedSpace, selectedMove, onSpaceClick, availableMoves, diceRollData } = props;
     
     // Ensure the space has the right visit type based on player's visit history
     if (window.GameState && players.length > 0) {
       const currentPlayer = window.GameState.getCurrentPlayer();
       if (currentPlayer && space) {
-        const spaceName = window.movementEngine?.extractSpaceName?.(space.name) || space.name;
+        const spaceName = window.movementEngine?.extractSpaceName?.(space.space_name) || space.space_name;
         const hasVisited = window.movementEngine?.hasPlayerVisitedSpace?.(currentPlayer, spaceName) || false;
         
         // Force the correct visit type based on visit history
         const correctVisitType = hasVisited ? 'subsequent' : 'first';
-        if (space.visitType !== correctVisitType) {
-          console.log(`BoardSpaceRenderer: Correcting visit type for ${spaceName} from ${space.visitType} to ${correctVisitType}`);
-          space.visitType = correctVisitType;
+        if (space.visit_type !== correctVisitType) {
+          console.log(`BoardSpaceRenderer: Correcting visit type for ${spaceName} from ${space.visit_type} to ${correctVisitType}`);
+          space.visit_type = correctVisitType;
         }
       }
     }
     
     // Find players on this space
-    const playersOnSpace = players.filter(player => player.position === space.id);
+    const playersOnSpace = players.filter(player => player.position === space.space_name);
     
     // Find players who are moving to this space (their previous position was different)
     const playersMovingToSpace = players.filter(player => 
-      player.position === space.id && 
+      player.position === space.space_name && 
       player.previousPosition !== null && 
       player.previousPosition !== player.position
     );
     
     // Find players who just moved from this space
     const playersMovedFromSpace = players.filter(player => 
-      player.previousPosition === space.id && 
-      player.position !== space.id
+      player.previousPosition === space.space_name && 
+      player.position !== space.space_name
     );
     
     // Check if this space is an available move
-    const isAvailableMove = availableMoves.some(move => move.id === space.id);
+    const isAvailableMove = availableMoves.some(move => move.name === space.space_name);
     
     // Check if this is the selected destination for the current turn
-    const isSelectedMove = selectedMove === space.id;
+    const isSelectedMove = selectedMove === space.space_name;
     
     // Log when a space is marked as available or selected for debugging
     if (isAvailableMove) {
-      console.log(`BoardSpaceRenderer: Space ${space.id} (${space.name}) is marked as an available move`);
+      console.log(`BoardSpaceRenderer: Space ${space.space_name} is marked as an available move`);
     }
     if (isSelectedMove) {
-      console.log(`BoardSpaceRenderer: Space ${space.id} (${space.name}) is marked as the SELECTED move destination`);
+      console.log(`BoardSpaceRenderer: Space ${space.space_name} is marked as the SELECTED move destination`);
     }
     
     // Check if this space has dice roll options
@@ -125,7 +126,7 @@ window.BoardSpaceRenderer = {
     // Determine CSS classes
     const classes = ['board-space'];
     if (space.type) classes.push(`space-type-${space.type.toLowerCase()}`);
-    if (selectedSpace === space.id) classes.push('selected');
+    if (selectedSpace === space.space_name) classes.push('selected');
     if (isAvailableMove) classes.push('available-move');
     if (isSelectedMove) {
       classes.push('selected-move');
@@ -139,26 +140,26 @@ window.BoardSpaceRenderer = {
     if (pathType) classes.push(`path-${pathType}`);
     
     // Add visit status classes
-    if (space.visitType) {
-      const visitType = space.visitType.toLowerCase();
+    if (space.visit_type) {
+      const visitType = space.visit_type.toLowerCase();
       classes.push(visitType === 'first' ? 'first-visit' : 'subsequent-visit');
     }
     
     // Format the visit type text
     let visitTypeText = '';
-    if (space.visitType) {
+    if (space.visit_type) {
       // Normalize to lowercase for consistent comparison
-      const visitType = space.visitType.toLowerCase();
+      const visitType = space.visit_type.toLowerCase();
       visitTypeText = visitType === 'first' ? 'First Visit' : 'Subsequent Visit';
       
       // Enhanced debugging to track visit type rendering
-      console.log(`BoardSpaceRenderer: Rendering ${space.name} with visit type: ${visitType} -> ${visitTypeText}`);
+      console.log(`BoardSpaceRenderer: Rendering ${space.space_name} with visit type: ${visitType} -> ${visitTypeText}`);
       
       // Check if this space should be marked as visited
       if (players.length > 0) {
         const currentPlayer = window.GameState.getCurrentPlayer();
         if (currentPlayer) {
-          const spaceName = window.movementEngine?.extractSpaceName?.(space.name) || space.name;
+          const spaceName = window.movementEngine?.extractSpaceName?.(space.space_name) || space.space_name;
           const hasVisited = window.movementEngine?.hasPlayerVisitedSpace?.(currentPlayer, spaceName) || false;
           console.log(`BoardSpaceRenderer: Space ${spaceName} visited status check: ${hasVisited}, displayed type: ${visitType}`);
           
@@ -172,24 +173,24 @@ window.BoardSpaceRenderer = {
     
     return (
       <div 
-        key={space.id} 
+        key={space.space_name} 
         className={classes.join(' ')}
-        onClick={() => onSpaceClick && onSpaceClick(space.id)}
+        onClick={() => onSpaceClick && onSpaceClick(space.space_name)}
       >
         {/* Space type indicator */}
-        {space.type && (
+        {space.phase && (
           <div className="space-type-indicator">
-            {space.type.toUpperCase()}
+            {space.phase.toUpperCase()}
           </div>
         )}
         
         {/* Phase progress indicator */}
-        {space.type && (
-          <div className={`phase-progress ${space.type.toLowerCase()}`}></div>
+        {space.phase && (
+          <div className={`phase-progress ${space.phase.toLowerCase()}`}></div>
         )}
         
         <div className="space-content">
-          <div className="space-name">{space.name}</div>
+          <div className="space-name">{space.space_name}</div>
           {visitTypeText && <div className="visit-type">{visitTypeText}</div>}
           
           {/* Show dice roll indicator */}
@@ -231,11 +232,11 @@ window.BoardSpaceRenderer = {
               let animationClass = '';
               if (justMoved) {
                 // Get information about the previous space to determine movement direction
-                const previousSpace = window.GameState.spaces.find(s => s.id === player.previousPosition);
-                const currentSpace = window.GameState.spaces.find(s => s.id === player.position);
+                const previousSpace = window.GameState.spaces.find(s => s.space_name === player.previousPosition);
+                const currentSpace = window.GameState.spaces.find(s => s.space_name === player.position);
                 
                 if (previousSpace && currentSpace) {
-                  console.log(`BoardSpaceRenderer: Player ${player.name} moved from ${previousSpace.name} to ${currentSpace.name}`);
+                  console.log(`BoardSpaceRenderer: Player ${player.name} moved from ${previousSpace.space_name} to ${currentSpace.space_name}`);
                   animationClass = 'player-moved-in';
                 }
               }
@@ -297,16 +298,16 @@ window.BoardSpaceRenderer = {
     // Sort spaces into categories
     filteredSpaces.forEach(space => {
       let assigned = false;
-      const spaceName = space.name.toUpperCase();
+      const spaceName = space.space_name.toUpperCase();
       
       // Categorize based on space type and name
-      if (space.type && space.type.toUpperCase() === 'SETUP') {
+      if (space.phase && space.phase.toUpperCase() === 'SETUP') {
         spacesByType['SETUP'].push(space);
         assigned = true;
-      } else if (space.type && space.type.toUpperCase() === 'FUNDING') {
+      } else if (space.phase && space.phase.toUpperCase() === 'FUNDING') {
         spacesByType['FUNDING'].push(space);
         assigned = true;
-      } else if (space.type && space.type.toUpperCase() === 'DESIGN') {
+      } else if (space.phase && space.phase.toUpperCase() === 'DESIGN') {
         // Split design spaces into architectural and engineering
         if (spaceName.includes('ENG-')) {
           // All spaces with ENG- prefix are engineering
@@ -321,7 +322,7 @@ window.BoardSpaceRenderer = {
           spacesByType['ARCHITECTURAL'].push(space);
           assigned = true;
         }
-      } else if (space.type && space.type.toUpperCase() === 'REGULATORY') {
+      } else if (space.phase && space.phase.toUpperCase() === 'REGULATORY') {
         // Split regulatory spaces into DOB and FDNY
         if (spaceName.includes('DOB')) {
           spacesByType['REGULATORY_DOB'].push(space);
@@ -330,7 +331,7 @@ window.BoardSpaceRenderer = {
           spacesByType['REGULATORY_FDNY'].push(space);
           assigned = true;
         }
-      } else if (space.type && space.type.toUpperCase() === 'CONSTRUCTION') {
+      } else if (space.phase && space.phase.toUpperCase() === 'CONSTRUCTION') {
         spacesByType['CONSTRUCTION'].push(space);
         assigned = true;
       }
@@ -358,6 +359,15 @@ window.BoardSpaceRenderer = {
       }
     });
     
+    // Debug: Log how many spaces are in each category
+    console.log('BoardSpaceRenderer: Space categorization results:');
+    Object.entries(spacesByType).forEach(([category, spaces]) => {
+      console.log(`  ${category}: ${spaces.length} spaces`);
+      if (spaces.length > 0) {
+        spaces.forEach(space => console.log(`    - ${space.space_name} (${space.phase})`));
+      }
+    });
+    
     return spacesByType;
   },
   
@@ -370,12 +380,12 @@ window.BoardSpaceRenderer = {
     // Process each space
     spaces.forEach(space => {
       // Skip instruction spaces
-      if (space.name && (space.name.includes('START - Quick play guide') || space.name.includes('START-QUICK-PLAY-GUIDE'))) {
+      if (space.space_name && (space.space_name.includes('START - Quick play guide') || space.space_name.includes('START-QUICK-PLAY-GUIDE'))) {
         return;
       }
       
       // Extract the base space name
-      const spaceName = window.movementEngine?.extractSpaceName?.(space.name) || space.name;
+      const spaceName = window.movementEngine?.extractSpaceName?.(space.space_name) || space.space_name;
       
       // Skip if we already added a space with this name
       if (addedSpaceNames.has(spaceName)) {
@@ -392,8 +402,8 @@ window.BoardSpaceRenderer = {
       
       // Get all spaces matching this name
       const matchingSpaces = spaces.filter(s => 
-        (window.movementEngine?.extractSpaceName?.(s.name) || s.name) === spaceName &&
-        s.type && s.type.toUpperCase() === 'SETUP'
+        (window.movementEngine?.extractSpaceName?.(s.space_name) || s.space_name) === spaceName &&
+        s.phase && s.phase.toUpperCase() === 'SETUP'
       );
       
       // Check if player has visited this space before
@@ -406,12 +416,12 @@ window.BoardSpaceRenderer = {
       
       // Extra debugging - log all matching spaces
       matchingSpaces.forEach(s => {
-      console.log(`BoardSpaceRenderer: Found space variant - Name: ${s.name}, Visit Type: ${s.visitType}`);
+      console.log(`BoardSpaceRenderer: Found space variant - Name: ${s.space_name}, Visit Type: ${s.visit_type}`);
       });
         
       // Look for a space with the appropriate visit type first
       let appropriateSpace = matchingSpaces.find(s => 
-      s.visitType && s.visitType.toLowerCase() === requiredVisitType
+      s.visit_type && s.visit_type.toLowerCase() === requiredVisitType
       );
       
       // If appropriate visit type space not found, try to fix it
@@ -422,16 +432,16 @@ window.BoardSpaceRenderer = {
         if (matchingSpaces.length > 0) {
           // Create a clone of the first matching space and set the correct visit type
           console.log(`BoardSpaceRenderer: Creating modified space with correct visit type: ${requiredVisitType}`);
-          appropriateSpace = { ...matchingSpaces[0], visitType: requiredVisitType };
+          appropriateSpace = { ...matchingSpaces[0], visit_type: requiredVisitType };
         } else {
           // Last resort - find any space with this name
           const anyMatchingSpace = spaces.find(s => 
-            (window.movementEngine?.extractSpaceName?.(s.name) || s.name) === spaceName
+            (window.movementEngine?.extractSpaceName?.(s.space_name) || s.space_name) === spaceName
           );
           
           if (anyMatchingSpace) {
             // Clone and set the correct visit type
-            appropriateSpace = { ...anyMatchingSpace, visitType: requiredVisitType };
+            appropriateSpace = { ...anyMatchingSpace, visit_type: requiredVisitType };
           }
         }
       }
@@ -441,12 +451,12 @@ window.BoardSpaceRenderer = {
       const standardizedSpace = { ...appropriateSpace };
       
       // Log the visit type that will be displayed
-      console.log(`BoardSpaceRenderer: Using space with visit type: ${standardizedSpace.visitType}`);
+      console.log(`BoardSpaceRenderer: Using space with visit type: ${standardizedSpace.visit_type}`);
       
       filteredSpaces.push(standardizedSpace);
       addedSpaceNames.add(spaceName);
       
-      console.log(`BoardSpaceRenderer: Added ${spaceName} with visit type: ${standardizedSpace.visitType}`);
+      console.log(`BoardSpaceRenderer: Added ${spaceName} with visit type: ${standardizedSpace.visit_type}`);
     } else {
       console.log(`BoardSpaceRenderer: Failed to find any matching space for ${spaceName}`);
     }
@@ -457,7 +467,7 @@ window.BoardSpaceRenderer = {
       // If there's a current player, use visit history to filter
       if (currentPlayer) {
         // Always show the current player's position
-        if (space.id === currentPlayer.position) {
+        if (space.space_name === currentPlayer.position) {
           filteredSpaces.push(space);
           addedSpaceNames.add(spaceName);
           return;
@@ -470,14 +480,14 @@ window.BoardSpaceRenderer = {
         const requiredVisitType = hasVisited ? 'subsequent' : 'first';
         
         // Log visit type determination for debugging
-        const isCurrentSpace = currentPlayer && space.id === currentPlayer.position;
+        const isCurrentSpace = currentPlayer && space.space_name === currentPlayer.position;
         if (!isCurrentSpace) { // Don't log current space to reduce console noise
           console.log(`BoardSpaceRenderer: Regular space ${spaceName} - has visited: ${hasVisited}, required visit type: ${requiredVisitType}`);
         }
         
         // Get all spaces matching this name
         const matchingSpaces = spaces.filter(s => 
-        (window.movementEngine?.extractSpaceName?.(s.name) || s.name) === spaceName
+        (window.movementEngine?.extractSpaceName?.(s.space_name) || s.space_name) === spaceName
         );
         
         // First, find any variant of this space
@@ -485,14 +495,14 @@ window.BoardSpaceRenderer = {
         
         // Look for a space with the required visit type
         appropriateSpace = matchingSpaces.find(s => 
-          s.visitType && s.visitType.toLowerCase() === requiredVisitType
+          s.visit_type && s.visit_type.toLowerCase() === requiredVisitType
         );
         
         // If no match found, take the first match and modify its visit type
         if (!appropriateSpace && matchingSpaces.length > 0) {
         console.log(`BoardSpaceRenderer: Creating modified space with correct visit type: ${requiredVisitType} for ${spaceName}`);
         // Create a clone and set the correct visit type
-        appropriateSpace = { ...matchingSpaces[0], visitType: requiredVisitType };
+        appropriateSpace = { ...matchingSpaces[0], visit_type: requiredVisitType };
       }
         
         // If we found any match, use it
@@ -501,7 +511,7 @@ window.BoardSpaceRenderer = {
           addedSpaceNames.add(spaceName);
         } else if (!isCurrentSpace) {
           // Check if this space matches the required visit type as a fallback
-          if (space.visitType && space.visitType.toLowerCase() === requiredVisitType) {
+          if (space.visit_type && space.visit_type.toLowerCase() === requiredVisitType) {
             filteredSpaces.push(space);
             addedSpaceNames.add(spaceName);
           } else {
@@ -513,7 +523,7 @@ window.BoardSpaceRenderer = {
         }
       } else {
         // If no current player, show all first visit spaces
-        if (space.visitType && space.visitType.toLowerCase() === 'first') {
+        if (space.visit_type && space.visit_type.toLowerCase() === 'first') {
           filteredSpaces.push(space);
           addedSpaceNames.add(spaceName);
         }
@@ -560,13 +570,18 @@ window.BoardSpaceRenderer = {
   renderBoard: function(props) {
     this.logMethodCall('renderBoard');
     const { spaces } = props;
-    if (!spaces || spaces.length === 0) return null;
+    console.log(`BoardSpaceRenderer: renderBoard called with ${spaces ? spaces.length : 0} spaces`);
+    if (!spaces || spaces.length === 0) {
+      console.log('BoardSpaceRenderer: No spaces to render, returning null');
+      return null;
+    }
     
     // Get current player from GameState
     const currentPlayer = window.GameState.getCurrentPlayer();
     
     // Filter spaces based on visit history
     const filteredSpaces = this.filterSpaces(spaces, currentPlayer);
+    console.log(`BoardSpaceRenderer: After filtering, ${filteredSpaces.length} spaces remain`);
     
     // Categorize spaces by type
     const spacesByType = this.categorizeSpaces(filteredSpaces);

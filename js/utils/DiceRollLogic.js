@@ -278,7 +278,7 @@ window.DiceRollLogic = {
     
     // Find all spaces that match this name
     const matchingSpaces = gameState.spaces.filter(space => {
-      const extractedName = window.movementEngine?.extractSpaceName?.(space.name) || space.name;
+      const extractedName = window.movementEngine?.extractSpaceName?.(space.space_name) || space.space_name;
       return extractedName === cleanedName;
     });
     

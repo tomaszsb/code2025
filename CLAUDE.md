@@ -231,3 +231,77 @@ Game rules and content are externalized to CSV files for easy modification witho
 - **Added**: `gameStarted` getter property for proper state access
 - **Fixed**: Initialization flag setting when first player is added
 - **Enhanced**: Event-driven state updates for UI synchronization
+
+### CSV Data Standardization and Movement Engine Fix (Post-Phase 4)
+- **Issue**: After CSV standardization, three critical problems emerged:
+  1. Missing dice roll button on OWNER-SCOPE-INITIATION
+  2. Missing card pickup functionality  
+  3. Wrong next move (showing CON-INITIATION instead of OWNER-FUND-INITIATION)
+- **Root Cause**: Inconsistent CSV column mapping in GameStateManager after standardization
+- **Solution**: Fixed GameStateManager.js to properly map CSV headers to consistent snake_case properties
+- **Key Changes**:
+  - Fixed CSV column references for card data (w_card, b_card, etc.)
+  - Standardized all space movement data to use snake_case (space_1, space_2, etc.)
+  - Removed duplicate/inconsistent property mappings
+  - Ensured MovementEngine receives proper space data with space_1 = "OWNER-FUND-INITIATION"
+
+## Data Standards
+
+### CSV Format Consistency
+All CSV data follows these conventions:
+- **Column Headers**: Mixed case as they exist (space_name, Event, Action, space_1, Time, etc.)
+- **Internal Properties**: Always mapped to snake_case for consistency (space_1, visit_type, w_card)
+- **Movement Data**: Uses space_1, space_2, space_3, space_4, space_5 columns
+- **Card Data**: Uses w_card, b_card, i_card, l_card, e_card columns
+- **No Hardcoded Logic**: All game mechanics read from CSV files, not code constants
+
+## Post-CSV Standardization Fixes (January 2025)
+
+### End Turn Button and Space Display Issues
+- **Issue**: After CSV standardization, End Turn button was not properly loading next spaces, and spaces would appear briefly then disappear
+- **Root Causes**: 
+  1. Property name mismatches: `currentSpace.name` vs `currentSpace.space_name` in MovementEngine
+  2. Space lookup inconsistencies: `space.id` vs `space.space_name` in UI components
+  3. Move ID vs space name mismatches in move selection
+  4. React setState race conditions overwriting `exploredSpace` state
+- **Solution**: Comprehensive property name standardization and state preservation
+- **Key Changes**:
+  - **MovementEngine.js**: Fixed all `currentSpace.name` references to `currentSpace.space_name`
+  - **TurnManager.js**: Fixed space lookup to use `space.space_name` instead of `space.id`
+  - **SpaceSelectionManager.js**: Fixed move validation and space lookups to use correct property names
+  - **BoardSpaceRenderer.js**: Fixed available move checking to use `move.name` instead of `move.id`
+  - **SpaceSelectionManager.js**: Fixed all setState calls to preserve existing state with spread operator
+
+### Worktype Card Scope Display Fix
+- **Issue**: Worktype (W) cards were not displaying as scope in the current turn panel (StaticPlayerStatus component)
+- **Root Cause**: StaticPlayerStatus was using legacy field names for card properties
+- **Solution**: Updated field name mapping to match current CSV format
+- **Key Changes**:
+  - **StaticPlayerStatus.js**: Updated card type check to include both `card.type` and `card.card_type`
+  - **StaticPlayerStatus.js**: Updated work type field to use `card.work_type_restriction` with legacy fallback
+  - **StaticPlayerStatus.js**: Updated cost field to use `card.work_cost` with legacy fallback
+
+### State Management Race Condition Prevention
+- **Issue**: Multiple React setState calls were overwriting important state like `exploredSpace`
+- **Solution**: Changed all setState calls to use function form with prevState spread
+- **Pattern Applied**:
+  ```javascript
+  // Before (overwrites state):
+  this.gameBoard.setState({ availableMoves: [], showDiceRoll: false });
+  
+  // After (preserves state):
+  this.gameBoard.setState(prevState => ({ 
+    ...prevState, 
+    availableMoves: [], 
+    showDiceRoll: false 
+  }));
+  ```
+- **Components Fixed**: SpaceSelectionManager event handlers and state updates
+
+### Property Name Standardization Rules
+Moving forward, all components must use:
+- **Space Objects**: `space.space_name` (not `space.name`)
+- **Move Objects**: `move.name` for space name, `move.id` for generated ID
+- **Card Objects**: Both `card.card_type` and `card.type` for type checking
+- **Card Fields**: Current CSV names (`work_type_restriction`, `work_cost`) with legacy fallbacks
+- **React setState**: Always use function form with spread operator to preserve state

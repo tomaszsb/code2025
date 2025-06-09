@@ -168,7 +168,7 @@ window.SpaceInfoUtils.shouldShowCardForCondition = function(cardText, props) {
   }
   
   // Special case for owner-fund-initiation space
-  if (props.space && props.space.name === "OWNER-FUND-INITIATION") {
+  if (props.space && props.space.space_name === "OWNER-FUND-INITIATION") {
     console.log('SpaceInfoUtils: Special handling for OWNER-FUND-INITIATION space');
     
     // Check which condition we're evaluating

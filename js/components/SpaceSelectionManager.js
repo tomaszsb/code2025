@@ -76,13 +76,15 @@ class SpaceSelectionManager {
     // CRITICAL FIX: Proper MovementEngine readiness check with no fallback generation
     if (!window.movementEngine) {
       console.error('SpaceSelectionManager: MovementEngine not found');
+      console.error('SpaceSelectionManager: Available window objects:', Object.keys(window).filter(k => k.includes('movement') || k.includes('Movement')));
       
       // Update GameBoard state to show no available moves
-      this.gameBoard.setState({ 
+      this.gameBoard.setState(prevState => ({ 
+        ...prevState,
         availableMoves: [],
         showDiceRoll: false,
         diceRollSpace: null
-      });
+      }));
       return;
     }
     
@@ -103,11 +105,12 @@ class SpaceSelectionManager {
         console.error('SpaceSelectionManager: MovementEngine initialization failed');
         
         // Update GameBoard state to show no available moves (no fallback generation)
-        this.gameBoard.setState({ 
+        this.gameBoard.setState(prevState => ({ 
+          ...prevState,
           availableMoves: [],
           showDiceRoll: false,
           diceRollSpace: null
-        });
+        }));
         return;
       }
       
@@ -130,6 +133,12 @@ class SpaceSelectionManager {
     });
     
     // Delegate movement calculation to MovementEngine
+    console.log('SpaceSelectionManager: About to call MovementEngine.getAvailableMovements()');
+    console.log('SpaceSelectionManager: MovementEngine status:', {
+      exists: !!window.movementEngine,
+      isReady: window.movementEngine ? window.movementEngine.isReady() : false,
+      gameStateManager: window.movementEngine ? !!window.movementEngine.gameStateManager : false
+    });
     const movementResult = window.movementEngine.getAvailableMovements(currentPlayer);
     
     console.log('SpaceSelectionManager: Movement result:', movementResult);
@@ -155,13 +164,14 @@ class SpaceSelectionManager {
       });
       
       // Update GameBoard state for dice roll requirement
-      this.gameBoard.setState({ 
+      this.gameBoard.setState(prevState => ({ 
+        ...prevState,
         showDiceRoll: true, 
         diceRollSpace: movementResult.spaceName,
         diceRollVisitType: movementResult.visitType,
         availableMoves: [],
         hasRolledDice: false
-      });
+      }));
       
       return;
     }
@@ -180,13 +190,14 @@ class SpaceSelectionManager {
       };
       
       // Update GameBoard state with logic space data
-      this.gameBoard.setState({ 
+      this.gameBoard.setState(prevState => ({ 
+        ...prevState,
         availableMoves: [logicSpaceMove], // Wrap in array for compatibility
         showDiceRoll: false,
         diceRollSpace: null,
         diceRollVisitType: null,
         isLogicSpace: true // Add flag for UI components
-      });
+      }));
       
       return;
     }
@@ -196,13 +207,14 @@ class SpaceSelectionManager {
       console.log('SpaceSelectionManager: No valid movements available');
       
       // Update GameBoard state with empty moves (no fallback generation)
-      this.gameBoard.setState({ 
+      this.gameBoard.setState(prevState => ({ 
+        ...prevState,
         availableMoves: [],
         showDiceRoll: false,
         diceRollSpace: null,
         diceRollVisitType: null,
         isLogicSpace: false // Reset logic space flag
-      });
+      }));
       return;
     }
     
@@ -236,13 +248,14 @@ class SpaceSelectionManager {
     });
     
     // Update GameBoard state
-    this.gameBoard.setState({ 
+    this.gameBoard.setState(prevState => ({ 
+      ...prevState,
       availableMoves: validMovements, 
       showDiceRoll: false,
       diceRollSpace: null,
       diceRollVisitType: null,
       isLogicSpace: false // Reset logic space flag for normal moves
-    }, () => {
+    }), () => {
       // Apply visual cues for available moves after state update
       this.updateAvailableMoveVisuals();
     });
@@ -376,22 +389,26 @@ class SpaceSelectionManager {
     const { availableMoves, spaces } = this.gameBoard.state;
     
     // Find the clicked space
-    const clickedSpace = spaces.find(space => space.id === spaceId);
+    const clickedSpace = spaces.find(space => space.space_name === spaceId);
     
     // Always update exploredSpace to the clicked space for space explorer
     const exploredSpaceData = clickedSpace;
     
     // Log space explorer update
     if (window.logSpaceExplorerToggle && typeof window.logSpaceExplorerToggle === 'function') {
-      window.logSpaceExplorerToggle(true, clickedSpace ? clickedSpace.name : 'unknown');
+      window.logSpaceExplorerToggle(true, clickedSpace ? clickedSpace.space_name : 'unknown');
     }
     
     // Check if this space is a valid move (simple array check - no complex validation needed)
-    const isValidMove = availableMoves && availableMoves.some(space => space.id === spaceId);
+    const isValidMove = availableMoves && availableMoves.some(move => move.name === spaceId);
     
     if (isValidMove) {
+      // Find the matching move to get its ID
+      const matchingMove = availableMoves.find(move => move.name === spaceId);
+      const moveId = matchingMove ? matchingMove.id : spaceId;
+      
       // Handle valid move selection
-      this._handleValidSpaceSelection(spaceId, clickedSpace);
+      this._handleValidSpaceSelection(moveId, clickedSpace);
     } else {
       // Handle space exploration (non-move clicks)
       window.GameStateManager.dispatchEvent('spaceSelected', {
@@ -438,11 +455,11 @@ class SpaceSelectionManager {
   handleMoveSelection = (moveId) => {
     console.log('SpaceSelectionManager: Direct move selection:', moveId);
     
-    // PRIMARY: Try exact ID match first (for normal space-to-space moves)
-    let spaceData = this.gameBoard.state.spaces.find(space => space.id === moveId);
+    // PRIMARY: Try exact space_name match first (for normal space-to-space moves)
+    let spaceData = this.gameBoard.state.spaces.find(space => space.space_name === moveId);
     
     if (spaceData) {
-      console.log('SpaceSelectionManager: Found space by exact ID match:', spaceData.name);
+      console.log('SpaceSelectionManager: Found space by exact space_name match:', spaceData.space_name);
     } else {
       console.log('SpaceSelectionManager: Exact ID match failed, attempting visit-type aware resolution');
       
@@ -466,28 +483,30 @@ class SpaceSelectionManager {
       const expectedSpaceId = moveId.toLowerCase().replace(/\s+/g, '-') + '-' + visitType;
       console.log('SpaceSelectionManager: Looking for space ID:', expectedSpaceId);
       
-      // Find space with the constructed ID
-      spaceData = this.gameBoard.state.spaces.find(space => space.id === expectedSpaceId);
+      // Find space with the constructed name and visit type
+      spaceData = this.gameBoard.state.spaces.find(space => 
+        space.space_name === moveId && space.visit_type === visitType
+      );
       
       if (spaceData) {
-        console.log('SpaceSelectionManager: Found space by visit-type resolution:', spaceData.name);
+        console.log('SpaceSelectionManager: Found space by visit-type resolution:', spaceData.space_name);
       } else {
         // Fallback: Try case-insensitive name matching (for edge cases)
         console.log('SpaceSelectionManager: ID construction failed, trying name matching');
         spaceData = this.gameBoard.state.spaces.find(space => 
-          space.name && space.name.toUpperCase() === moveId.toUpperCase() &&
-          space['Visit Type'] && space['Visit Type'].toLowerCase() === visitType
+          space.space_name && space.space_name.toUpperCase() === moveId.toUpperCase() &&
+          space.visit_type && space.visit_type.toLowerCase() === visitType
         );
         
         if (spaceData) {
-          console.log('SpaceSelectionManager: Found space by name + visit type matching:', spaceData.name);
+          console.log('SpaceSelectionManager: Found space by name + visit type matching:', spaceData.space_name);
         }
       }
     }
     
     if (!spaceData) {
       console.error('SpaceSelectionManager: Could not resolve space for moveId:', moveId);
-      console.log('SpaceSelectionManager: Available space IDs:', this.gameBoard.state.spaces.slice(0, 5).map(s => s.id) + '...');
+      console.log('SpaceSelectionManager: Available space names:', this.gameBoard.state.spaces.slice(0, 5).map(s => s.space_name) + '...');
       // Continue with null to maintain existing error handling
     }
     
@@ -568,8 +587,8 @@ class SpaceSelectionManager {
    */
   getSelectedSpace = () => {
     const { selectedSpace, spaces } = this.gameBoard.state;
-    const space = spaces.find(space => space.id === selectedSpace);
-    console.log('SpaceSelectionManager: Getting selected space for info display:', space?.name || 'None');
+    const space = spaces.find(space => space.space_name === selectedSpace);
+    console.log('SpaceSelectionManager: Getting selected space for info display:', space?.space_name || 'None');
     return space;
   }
   
@@ -626,12 +645,12 @@ class SpaceSelectionManager {
     
     // Find the START - Quick play guide spaces (first and subsequent)
     const firstVisitInstructionsSpace = spaces.find(space => {
-      return space.name && space.name.includes('START - Quick play guide') && 
+      return space.space_name && space.space_name.includes('START - Quick play guide') && 
              space.id && space.id.toLowerCase().includes('first');
     });
     
     const subsequentVisitInstructionsSpace = spaces.find(space => {
-      return space.name && space.name.includes('START - Quick play guide') && 
+      return space.space_name && space.space_name.includes('START - Quick play guide') && 
              space.id && space.id.toLowerCase().includes('subsequent');
     });
     
@@ -712,10 +731,11 @@ class SpaceSelectionManager {
     
     // Reset any selected move
     if (this.gameBoard) {
-      this.gameBoard.setState({
+      this.gameBoard.setState(prevState => ({
+        ...prevState,
         selectedMove: null,
         hasSelectedMove: false
-      });
+      }));
     }
   }
   
@@ -730,10 +750,11 @@ class SpaceSelectionManager {
     
     // Reset any selected move
     if (this.gameBoard) {
-      this.gameBoard.setState({
+      this.gameBoard.setState(prevState => ({
+        ...prevState,
         selectedMove: null,
         hasSelectedMove: false
-      });
+      }));
     }
   }
   
@@ -749,11 +770,12 @@ class SpaceSelectionManager {
         case 'newGame':
           // Reset for new game
           if (this.gameBoard) {
-            this.gameBoard.setState({
+            this.gameBoard.setState(prevState => ({
+              ...prevState,
               selectedMove: null,
               hasSelectedMove: false,
               availableMoves: []
-            });
+            }));
           }
           break;
           

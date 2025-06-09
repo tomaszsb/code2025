@@ -253,7 +253,7 @@ class SpaceExplorer extends React.Component {
       
       // Only show outcomes that match both space name AND visit type (strict matching)
       const spaceDiceData = diceRollData.filter(data => 
-        data['space_name'] === space.name && 
+        data['space_name'] === space.space_name && 
         data['visit_type'].toLowerCase() === visitType
       );
       
@@ -440,7 +440,7 @@ class SpaceExplorer extends React.Component {
       if (window.GameStateManager) {
         window.GameStateManager.dispatchEvent('spaceExplorerToggled', {
           visible: false,
-          spaceName: this.props.space ? this.props.space.name : ''
+          spaceName: this.props.space ? this.props.space.space_name : ''
         });
       }
     }
@@ -462,7 +462,7 @@ class SpaceExplorer extends React.Component {
     console.log('SpaceExplorer: renderSpaceMetadata method completed');
     return (
       <>
-        <div className="explorer-space-name">{space.name}</div>
+        <div className="explorer-space-name">{space.space_name}</div>
         <div className="explorer-visit-type">
           {visitType === 'first' ? 'First Visit' : 'Subsequent Visit'}
         </div>
@@ -645,7 +645,7 @@ class SpaceExplorer extends React.Component {
     try {
       console.log('SpaceExplorer: render method completed with space UI');
       return (
-        <div className="space-explorer" data-type={space.type ? space.type.toUpperCase() : ''}>
+        <div className="space-explorer" data-type={space.phase ? space.phase.toUpperCase() : ''}>
           {this.renderHeader()}
           {this.renderSpaceMetadata()}
           {this.renderDiceRollIndicator()}

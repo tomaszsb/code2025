@@ -157,8 +157,8 @@ class TurnManager {
         // Also clean up logic state in MovementEngine
         if (window.movementEngine && currentPlayer) {
           const currentSpaceData = window.movementEngine.getCurrentSpaceData(currentPlayer);
-          if (currentSpaceData && currentPlayer.logicState && currentPlayer.logicState[currentSpaceData.name]) {
-            delete currentPlayer.logicState[currentSpaceData.name];
+          if (currentSpaceData && currentPlayer.logicState && currentPlayer.logicState[currentSpaceData.space_name]) {
+            delete currentPlayer.logicState[currentSpaceData.space_name];
             console.log('TurnManager: Cleaned up logic state for FDNY space');
           }
         }
@@ -331,7 +331,7 @@ class TurnManager {
       console.log(`TurnManager: Player change from ${previousPlayerIndex} to ${window.GameStateManager.currentPlayerIndex}`);
       
       // Get the space the player landed on
-      const newSpace = this.gameBoard.state.spaces.find(s => s.id === newPlayerPosition);
+      const newSpace = this.gameBoard.state.spaces.find(s => s.space_name === newPlayerPosition);
       
       // Create player and space snapshots
       const playerSnapshot = this.createPlayerSnapshot(newCurrentPlayer);

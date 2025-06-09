@@ -89,7 +89,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
     }
     
     const currentPlayer = players[currentPlayerIndex];
-    const selectedSpaceObj = spaces.find(space => space.id === selectedSpace);
+    const selectedSpaceObj = spaces.find(space => space.space_name === selectedSpace);
     // Use spaceSelectionManager instead of directly calling isVisitingFirstTime from gameBoard
     const visitType = gameBoard.spaceSelectionManager.isVisitingFirstTime() ? 'first' : 'subsequent';
     

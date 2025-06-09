@@ -45,7 +45,7 @@ window.DiceRoll = class DiceRoll extends React.Component {
       return;
     }
     
-    console.log('DiceRoll: Searching for outcomes for space:', space.name, 'visit type:', visitType);
+    console.log('DiceRoll: Searching for outcomes for space:', space.space_name, 'visit type:', visitType);
     
     // Get all dice roll data from DiceRollLogic
     const diceRollData = window.DiceRollLogic.diceRollData;
@@ -58,13 +58,13 @@ window.DiceRoll = class DiceRoll extends React.Component {
     
     // Find exact matches for space name and visit type - no fallbacks
     const outcomes = diceRollData.filter(data => 
-      data['space_name'] === space.name && 
+      data['space_name'] === space.space_name && 
       data['visit_type'].toLowerCase() === visitType.toLowerCase()
     );
     
     // If no outcomes found, set empty array and log it
     if (outcomes.length === 0) {
-      console.log('DiceRoll: No outcomes found for', space.name, visitType, '- showing no dice roll');
+      console.log('DiceRoll: No outcomes found for', space.space_name, visitType, '- showing no dice roll');
       this.setState({ diceOutcomes: [] });
       return;
     }
@@ -140,7 +140,7 @@ window.DiceRoll = class DiceRoll extends React.Component {
     const { space, visitType, onShowOutcomes } = this.props;
     const { diceOutcomes } = this.state;
     
-    console.log('DiceRoll: Processing roll', rollResult, 'for space', space.name, 'visit type', visitType);
+    console.log('DiceRoll: Processing roll', rollResult, 'for space', space.space_name, 'visit type', visitType);
     console.log('DiceRoll: Available outcomes:', diceOutcomes);
     
     if (!space) {
@@ -402,7 +402,7 @@ window.DiceRoll = class DiceRoll extends React.Component {
     const renderedComponent = (
       <div className="dice-roll-container">
         <div className="dice-roll-header">
-          <h3>Dice Roll - {space.name}</h3>
+          <h3>Dice Roll - {space.space_name}</h3>
         </div>
         
         <div className={`dice-roll-content ${rollPhase}`}>

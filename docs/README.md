@@ -9,11 +9,11 @@ A sophisticated web-based board game that teaches project management concepts th
 **Version 2.0** - This is a fully functional, production-ready game with advanced features and professional-quality user experience.
 
 ### ✅ **Major Systems Completed**
-- **398-Card System**: Unified card mechanics with combos, chains, and advanced targeting
+- **404-Card System**: Unified card mechanics with basic effects and experimental advanced features
 - **Data-Driven Architecture**: All game logic externalized to CSV files for easy modification
 - **Professional UI/UX**: Animated movement, visual feedback, responsive design
-- **Manager-Based Architecture**: Clean, maintainable code with event-driven communication
-- **Performance Optimized**: O(1) lookups, efficient rendering, memory management
+- **Component-Based Architecture**: 35+ React components with event-driven communication
+- **Performance Optimized**: Efficient card lookups, smooth animations, memory management
 
 ## 🚀 **Quick Start**
 
@@ -46,12 +46,12 @@ http://localhost:8000/?debug=true&logLevel=debug
 
 ### **Advanced Card System**
 - **5 Card Types**: Work (W), Bank (B), Investor (I), Life (L), Expeditor (E)
-- **Card Combinations**: 2-card and 3-card combos for enhanced effects
-- **Chain Reactions**: Cards trigger cascading effects
-- **Smart Targeting**: Multi-player interactions with conditional logic
+- **404 Total Cards**: 60 B, 39 I, 49 L, 176 W, 74 E cards, plus 6 experimental TEST cards
+- **Basic Card Effects**: Money management, time effects, resource changes
+- **Experimental Features**: Combo requirements and chain effects in TEST cards only
 - **6-Card Limits**: Balanced hand management with visual indicators
-- **Card Sub-Systems**: CardDetailView for in-depth card examination, WorkCardDialogs for work-specific interactions
-- **Advanced Card Logic**: CardActions and CardAnimations for sophisticated card behavior and visual effects
+- **Card Sub-Systems**: CardDetailView for in-depth examination, WorkCardDialogs for work-specific interactions
+- **Professional Animation**: CardActions and CardAnimations for sophisticated card behavior and visual effects
 
 ### **Dynamic Movement System**
 - **3 Path Types**: Main path, special detours, side quest opportunities
@@ -72,65 +72,30 @@ http://localhost:8000/?debug=true&logLevel=debug
 
 ### **Data-Driven Design**
 - **`data/Spaces.csv`**: Game board spaces with path categorization
-- **`data/cards.csv`**: Unified card system with 48 metadata fields
+- **`data/cards.csv`**: Unified card system with 404 cards and 48 metadata fields
 - **`data/DiceRoll Info.csv`**: Dice roll outcomes and requirements
 
 ### **Component Structure**
 ```
 js/components/
-├── managers/              # 12+ Manager classes for specialized systems
+├── managers/              # 2 Core manager classes
 │   ├── InitializationManager.js  # 5-stage app initialization
-│   ├── SpaceInfoManager.js       # Space information display
-│   ├── SpaceExplorerManager.js   # Space explorer panel operations
-│   ├── SpaceSelectionManager.js  # Space selection logic and UI
-│   ├── LogicSpaceManager.js      # Logic space handling
-│   └── BoardStyleManager.js      # Dynamic board styling
+│   └── SpaceInfoManager.js       # Space information display
 ├── utils/                # Utility frameworks and helpers
-│   ├── CardDrawUtil.js           # Card drawing logic
-│   ├── CardTypeConstants.js      # Card type definitions
-│   ├── DiceOutcomeParser.js      # Dice outcome processing
-│   ├── DiceRollLogic.js          # Dice roll mechanics
-│   ├── csv-parser.js             # Advanced CSV parsing
-│   └── movement/                 # Movement system utilities
 ├── App.js                # Root React component
 ├── GameBoard.js          # Main game controller
 ├── BoardRenderer.js      # Multi-layer board rendering
-├── BoardSpaceRenderer.js # Individual space rendering
-├── BoardDisplay.js       # Board display coordination
-├── SpaceInfo.js         # Modular space information
-│   ├── SpaceInfoDice.js         # Dice-specific space info
-│   ├── SpaceInfoCards.js        # Card-specific space info
-│   ├── SpaceInfoMoves.js        # Move-specific space info
-│   └── SpaceInfoUtils.js        # Space info utilities
-├── CardDisplay.js       # Card management interface
-├── CardDetailView.js    # Detailed card viewing
-├── CardActions.js       # Card action handling
-├── CardAnimations.js    # Card animation system
-├── WorkCardDialogs.js   # Work card specific dialogs
-├── DiceRoll.js          # Dice rolling mechanics
-├── DiceManager.js       # Dice system management
-├── PlayerSetup.js       # Player setup interface
-├── PlayerInfo.js        # Player information display
-├── StaticPlayerStatus.js # Static player status panel
+├── CardDisplay.js        # Card management interface
+├── CardAnimations.js     # Professional card animation system
 ├── PlayerMovementVisualizer.js # Advanced movement animations
-├── TurnManager.js       # Turn progression system
-├── TooltipSystem.js     # Context-sensitive tooltips
-├── InteractiveFeedback.js # Toast notifications and feedback
-├── GameStateAnimations.js # Phase and turn animations
-└── SpaceExplorer.js     # Space exploration interface
+└── [30+ other components] # Complete UI system
 
 css/
-├── main.css             # Core layout, design tokens, CSS variables
-├── game-components.css  # Game-specific UI elements
-├── card-components.css  # Comprehensive card styling system
-├── player-animations.css # 20+ movement and transition animations
-├── dice-animations.css  # 3D dice animations and effects
-├── board-space-renderer.css # Board space styling
-├── logic-space-components.css # Logic space specific styling
-├── space-explorer.css   # Space explorer panel styling
-├── space-info.css       # Space information styling
-├── static-player-status.css # Player status panel styling
-└── player-setup.css     # Player setup interface styling
+├── main.css             # Core layout + design tokens
+├── game-components.css  # Game-specific styling
+├── card-components.css  # Comprehensive card styling
+├── player-animations.css # Movement animations
+└── [7 other CSS files]  # Component-specific styling
 ```
 
 ### **Modern Architecture Patterns**
@@ -191,13 +156,12 @@ The game is designed to be easily modified:
 - **Fallbacks**: Graceful degradation for older browsers
 
 ### **Performance Features**
-- **Advanced Indexing**: O(1) lookups for large datasets with multi-dimensional card indexes
-- **Efficient Rendering**: Minimal DOM updates and optimized animations
+- **Card Indexing**: Efficient lookups for 404-card dataset
+- **Smooth Animations**: Card draws, player movement, turn transitions
 - **Memory Management**: Proper cleanup of event listeners and resources
-- **Responsive**: Smooth performance on mobile and desktop
-- **Space Caching System**: byId, byName, byNormalizedName caches for instant space lookups
-- **5-Stage Initialization**: Deterministic loading sequence with error recovery and dependency management
-- **Animation Optimization**: 20+ keyframe animations with hardware acceleration and performance monitoring
+- **Responsive**: Works on desktop, tablet, and mobile devices
+- **Browser-Based Compilation**: Babel standalone for JSX without build step
+- **5-Stage Initialization**: Deterministic loading sequence with error recovery
 
 ## 🚀 **Future Enhancements**
 
@@ -257,14 +221,14 @@ The game is designed to be easily modified:
 ## 📊 **Project Stats**
 
 - **Lines of Code**: ~15,000+ (JavaScript, CSS, HTML)
-- **React Components**: 35+ components with sophisticated manager architecture
-- **Manager Classes**: 12+ specialized managers for different systems
-- **CSS Files**: 11 dedicated stylesheets with design system architecture
-- **Animation Systems**: 4 major animation frameworks with 20+ keyframes
-- **Game Content**: 398 cards, 50+ board spaces, 100+ dice outcomes
+- **React Components**: 35+ components with professional architecture
+- **Manager Classes**: 2 core managers for system organization
+- **CSS Files**: 11 dedicated stylesheets with design system
+- **Animation Systems**: Professional card and movement animations
+- **Game Content**: 404 cards, 50+ board spaces, dice outcomes
 - **Utility Modules**: 8+ utility systems for game logic and data processing
 - **Development Time**: 18+ months of iterative development
-- **Architecture**: Event-driven, data-driven, manager-based, component-modular
+- **Architecture**: Event-driven, data-driven, component-based
 
 ---
 

@@ -172,27 +172,103 @@ window.CardManagerInterface = {
     drawCard: function(type) { /* ... */ },
     getCardCount: function(type) { /* ... */ }
 };
+
+// React State Updates (Critical Pattern)
+// Always preserve existing state
+this.setState(prevState => ({ 
+    ...prevState, 
+    newProperty: value 
+}));
+
+// CSV Data Standards
+// Space Objects: Use space.space_name (not space.name)
+// Card Objects: Support both card.card_type and card.type
+// Movement Data: Uses space_1, space_2, etc. columns
 ```
+
+### Modern Architecture Patterns
+- **Manager Pattern**: Specialized managers for major systems
+- **Event System**: Loose coupling through GameStateManager events
+- **Component Interfaces**: Standardized communication patterns
+- **Separation of Concerns**: Clear division between UI, logic, and data
+- **Data-Driven Configuration**: Game rules externalized to CSV files
+- **5-Stage Initialization**: Deterministic loading via InitializationManager
+
+### Performance Optimization
+- **Advanced Indexing**: Multi-dimensional card indexes for O(1) lookups
+- **Space Caching System**: byId, byName, byNormalizedName caches for instant space lookups
+- **Efficient Rendering**: Minimal DOM updates and optimized animations
+- **Memory Management**: Proper cleanup of event listeners and resources
+- **Animation Optimization**: 20+ keyframe animations with hardware acceleration
+
+### Critical Development Constraints
+- **No localStorage/sessionStorage**: Not supported in Claude.ai artifacts - use React state instead
+- **Loading Order Dependencies**: Components must load in specific sequence (see above)
+- **CSV-Driven Logic**: Never hardcode game rules - always use CSV data
+- **Event-Driven Communication**: Use GameStateManager events, not direct calls
+- **Property Name Standards**: Use snake_case for consistency (space_name, card_type, etc.)
 
 ### File Organization
 ```
 js/components/
-├── managers/           # Manager classes
-├── utils/             # Utility functions  
-├── App.js             # Root component
-├── GameBoard.js       # Main game container
-└── [UI components]    # Individual game UI pieces
+├── managers/              # 12+ Manager classes for specialized systems
+│   ├── InitializationManager.js  # 5-stage app initialization
+│   ├── SpaceInfoManager.js       # Space information display
+│   ├── SpaceExplorerManager.js   # Space explorer panel operations
+│   ├── SpaceSelectionManager.js  # Space selection logic and UI
+│   ├── LogicSpaceManager.js      # Logic space handling
+│   └── BoardStyleManager.js      # Dynamic board styling
+├── utils/                # Utility frameworks and helpers
+│   ├── CardDrawUtil.js           # Card drawing logic
+│   ├── CardTypeConstants.js      # Card type definitions
+│   ├── DiceOutcomeParser.js      # Dice outcome processing
+│   ├── DiceRollLogic.js          # Dice roll mechanics
+│   ├── csv-parser.js             # Advanced CSV parsing
+│   └── movement/                 # Movement system utilities
+├── App.js                # Root React component
+├── GameBoard.js          # Main game controller
+├── BoardRenderer.js      # Multi-layer board rendering
+├── BoardSpaceRenderer.js # Individual space rendering
+├── BoardDisplay.js       # Board display coordination
+├── SpaceInfo.js         # Modular space information
+│   ├── SpaceInfoDice.js         # Dice-specific space info
+│   ├── SpaceInfoCards.js        # Card-specific space info
+│   ├── SpaceInfoMoves.js        # Move-specific space info
+│   └── SpaceInfoUtils.js        # Space info utilities
+├── CardDisplay.js       # Card management interface
+├── CardDetailView.js    # Detailed card viewing
+├── CardActions.js       # Card action handling
+├── CardAnimations.js    # Card animation system
+├── WorkCardDialogs.js   # Work card specific dialogs
+├── DiceRoll.js          # Dice rolling mechanics
+├── DiceManager.js       # Dice system management
+├── PlayerSetup.js       # Player setup interface
+├── PlayerInfo.js        # Player information display
+├── StaticPlayerStatus.js # Static player status panel
+├── PlayerMovementVisualizer.js # Advanced movement animations
+├── TurnManager.js       # Turn progression system
+├── TooltipSystem.js     # Context-sensitive tooltips
+├── InteractiveFeedback.js # Toast notifications and feedback
+├── GameStateAnimations.js # Phase and turn animations
+└── SpaceExplorer.js     # Space exploration interface
 
 css/
-├── main.css           # Core layout
-├── game-components.css # Game-specific styling
-├── player-animations.css # Movement animations
-└── [component-specific CSS]
+├── main.css             # Core layout, design tokens, CSS variables
+├── game-components.css  # Game-specific UI elements
+├── card-components.css  # Comprehensive card styling system
+├── player-animations.css # 20+ movement and transition animations
+├── dice-animations.css  # 3D dice animations and effects
+├── board-space-renderer.css # Board space styling
+├── logic-space-components.css # Logic space specific styling
+├── space-explorer.css   # Space explorer panel styling
+├── space-info.css       # Space information styling
+├── static-player-status.css # Player status panel styling
+└── player-setup.css     # Player setup interface styling
 
 data/
-├── Spaces.csv         # Game board definition
-├── cards.csv          # Unified card data
-└── DiceRoll Info.csv  # Dice outcomes
+├── Spaces.csv         # Game board definition with Path and RequiresDiceRoll
+├── cards.csv          # Unified card data (398 cards, 48 metadata fields)
+└── DiceRoll Info.csv  # Dice outcomes and requirements
 ```
 
 ### Development Commands
@@ -209,6 +285,37 @@ http://localhost:8000/?debug=true&logLevel=debug
 ```
 
 **No build system** - Static web application with browser-based Babel compilation for JSX.
+
+### Critical Loading Order
+
+Components must load in this sequence (defined in Index.html):
+1. Utilities (csv-parser, cache-buster)
+2. Component Registry
+3. Movement System (before GameStateManager)
+4. GameStateManager & game-state
+5. Manager components
+6. UI components
+7. Main application script
+
+**This order is critical** - changing it will break the application due to dependency requirements.
+
+### Data Standards
+
+#### CSV Column Mapping
+All CSV data follows these conventions:
+- **Column Headers**: Mixed case as they exist (space_name, Event, Action, space_1, Time, etc.)
+- **Internal Properties**: Always mapped to snake_case for consistency (space_1, visit_type, w_card)
+- **Movement Data**: Uses space_1, space_2, space_3, space_4, space_5 columns
+- **Card Data**: Uses w_card, b_card, i_card, l_card, e_card columns
+- **No Hardcoded Logic**: All game mechanics read from CSV files, not code constants
+
+#### Property Name Standardization Rules
+Moving forward, all components must use:
+- **Space Objects**: `space.space_name` (not `space.name`)
+- **Move Objects**: `move.name` for space name, `move.id` for generated ID
+- **Card Objects**: Both `card.card_type` and `card.type` for type checking
+- **Card Fields**: Current CSV names (`work_type_restriction`, `work_cost`) with legacy fallbacks
+- **React setState**: Always use function form with spread operator to preserve state
 
 ---
 
@@ -297,15 +404,15 @@ Players move by selecting from available spaces. The system uses CSV data to det
 ## Card System Architecture
 
 ### Unified Card Structure
-- **Single CSV**: All 398 cards in `data/cards.csv`
+- **Single CSV**: All 404 cards in `data/cards.csv`
 - **48 Metadata Fields**: Comprehensive card properties
 - **5 Card Types**: W (Work), B (Bank), I (Investor), L (Life), E (Expeditor)
 
-### Advanced Card Features
-- **Combo System**: Pattern detection (B+I, 2xW+B+I)
-- **Chain Reactions**: Cards trigger cascading effects
-- **Complex Targeting**: Conditional and multi-player targeting
-- **Duration Effects**: Persistent effects lasting multiple turns
+### Card Features
+- **Basic Effects**: Money, time, resource management across all cards
+- **Experimental Advanced Features**: Combo requirements and chain effects in TEST cards only
+- **Multi-Player Interactions**: Some cards affect other players
+- **Phase-Specific Cards**: Some cards only work in certain project phases
 
 ### Card Management
 - **6-card limits**: Per type, with visual indicators

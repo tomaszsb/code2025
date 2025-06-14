@@ -4,6 +4,41 @@ All notable changes to the Project Management Board Game are documented in this 
 
 ---
 
+## [2.1.0] - June 14, 2025 - Card Data Standardization & Field Alignment
+
+### 🎯 **MAJOR DATA IMPROVEMENT**
+
+#### **Complete Card Field Standardization**
+- **399 Cards Updated**: Comprehensive field alignment across all Expeditor (E) and Life (L) cards
+- **Semantic Consistency Achieved**: Every field now matches exactly what card descriptions say
+- **Zero Text Parsing Required**: All effects available as structured data for CardManager
+
+#### **Field Alignment Improvements**
+- **Target/Scope Accuracy**: "All players" effects correctly tagged as `target: "All Players"`, `scope: "Global"`
+- **Time Effects Precision**: All time modifications properly quantified (e.g., "3 ticks more" → `time_effect: 3`)
+- **Phase Restrictions**: Cards mentioning phases/types correctly restricted (e.g., "inspection" → `phase_restriction: "CONSTRUCTION"`)
+- **Card Interactions**: All card draw/discard effects structured (e.g., "Draw 1 Expeditor Card" → `draw_cards: 1`, `card_type_filter: "E"`)
+- **Money Effects**: All monetary costs and gains properly tracked (e.g., "Pay $1000" → `money_cost: -1000`)
+- **Dice Mechanics**: All dice-based effects standardized with triggers and outcomes
+- **Complex Logic**: Multi-step effects captured in conditional_logic field
+
+#### **Data Quality Enhancements**
+- **Enhanced Flavor Text**: Added engaging narratives to 15+ Bank cards and improved descriptions across all types
+- **Fixed Incomplete Descriptions**: Resolved 9 Life cards with incomplete dice roll descriptions
+- **Standardized Duration Effects**: Turn-based effects properly structured with duration and duration_count
+
+#### **Technical Impact**
+- **CardManager Optimization Ready**: All card effects now available as structured data instead of requiring text parsing
+- **Performance Improvement Potential**: 93-line text parsing function can be replaced with simple data column reading
+- **Game Logic Reliability**: Eliminates parsing errors and inconsistencies in card effect processing
+
+### 📁 **Files Modified**
+- `data/cards.csv`: Updated 40+ Expeditor and Life cards with comprehensive field alignment
+- `docs/CSV_DATA_POPULATION_PROGRESS.md`: Updated to reflect completion status
+- `docs/CHANGELOG.md`: Added this entry documenting the improvements
+
+---
+
 ## [2.0.0] - January 2025 - MAJOR RELEASE: Complete System Overhaul
 
 ### 🎉 **MAJOR ACHIEVEMENTS**
@@ -44,13 +79,11 @@ All notable changes to the Project Management Board Game are documented in this 
 
 #### **Manager-Based Architecture Implementation**
 - **2 Core Managers**: InitializationManager and SpaceInfoManager implemented
-- **35+ React Components**: Complete component system with specialized UI elements
+- **30+ React Components**: Complete component system with specialized UI elements
 - **11 CSS Files**: Organized styling system with design tokens and component-specific styles
 - **Event System**: GameStateManager provides centralized event-driven communication
 - **Component Modularity**: SpaceInfo broken into focused modules (Dice, Cards, Moves, Utils)
 - **Professional Animation System**: CardAnimations, PlayerMovementVisualizer, GameStateAnimations
-
-### 🔧 **TECHNICAL IMPROVEMENTS**
 
 #### **Code Quality & Cleanup**
 - **Documentation Cleanup**: Removed 32 outdated technical files, consolidated to 5 useful guides
@@ -83,7 +116,7 @@ All notable changes to the Project Management Board Game are documented in this 
 
 ---
 
-## [1.8.0] - May 2025 - Movement System & CSV Improvements
+## [1.8.0] - June 11, 2025 - Movement System & CSV Improvements
 
 ### Added
 - **Modular Movement System**: MovementCore.js, MovementLogic.js, MovementUIAdapter.js, MovementSystem.js

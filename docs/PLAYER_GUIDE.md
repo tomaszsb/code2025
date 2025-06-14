@@ -80,5 +80,3 @@ On your turn:
 - **Clearer Interface**: Improved styling makes game actions more intuitive.
 
 Good luck with your project!
-
-console.log('PLAYER_GUIDE.md file has been updated.');

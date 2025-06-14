@@ -12,7 +12,7 @@ A sophisticated web-based board game that teaches project management concepts th
 - **404-Card System**: Unified card mechanics with basic effects and experimental advanced features
 - **Data-Driven Architecture**: All game logic externalized to CSV files for easy modification
 - **Professional UI/UX**: Animated movement, visual feedback, responsive design
-- **Component-Based Architecture**: 35+ React components with event-driven communication
+- **Component-Based Architecture**: 30+ React components with event-driven communication
 - **Performance Optimized**: Efficient card lookups, smooth animations, memory management
 
 ## 🚀 **Quick Start**

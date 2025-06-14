@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Data Editor</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .editor-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-counter {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .navigation {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .nav-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .nav-button:hover:not(:disabled) {
+            background: #2980b9;
+        }
+        
+        .nav-button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .card-id-input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 80px;
+            text-align: center;
+        }
+        
+        .card-form {
+            padding: 30px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #2c3e50;
+            position: relative;
+            cursor: help;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: #34495e;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: normal;
+            white-space: nowrap;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            bottom: 100%;
+            left: 0;
+            margin-bottom: 5px;
+            max-width: 300px;
+            white-space: normal;
+            line-height: 1.4;
+        }
+
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 15px;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid #34495e;
+        }
+
+        .form-group label:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .form-group input, 
+        .form-group textarea, 
+        .form-group select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .important-fields {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .important-fields h3 {
+            margin-top: 0;
+            color: #e74c3c;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            padding: 20px;
+            border-top: 1px solid #eee;
+            background: #f8f9fa;
+        }
+        
+        .save-button {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .save-button:hover {
+            background: #229954;
+        }
+        
+        .reset-button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .reset-button:hover {
+            background: #c0392b;
+        }
+        
+        .status-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+        
+        .status-message.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .status-message.success {
+            background: #27ae60;
+        }
+        
+        .status-message.error {
+            background: #e74c3c;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 18px;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <div class="header">
+            <div>
+                <div class="card-counter">
+                    Card <span id="currentIndex">1</span> of <span id="totalCards">0</span>
+                </div>
+                <div style="font-size: 12px; color: #ecf0f1; margin-top: 5px;">
+                    💾 Save downloads CSV - replace /data/cards.csv to persist changes
+                </div>
+            </div>
+            <div class="navigation">
+                <button class="nav-button" id="firstBtn">First</button>
+                <button class="nav-button" id="prevBtn">Previous</button>
+                <input type="number" class="card-id-input" id="cardIndexInput" min="1" value="1">
+                <button class="nav-button" id="goBtn">Go</button>
+                <button class="nav-button" id="nextBtn">Next</button>
+                <button class="nav-button" id="lastBtn">Last</button>
+            </div>
+        </div>
+        
+        <div id="loadingMessage" class="loading">
+            Loading card data...
+        </div>
+        
+        <div id="cardForm" class="card-form" style="display: none;">
+            <div class="important-fields">
+                <h3>Core Card Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="card_id">Card ID
+                            <div class="tooltip">Unique identifier for this card (e.g., B001, W150). Format: [Type][Number]</div>
+                        </label>
+                        <input type="text" id="card_id" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="card_type">Card Type
+                            <div class="tooltip">B=Bank (loans/money), I=Investor (funding), L=Life (personal events), W=Work (project tasks), E=Expeditor (process acceleration)</div>
+                        </label>
+                        <select id="card_type">
+                            <option value="B">B - Bank</option>
+                            <option value="I">I - Investor</option>
+                            <option value="L">L - Life</option>
+                            <option value="W">W - Work</option>
+                            <option value="E">E - Expeditor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="card_name">Card Name
+                            <div class="tooltip">Display name shown to players (e.g., "Small Business Loan", "Team Meeting")</div>
+                        </label>
+                        <input type="text" id="card_name">
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description
+                            <div class="tooltip">Main card text explaining what the card does when played. Keep clear and concise.</div>
+                        </label>
+                        <textarea id="description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="flavor_text">Flavor Text
+                            <div class="tooltip">Optional atmospheric text that adds theme/story but doesn't affect gameplay</div>
+                        </label>
+                        <textarea id="flavor_text"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="rarity">Rarity
+                            <div class="tooltip">How often this card appears in draws. Common=frequent, Legendary=very rare</div>
+                        </label>
+                        <select id="rarity">
+                            <option value="">-- Select Rarity --</option>
+                            <option value="Common">Common</option>
+                            <option value="Uncommon">Uncommon</option>
+                            <option value="Rare">Rare</option>
+                            <option value="Epic">Epic</option>
+                            <option value="Legendary">Legendary</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="allFields">
+                <!-- All other fields will be dynamically generated here in organized sections -->
+            </div>
+        </div>
+        
+        <div class="actions" id="actionButtons" style="display: none;">
+            <button class="save-button" id="saveBtn">Save Changes</button>
+            <button class="reset-button" id="resetBtn">Reset to Original</button>
+        </div>
+    </div>
+    
+    <div class="status-message" id="statusMessage"></div>
+
+    <script>
+        class CardEditor {
+            constructor() {
+                this.cards = [];
+                this.currentIndex = 0;
+                this.originalCard = null;
+                this.csvHeaders = [];
+                this.hasUnsavedChanges = false;
+                this.init();
+            }
+            
+            async init() {
+                try {
+                    await this.loadCards();
+                    this.setupEventListeners();
+                    this.showCard(0);
+                    document.getElementById('loadingMessage').style.display = 'none';
+                    document.getElementById('cardForm').style.display = 'block';
+                    document.getElementById('actionButtons').style.display = 'flex';
+                } catch (error) {
+                    this.showStatus('Failed to load card data: ' + error.message, 'error');
+                }
+            }
+            
+            async loadCards() {
+                // Load cards data
+                const response = await fetch('./data/cards.csv');
+                const csvText = await response.text();
+                
+                const lines = csvText.trim().split('\n');
+                this.csvHeaders = lines[0].split(',').filter(header => header.trim() !== ''); // Remove empty headers
+                
+                this.cards = lines.slice(1).map(line => {
+                    const values = this.parseCSVLine(line);
+                    const card = {};
+                    this.csvHeaders.forEach((header, index) => {
+                        card[header] = values[index] || '';
+                    });
+                    return card;
+                });
+                
+                // Load spaces data for restrictions
+                await this.loadSpacesData();
+                
+                document.getElementById('totalCards').textContent = this.cards.length;
+                document.getElementById('cardIndexInput').max = this.cards.length;
+                
+                this.generateFormFields();
+            }
+
+            async loadSpacesData() {
+                try {
+                    const response = await fetch('./data/Spaces.csv');
+                    const csvText = await response.text();
+                    const lines = csvText.trim().split('\n');
+                    
+                    // Extract unique phases
+                    this.phases = [...new Set(lines.slice(1).map(line => {
+                        const values = this.parseCSVLine(line);
+                        return values[1]; // phase column
+                    }).filter(phase => phase && phase !== 'phase'))].sort();
+                    
+                    // Extract unique space names
+                    this.spaces = [...new Set(lines.slice(1).map(line => {
+                        const values = this.parseCSVLine(line);
+                        return values[0]; // space_name column
+                    }).filter(space => space && space !== 'space_name'))].sort();
+                    
+                } catch (error) {
+                    console.warn('Could not load Spaces.csv for restrictions:', error);
+                    this.phases = ['SETUP', 'OWNER', 'FUNDING', 'DESIGN', 'CONSTRUCTION', 'REGULATORY', 'END'];
+                    this.spaces = [];
+                }
+            }
+            
+            parseCSVLine(line) {
+                const result = [];
+                let current = '';
+                let inQuotes = false;
+                
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        result.push(current);
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                
+                result.push(current);
+                return result;
+            }
+            
+            generateFormFields() {
+                const container = document.getElementById('allFields');
+                const coreFields = ['card_id', 'card_type', 'card_name', 'description', 'flavor_text', 'rarity'];
+                
+                // Organize fields by category
+                const fieldCategories = {
+                    'Targeting & Scope': {
+                        'target': { desc: 'Who can use this card', type: 'dropdown', options: ['', 'Self', 'Any', 'Opponent'] },
+                        'scope': { desc: 'How many players affected', type: 'dropdown', options: ['', 'Single', 'Group', 'All'] }
+                    },
+                    'Restrictions': {
+                        'phase_restriction': { desc: 'Which game phase this card can be played in', type: 'dropdown', options: ['', ...this.phases] },
+                        'space_restriction': { desc: 'Specific board spaces where this card can be used', type: 'dropdown', options: ['', ...this.spaces.slice(0, 20)] }, // Limit for UI
+                        'work_type_restriction': { desc: 'Type of construction work this applies to', type: 'dropdown', options: ['', 'General Construction', 'Plumbing', 'Mechanical Systems', 'Sprinklers', 'Structural', 'Construction Fence', 'Sidewalk Shed', 'Supported Scaffold', 'Boiler Equipment', 'Antenna', 'Sign', 'Solar', 'Standpipe', 'New Building', 'Full Demolition', 'Alteration', 'Equipment Work', 'Electrical', 'Elevator', 'Fire Alarm', 'Fire Suppression', 'Foundation', 'Earthwork Only', 'Curb Cut'] }
+                    },
+                    'Financial Effects': {
+                        'money_cost': { desc: 'How much money required to play this card', type: 'number' },
+                        'money_effect': { desc: 'Money gained (+) or lost (-) when played', type: 'number' },
+                        'loan_amount': { desc: 'Amount of money loaned (for Bank cards)', type: 'number' },
+                        'loan_rate': { desc: 'Interest rate percentage for loans', type: 'number' },
+                        'investment_amount': { desc: 'Money invested (for Investor cards)', type: 'number' },
+                        'work_cost': { desc: 'Cost to perform work tasks', type: 'number' },
+                        'percentage_effect': { desc: 'Percentage modifier applied to other values', type: 'number' }
+                    },
+                    'Time & Duration': {
+                        'duration': { desc: 'How long effect lasts', type: 'dropdown', options: ['', 'Permanent', 'Temporary', 'Until Condition', 'Instant'] },
+                        'duration_count': { desc: 'Number of turns for temporary effects', type: 'number' },
+                        'time_effect': { desc: 'Time units gained (+) or lost (-)', type: 'number' },
+                        'activation_timing': { desc: 'When during turn this card takes effect', type: 'dropdown', options: ['', 'Immediate', 'Start of Turn', 'End of Turn', 'On Draw', 'On Discard'] }
+                    },
+                    'Card Interactions': {
+                        'draw_cards': { desc: 'Number of cards to draw when played', type: 'number' },
+                        'discard_cards': { desc: 'Number of cards to discard when played', type: 'number' },
+                        'card_type_filter': { desc: 'Which card types are affected by this card', type: 'dropdown', options: ['', 'B', 'I', 'L', 'W', 'E', 'B,I', 'W,E', 'All'] }
+                    },
+                    'Game Effects': {
+                        'immediate_effect': { desc: 'Core action: Apply Work (costs work_cost, advances project), Apply Card (special effects), Apply Loan (provides loan_amount at loan_rate), Apply Investment (provides investment_amount)', type: 'dropdown', options: ['', 'Apply Work', 'Apply Card', 'Apply Loan', 'Apply Investment'] },
+                        'dice_trigger': { desc: 'Conditions that trigger dice rolling', type: 'dropdown', options: ['', 'On Play', 'Each Turn', 'On Move', 'Manual'] },
+                        'dice_effect': { desc: 'What happens based on dice results', type: 'text' }
+                    },
+                    'Advanced Mechanics': {
+                        'conditional_logic': { desc: 'IF-THEN rules for complex card effects', type: 'textarea' },
+                        'chain_effect': { desc: 'Additional effects triggered by this card', type: 'text' },
+                        'combo_requirement': { desc: 'Other cards needed to create combo effects', type: 'text' },
+                        'prerequisite': { desc: 'Requirements that must be met before playing', type: 'text' },
+                        'priority': { desc: 'Order of resolution when multiple effects occur', type: 'number' },
+                        'nullify_effect': { desc: 'What effects this card cancels or prevents', type: 'text' }
+                    }
+                };
+                
+                // Create sections for each category
+                Object.entries(fieldCategories).forEach(([categoryName, fields]) => {
+                    // Only create section if we have fields from this category in the CSV
+                    const categoryFields = Object.keys(fields).filter(field => this.csvHeaders.includes(field));
+                    if (categoryFields.length === 0) return;
+                    
+                    // Create category section
+                    const section = document.createElement('div');
+                    section.className = 'important-fields';
+                    section.style.marginBottom = '20px';
+                    
+                    const title = document.createElement('h3');
+                    title.textContent = categoryName;
+                    section.appendChild(title);
+                    
+                    const grid = document.createElement('div');
+                    grid.className = 'form-grid';
+                    
+                    categoryFields.forEach(fieldName => {
+                        const fieldConfig = fields[fieldName];
+                        const formGroup = document.createElement('div');
+                        formGroup.className = 'form-group';
+                        
+                        const label = document.createElement('label');
+                        label.setAttribute('for', fieldName);
+                        label.textContent = fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        
+                        // Add tooltip
+                        const tooltip = document.createElement('div');
+                        tooltip.className = 'tooltip';
+                        tooltip.textContent = fieldConfig.desc;
+                        label.appendChild(tooltip);
+                        
+                        let input;
+                        
+                        // Create appropriate input type
+                        if (fieldConfig.type === 'dropdown') {
+                            input = document.createElement('select');
+                            fieldConfig.options.forEach(option => {
+                                const optionElement = document.createElement('option');
+                                optionElement.value = option;
+                                optionElement.textContent = option || '-- Select --';
+                                input.appendChild(optionElement);
+                            });
+                        } else if (fieldConfig.type === 'number') {
+                            input = document.createElement('input');
+                            input.type = 'number';
+                            input.step = 'any';
+                        } else if (fieldConfig.type === 'textarea') {
+                            input = document.createElement('textarea');
+                            input.rows = 3;
+                        } else {
+                            input = document.createElement('input');
+                            input.type = 'text';
+                        }
+                        
+                        input.id = fieldName;
+                        
+                        formGroup.appendChild(label);
+                        formGroup.appendChild(input);
+                        grid.appendChild(formGroup);
+                    });
+                    
+                    section.appendChild(grid);
+                    container.appendChild(section);
+                });
+                
+                // Add any remaining fields that weren't categorized
+                const categorizedFields = Object.values(fieldCategories).flatMap(cat => Object.keys(cat));
+                const remainingFields = this.csvHeaders.filter(header => 
+                    !coreFields.includes(header) && 
+                    !categorizedFields.includes(header) && 
+                    header.trim() !== '' &&
+                    // Skip these confusing/unnecessary fields
+                    !['environmental_factor', 'social_factor', 'political_factor', 'stacking_limit', 'usage_limit', 'cooldown', 'tick_modifier', 'distribution_level'].includes(header)
+                );
+                
+                if (remainingFields.length > 0) {
+                    const section = document.createElement('div');
+                    section.className = 'important-fields';
+                    section.style.marginBottom = '20px';
+                    
+                    const title = document.createElement('h3');
+                    title.textContent = 'Other Fields';
+                    section.appendChild(title);
+                    
+                    const grid = document.createElement('div');
+                    grid.className = 'form-grid';
+                    
+                    remainingFields.forEach(fieldName => {
+                        const formGroup = document.createElement('div');
+                        formGroup.className = 'form-group';
+                        
+                        const label = document.createElement('label');
+                        label.setAttribute('for', fieldName);
+                        label.textContent = fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.id = fieldName;
+                        
+                        formGroup.appendChild(label);
+                        formGroup.appendChild(input);
+                        grid.appendChild(formGroup);
+                    });
+                    
+                    section.appendChild(grid);
+                    container.appendChild(section);
+                }
+            }
+            
+            setupEventListeners() {
+                document.getElementById('firstBtn').addEventListener('click', () => this.showCard(0));
+                document.getElementById('prevBtn').addEventListener('click', () => this.showCard(this.currentIndex - 1));
+                document.getElementById('nextBtn').addEventListener('click', () => this.showCard(this.currentIndex + 1));
+                document.getElementById('lastBtn').addEventListener('click', () => this.showCard(this.cards.length - 1));
+                
+                document.getElementById('goBtn').addEventListener('click', () => {
+                    const index = parseInt(document.getElementById('cardIndexInput').value) - 1;
+                    this.showCard(index);
+                });
+                
+                document.getElementById('cardIndexInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        const index = parseInt(e.target.value) - 1;
+                        this.showCard(index);
+                    }
+                });
+                
+                document.getElementById('saveBtn').addEventListener('click', () => this.saveCard());
+                document.getElementById('resetBtn').addEventListener('click', () => this.resetCard());
+            }
+            
+            showCard(index) {
+                if (index < 0 || index >= this.cards.length) return;
+                
+                // Save current card's changes before switching
+                this.saveCurrentCardChanges();
+                
+                this.currentIndex = index;
+                const card = this.cards[index];
+                this.originalCard = { ...card };
+                
+                document.getElementById('currentIndex').textContent = index + 1;
+                document.getElementById('cardIndexInput').value = index + 1;
+                
+                // Update form fields
+                this.csvHeaders.forEach(header => {
+                    const element = document.getElementById(header);
+                    if (element) {
+                        element.value = card[header] || '';
+                    }
+                });
+                
+                // Update navigation buttons
+                document.getElementById('firstBtn').disabled = index === 0;
+                document.getElementById('prevBtn').disabled = index === 0;
+                document.getElementById('nextBtn').disabled = index === this.cards.length - 1;
+                document.getElementById('lastBtn').disabled = index === this.cards.length - 1;
+            }
+            
+            saveCurrentCardChanges() {
+                if (this.currentIndex === undefined) return;
+                
+                const card = this.cards[this.currentIndex];
+                let hasChanges = false;
+                
+                this.csvHeaders.forEach(header => {
+                    const element = document.getElementById(header);
+                    if (element) {
+                        const newValue = element.value;
+                        if (card[header] !== newValue) {
+                            card[header] = newValue;
+                            hasChanges = true;
+                        }
+                    }
+                });
+                
+                // Mark that we have unsaved changes
+                if (hasChanges) {
+                    this.hasUnsavedChanges = true;
+                    this.updateSaveButtonState();
+                }
+            }
+            
+            updateSaveButtonState() {
+                const saveBtn = document.getElementById('saveBtn');
+                if (this.hasUnsavedChanges) {
+                    saveBtn.textContent = 'Download All Changes';
+                    saveBtn.style.background = '#e67e22'; // Orange to indicate pending changes
+                } else {
+                    saveBtn.textContent = 'Save Changes';
+                    saveBtn.style.background = '#27ae60'; // Green
+                }
+            }
+            
+            saveCard() {
+                // Save current card changes first
+                this.saveCurrentCardChanges();
+                
+                // Generate CSV content with all accumulated changes
+                const csvContent = [
+                    this.csvHeaders.join(','),
+                    ...this.cards.map(card => 
+                        this.csvHeaders.map(header => {
+                            const value = card[header] || '';
+                            return value.includes(',') || value.includes('"') ? `"${value.replace(/"/g, '""')}"` : value;
+                        }).join(',')
+                    )
+                ].join('\n');
+                
+                // Download the updated CSV
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'cards.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                // Reset unsaved changes state
+                this.hasUnsavedChanges = false;
+                this.updateSaveButtonState();
+                
+                this.showStatus('CSV downloaded with ALL changes! Replace /data/cards.csv with the downloaded file.', 'success');
+            }
+            
+            resetCard() {
+                if (this.originalCard) {
+                    this.csvHeaders.forEach(header => {
+                        const element = document.getElementById(header);
+                        if (element) {
+                            element.value = this.originalCard[header] || '';
+                        }
+                    });
+                    this.showStatus('Card reset to original values.', 'success');
+                }
+            }
+            
+            showStatus(message, type) {
+                const statusElement = document.getElementById('statusMessage');
+                statusElement.textContent = message;
+                statusElement.className = `status-message ${type} show`;
+                
+                setTimeout(() => {
+                    statusElement.classList.remove('show');
+                }, 3000);
+            }
+        }
+        
+        // Initialize the editor when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new CardEditor();
+        });
+    </script>
+</body>
+</html>

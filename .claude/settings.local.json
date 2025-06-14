@@ -50,7 +50,9 @@
       "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -n \"CARD_TYPES\" /mnt/d/unravel/current_game/code2025/js/)",
       "Bash(mv:*)",
       "Bash(true)",
-      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -i \"current.*turn|turn.*panel\" /mnt/d/unravel/current_game/code2025/js --type js -A 5 -B 5)"
+      "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -i \"current.*turn|turn.*panel\" /mnt/d/unravel/current_game/code2025/js --type js -A 5 -B 5)",
+      "Bash(awk:*)",
+      "Bash(python3:*)"
     ],
     "deny": []
   }

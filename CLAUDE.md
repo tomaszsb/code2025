@@ -17,7 +17,7 @@ http://localhost:8000/?debug=true&logLevel=debug
 ## 🏗️ Architecture (Critical)
 
 ### Core Pattern: Component-Based + Event-Driven
-- **35+ React Components**: Complete UI system with specialized components
+- **30+ React Components**: Complete UI system with specialized components
 - **Event System**: Components communicate via GameStateManager events  
 - **Data-Driven**: CSV files control game logic (never hardcode rules)
 - **5-Stage Init**: Deterministic loading sequence (see loading order below)
@@ -35,7 +35,7 @@ js/utils/movement/MovementEngine.js  # Movement logic
 js/components/App.js            # Root React component
 js/components/managers/         # 2 core manager classes
 data/Spaces.csv                 # Board spaces + paths
-data/cards.csv                  # 404 cards, all types
+data/cards.csv                  # 398 production cards (B/I/L/W/E types)
 data/DiceRoll Info.csv          # Dice outcomes
 ```
 
@@ -101,29 +101,43 @@ this.setState(prevState => ({
 ## 📊 Data Standards
 
 ### CSV Column Mapping
-- **Spaces**: `space_name` (not `name`), `Path`, `RequiresDiceRoll`
-- **Cards**: `card_type`, `w_card`, `b_card`, etc. (snake_case properties)
-- **Movement**: `space_1`, `space_2`, etc. for destinations
+- **Spaces**: `space_name`, `phase` (game phases like SETUP, DESIGN, CONSTRUCTION)
+- **Cards**: `card_type` (B/I/L/W/E), `immediate_effect` (Apply Work/Card/Loan/Investment)
+- **Money Fields**: `money_cost`, `loan_amount`, `investment_amount`, `work_cost`
 
 ### Property Name Rules
-- **Space Objects**: Use `space.space_name` 
+- **Space Objects**: Use `space.space_name` and `space.phase`
 - **Move Objects**: Use `move.name` for destinations
-- **Card Objects**: Support both `card.card_type` and `card.type`
+- **Card Objects**: Use `card.card_type` and `card.immediate_effect`
 
 ## 🃏 Card System Facts
 
-### Actual Card Counts (404 total)
-- **B (Bank)**: 60 cards
-- **I (Investor)**: 39 cards  
-- **L (Life)**: 49 cards
-- **W (Work)**: 176 cards
-- **E (Expeditor)**: 74 cards
-- **TEST**: 6 experimental cards
+### Actual Card Counts (399 production cards)
+- **B (Bank)**: 60 cards - Provide loans with `loan_amount` and `loan_rate`
+- **I (Investor)**: 39 cards - Provide funding with `investment_amount`  
+- **L (Life)**: 49 cards - Personal events with special effects
+- **W (Work)**: 176 cards - Construction tasks requiring `work_cost`
+- **E (Expeditor)**: 74 cards - Process acceleration and efficiency
+- **TEST**: 6 advanced testing cards with experimental features
 
-### Card Features
-- **Basic Effects**: Money, time, resource management (all cards)
-- **Advanced Features**: Combo requirements and chain effects (TEST cards only)
+### Card Features - ✅ Fully Standardized
+- **Immediate Effects**: `Apply Work`, `Apply Card`, `Apply Loan`, `Apply Investment`
+- **Semantic Consistency**: All fields match card descriptions exactly
+- **Time Effects**: Structured as `time_effect` (positive = add time, negative = reduce time)
+- **Money Effects**: `money_cost` (to play card) and `money_effect` (gain/lose money)
+- **Target/Scope**: Accurate `target` ("Self"/"All Players") and `scope` ("Single"/"Global")
+- **Phase Restrictions**: Cards properly restricted to game phases (e.g., "CONSTRUCTION" for inspections)
+- **Card Interactions**: `draw_cards`/`discard_cards` with `card_type_filter` for specific types
+- **Dice Mechanics**: `dice_trigger` ("On Play") and `dice_effect` (outcome descriptions)
+- **Complex Logic**: Multi-step effects in `conditional_logic` field
+- **Duration Effects**: Turn-based with `duration` and `duration_count`
 - **6-Card Limits**: Per type, with visual indicators and forced discard
+
+### Data Quality Improvements
+- **Zero Text Parsing**: All effects available as structured data
+- **Enhanced Flavor Text**: Engaging narratives across all card types
+- **Complete Descriptions**: All dice effects and conditional logic properly detailed
+- **Performance Ready**: Optimized for efficient CardManager processing
 
 ## 🚀 Quick References
 

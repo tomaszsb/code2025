@@ -99,11 +99,24 @@ class SpaceExplorerManager {
     
     // Handle relevant game state changes
     if (event.data && event.data.changeType === 'newGame') {
-      // Reset any explorer-specific state
-      this.gameBoard.setState({
-        showSpaceExplorer: false,
-        exploredSpace: null
-      });
+      console.log('SpaceExplorerManager: newGame event received - keeping explorer visible during gameplay');
+      // BUGFIX: Don't hide space explorer during normal gameplay
+      // The original code was hiding the explorer panel whenever newGame events fired
+      // which caused panels to briefly appear then disappear during player movement
+      
+      // Ensure explorer stays visible and shows current player's space
+      if (!this.gameBoard.state.showSpaceExplorer) {
+        this.handleOpenExplorer();
+      }
+      
+      // Update to current player's space if needed
+      const currentPlayer = window.GameStateManager.getCurrentPlayer();
+      if (currentPlayer && currentPlayer.position) {
+        const currentSpace = window.GameStateManager.findSpaceById(currentPlayer.position);
+        if (currentSpace) {
+          this.updateExploredSpace(currentSpace);
+        }
+      }
     }
   }
   

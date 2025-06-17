@@ -39,7 +39,8 @@ class SpaceInfoManager {
     this.eventHandlers = {
       gameStateChanged: this.handleGameStateChangedEvent.bind(this),
       turnChanged: this.handleTurnChangedEvent.bind(this),
-      spaceChanged: this.handleSpaceChangedEvent.bind(this)
+      spaceChanged: this.handleSpaceChangedEvent.bind(this),
+      playerMoved: this.handlePlayerMovedEvent.bind(this)
     };
     
     // Register event listeners with GameStateManager
@@ -64,6 +65,7 @@ class SpaceInfoManager {
     window.GameStateManager.addEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
     window.GameStateManager.addEventListener('turnChanged', this.eventHandlers.turnChanged);
     window.GameStateManager.addEventListener('spaceChanged', this.eventHandlers.spaceChanged);
+    window.GameStateManager.addEventListener('playerMoved', this.eventHandlers.playerMoved);
     
     console.log('SpaceInfoManager: Event listeners registered successfully');
   }
@@ -112,6 +114,21 @@ class SpaceInfoManager {
     const currentPlayer = window.GameStateManager.getCurrentPlayer();
     if (currentPlayer && event.data && event.data.spaceId) {
       this.resetButtonsForSpace(currentPlayer.id, event.data.spaceId);
+    }
+  }
+  
+  /**
+   * Handle playerMoved events from GameStateManager
+   * @param {Object} event - The playerMoved event object
+   */
+  handlePlayerMovedEvent(event) {
+    console.log('SpaceInfoManager: Handling playerMoved event');
+    
+    // Player has moved to a new space, reset buttons for the new space
+    const currentPlayer = window.GameStateManager.getCurrentPlayer();
+    if (currentPlayer && event.data && event.data.toSpaceId) {
+      console.log('SpaceInfoManager: Player moved to new space, resetting buttons for space:', event.data.toSpaceId);
+      this.resetButtonsForSpace(currentPlayer.id, event.data.toSpaceId);
     }
   }
   

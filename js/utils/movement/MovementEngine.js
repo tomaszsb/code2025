@@ -1043,22 +1043,18 @@ class MovementEngine {
           }
           
           if (spaceExists && !this.conflictsWithSingleChoice(player, spaceName)) {
-            // CRITICAL FIX: Generate proper visit-type-aware space ID for dice movements
+            // SIMPLIFIED: Use space name directly as ID - no conversion needed
             const visitType = this.getVisitType(player, { name: spaceName });
-            const properSpaceId = spaceName
-              .replace(/[^\w\s-]/g, '')
-              .replace(/\s+/g, '-')
-              .toLowerCase() + '-' + visitType.toLowerCase();
               
             movements.push({
-              id: properSpaceId, // Use visit-type-aware ID
+              id: spaceName, // Use space name directly from CSV
               name: spaceName, // Use the verified space name directly
               type: this.getSpaceType(spaceName),
               description: option,
               visitType: visitType,
               fromDiceRoll: true
             });
-            console.log('MovementEngine: Added dice movement option:', spaceName, 'with ID:', properSpaceId);
+            console.log('MovementEngine: Added dice movement option:', spaceName, 'with ID:', spaceName);
           } else {
             console.log('MovementEngine: Rejected dice option:', spaceName, 'exists:', spaceExists);
           }
@@ -1092,22 +1088,18 @@ class MovementEngine {
         }
         
         if (spaceExists && !this.conflictsWithSingleChoice(player, spaceName)) {
-          // CRITICAL FIX: Generate proper visit-type-aware space ID for single dice movements
+          // SIMPLIFIED: Use space name directly as ID - no conversion needed
           const visitType = this.getVisitType(player, { name: spaceName });
-          const properSpaceId = spaceName
-            .replace(/[^\w\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .toLowerCase() + '-' + visitType.toLowerCase();
             
           movements.push({
-            id: properSpaceId, // Use visit-type-aware ID
+            id: spaceName, // Use space name directly from CSV
             name: spaceName, // Use the verified space name directly
             type: this.getSpaceType(spaceName),
             description: `Dice Result: ${outcome}`,
             visitType: visitType,
             fromDiceRoll: true
           });
-          console.log('MovementEngine: Added single dice movement:', spaceName, 'with ID:', properSpaceId);
+          console.log('MovementEngine: Added single dice movement:', spaceName, 'with ID:', spaceName);
         } else {
           console.log('MovementEngine: Rejected single dice option:', spaceName, 'exists:', spaceExists);
         }
@@ -1194,15 +1186,11 @@ class MovementEngine {
               
               // Validate that this is a real space name
               if (this.gameStateManager.spaces.some(s => s.space_name === spaceName)) {
-                // CRITICAL FIX: Generate proper visit-type-aware space ID for original space movements
+                // SIMPLIFIED: Use space name directly as ID - no conversion needed
                 const visitType = this.getVisitType(player, { name: spaceName });
-                const properSpaceId = spaceName
-                  .replace(/[^\w\s-]/g, '')
-                  .replace(/\s+/g, '-')
-                  .toLowerCase() + '-' + visitType.toLowerCase();
                   
                 movements.push({
-                  id: properSpaceId, // Use visit-type-aware ID
+                  id: spaceName, // Use space name directly from CSV
                   name: spaceName,
                   type: 'standard',
                   description: `Continue: ${origDestStr}`,
@@ -1210,7 +1198,7 @@ class MovementEngine {
                   fromOriginalSpace: true,
                   originalSpaceName: player.previousSpace
                 });
-                console.log('MovementEngine: Added original space movement:', spaceName, 'with ID:', properSpaceId);
+                console.log('MovementEngine: Added original space movement:', spaceName, 'with ID:', spaceName);
               } else {
                 console.log('MovementEngine: Space not found for original movement:', spaceName);
               }
@@ -1235,21 +1223,17 @@ class MovementEngine {
       // Validate that this is a real space name
       const spaceExists = this.gameStateManager.spaces.some(s => s.space_name === spaceName);
       if (spaceExists) {
-        // CRITICAL FIX: Generate proper visit-type-aware space ID
+        // SIMPLIFIED: Use space name directly as ID - no conversion needed
         const visitType = this.getVisitType(player, { name: spaceName });
-        const properSpaceId = spaceName
-          .replace(/[^\w\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .toLowerCase() + '-' + visitType.toLowerCase();
         
         movements.push({
-          id: properSpaceId, // Use visit-type-aware ID
+          id: spaceName, // Use space name directly from CSV
           name: spaceName,
           type: 'standard', 
           description: destStr,
           visitType: visitType
         });
-        console.log('MovementEngine: Added movement:', spaceName, 'with ID:', properSpaceId);
+        console.log('MovementEngine: Added movement:', spaceName, 'with ID:', spaceName);
       } else {
         console.log('MovementEngine: Space not found in game data:', spaceName);
         console.log('MovementEngine: Available space names:', this.gameStateManager.spaces.map(s => s.space_name).slice(0, 10));
@@ -2053,7 +2037,7 @@ class MovementEngine {
       if (nextSpace && !this.hasPlayerVisitedSpace(player, nextSpaceName)) {
         const visitType = this.getVisitType(player, { name: nextSpaceName });
         return [{
-          id: nextSpaceName.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-') + '-' + visitType.toLowerCase(),
+          id: nextSpaceName, // Use space name directly from CSV
           name: nextSpaceName,
           type: 'emergency-fallback',
           description: `${nextSpaceName} - Emergency fallback (incomplete space data)`,

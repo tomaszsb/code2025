@@ -493,35 +493,58 @@ class TurnManager {
     
     // Use setTimeout to ensure React has finished rendering
     this.activePlayerHighlightTimer = setTimeout(() => {
-      try {
-        // Find the token for the current player
-        const currentPlayerTokens = document.querySelectorAll('.player-token.current-player');
-        
-        if (currentPlayerTokens.length === 0) {
-          console.warn('TurnManager: No player token found with current-player class');
-          return;
-        }
-        
-        // Apply enhanced animation class to each token
-        currentPlayerTokens.forEach(token => {
-          // Add a class that triggers attention animation
-          token.classList.add('active-player-enhanced');
-          
-          // Log success
-          console.log('TurnManager: Applied enhanced highlight to active player token');
-        });
-        
-        // Also update player info section if it exists
-        const playerInfos = document.querySelectorAll('.player-info');
-        playerInfos.forEach(info => {
-          if (info.classList.contains('current')) {
-            info.classList.add('active-player-info-enhanced');
-          }
-        });
-      } catch (error) {
-        console.error('TurnManager: Error applying enhanced player highlight:', error);
+      this.findAndHighlightPlayerToken(currentPlayer, 0);
+    }, 250);
+  }
+
+  // Helper method to find and highlight player token with retry logic
+  findAndHighlightPlayerToken = (currentPlayer, retryCount) => {
+    if (retryCount > 3) {
+      console.log('TurnManager: Max retries reached for player token highlighting');
+      return;
+    }
+
+    try {
+      // Find the token for the current player - try multiple selectors
+      let currentPlayerTokens = document.querySelectorAll('.player-token.current-player');
+      
+      // If not found, try alternative selectors
+      if (currentPlayerTokens.length === 0) {
+        currentPlayerTokens = document.querySelectorAll('.current-player');
       }
-    }, 100); // Short delay to ensure DOM is updated
+      if (currentPlayerTokens.length === 0) {
+        currentPlayerTokens = document.querySelectorAll(`[data-player-id="${currentPlayer.id}"]`);
+      }
+      
+      if (currentPlayerTokens.length === 0) {
+        console.log(`TurnManager: Player tokens not ready (attempt ${retryCount + 1}/4), retrying...`);
+        // Retry with exponential backoff
+        setTimeout(() => {
+          this.findAndHighlightPlayerToken(currentPlayer, retryCount + 1);
+        }, 250 * (retryCount + 1));
+        return;
+      }
+
+      // Apply enhanced animation class to each token
+      currentPlayerTokens.forEach(token => {
+        // Add a class that triggers attention animation
+        token.classList.add('active-player-enhanced');
+        
+        // Log success
+        console.log('TurnManager: Applied enhanced highlight to active player token');
+      });
+      
+      // Also update player info section if it exists
+      const playerInfos = document.querySelectorAll('.player-info');
+      playerInfos.forEach(info => {
+        if (info.classList.contains('current')) {
+          info.classList.add('active-player-info-enhanced');
+        }
+      });
+      
+    } catch (error) {
+      console.error('TurnManager: Error applying enhanced player highlight:', error);
+    }
   }
   
   /**

@@ -32,7 +32,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
 
   // Initialize visualization containers for movement effects
   initializeVisualizationContainers = () => {
-    const gameBoard = document.querySelector('.game-board');
+    const gameBoard = document.querySelector('.game-container');
     if (gameBoard && window.PlayerMovementVisualizer) {
       window.PlayerMovementVisualizer.createVisualizationContainers();
     }
@@ -134,17 +134,21 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
             {/* The showSpaceExplorer flag is toggled by GameBoard.handleCloseExplorer and GameBoard.handleOpenExplorer */}
             {this.props.showSpaceExplorer && (
               <div className="space-explorer-container">
-                {window.SpaceExplorer && (
-                  <window.SpaceExplorer 
-                    space={exploredSpace || gameBoard.spaceSelectionManager.getSelectedSpace()}
-                    visitType={exploredSpace ? 
-                      (window.movementEngine && window.movementEngine.hasPlayerVisitedSpace && 
-                       window.movementEngine.hasPlayerVisitedSpace(currentPlayer, exploredSpace.name) ? 'subsequent' : 'first')
-                      : 'first'}
-                    diceRollData={diceRollData}
-                    onClose={gameBoard.spaceExplorerManager.handleCloseExplorer}
-                  />
-                )}
+                {window.SpaceExplorer && (() => {
+                  const spaceToExplore = exploredSpace || gameBoard.spaceSelectionManager?.getSelectedSpace();
+                  // Always render SpaceExplorer but with proper null handling
+                  return (
+                    <window.SpaceExplorer 
+                      space={spaceToExplore || null}
+                      visitType={exploredSpace ? 
+                        (window.movementEngine && window.movementEngine.hasPlayerVisitedSpace && 
+                         window.movementEngine.hasPlayerVisitedSpace(currentPlayer, exploredSpace.space_name || exploredSpace.name) ? 'subsequent' : 'first')
+                        : 'first'}
+                      diceRollData={diceRollData}
+                      onClose={gameBoard.spaceExplorerManager?.handleCloseExplorer}
+                    />
+                  );
+                })()}
               </div>
             )}
             

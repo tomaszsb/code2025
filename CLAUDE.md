@@ -68,16 +68,29 @@ css/dice-animations.css         # 3D dice effects
 - **Event-driven communication** - Use GameStateManager events, not direct calls
 - **CSV-driven logic** - Game rules in data files, not code
 - **React setState pattern** - Always use function form with spread operator
+- **Use CSV data directly** - No transforming space names (see Data Standards below)
+- **Coordinate component updates** - Use componentFinished signals (see Patterns below)
 
 ## 🔧 Common Development Patterns
 
-### Event Communication
+### Coordinated Updates Pattern (CRITICAL)
 ```javascript
-// Listen for events
-GameStateManager.addEventListener('playerMoved', handler);
+// Components signal when they're done updating
+this.setState(newState, () => {
+  GameStateManager.dispatchEvent('componentFinished', {
+    component: 'SpaceInfo',
+    action: 'playerMoved' 
+  });
+  console.log('SpaceInfo: Finished updating');
+});
 
-// Dispatch events  
-GameStateManager.dispatchEvent('gameStateChanged', data);
+// Other components wait for the signal
+GameStateManager.addEventListener('componentFinished', (event) => {
+  if (event.data.component === 'SpaceInfo') {
+    // Now safe to update without causing loops
+    this.updateMyComponent();
+  }
+});
 ```
 
 ### Component Interface Pattern
@@ -107,8 +120,22 @@ this.setState(prevState => ({
 
 ### Property Name Rules
 - **Space Objects**: Use `space.space_name` and `space.phase`
-- **Move Objects**: Use `move.name` for destinations
+- **Move Objects**: Use `move.id = space.space_name` (directly from CSV, no conversions)
 - **Card Objects**: Use `card.card_type` and `card.immediate_effect`
+
+### GameStateManager Events (Complete List)
+- **`playerMoved`** - Player moves to new space (use this for space updates)
+- **`turnChanged`** - Turn switches to new player
+- **`gameStateChanged`** - Major state changes (newGame, etc.)
+- **`spaceSelected`** - User clicks on spaces (exploration)
+- **`componentFinished`** - Component signals completion (prevents loops)
+- **`cardDrawn` / `cardPlayed`** - Card-related actions
+
+### Event Listening Rules
+- **SpaceInfo**: Listen to `playerMoved`, `turnChanged`
+- **SpaceExplorer**: Listen to `componentFinished` from SpaceInfo
+- **TurnManager**: Listen to `turnChanged`, `playerMoved` 
+- **SpaceExplorerManager**: Listen to `playerMoved`
 
 ## 🃏 Card System Facts
 
@@ -139,6 +166,38 @@ this.setState(prevState => ({
 - **Complete Descriptions**: All dice effects and conditional logic properly detailed
 - **Performance Ready**: Optimized for efficient CardManager processing
 
+## 🐛 Troubleshooting Guide
+
+### Space Panels Not Loading
+**Symptoms:** Space panel shows briefly then disappears, or doesn't update when player moves
+**Solutions:**
+- Check event listeners: Ensure components listen to correct events
+- Verify moveId format: Should be exact CSV space_name (e.g., "OWNER-FUND-INITIATION")
+- Check GameStateManager dispatches: Look for `playerMoved` events in console
+- Avoid name transformations: Use CSV data directly, no lowercase/hyphen conversions
+
+### Performance Issues (Rapid Re-rendering)  
+**Symptoms:** Console shows "Multiple renders occurring rapidly" warnings
+**Solutions:**
+- Check for setState in componentDidUpdate (very dangerous)
+- Look for event handler loops: Component A updates → triggers Component B → triggers A again
+- Use componentFinished pattern: Let components signal when they're done
+- Add processing flags: `this.isProcessing` to prevent concurrent operations
+
+### DOM Element Not Found Errors
+**Symptoms:** "No player token found" or similar DOM query failures
+**Solutions:**
+- Add setTimeout delays: Wait 250ms+ for React rendering to complete
+- Use multiple fallback selectors: Try `.player-token.current-player`, then `.current-player`, etc.
+- Check component mounting order: Ensure UI components load before trying to find elements
+
+### Data Resolution Errors
+**Symptoms:** "Could not resolve space for moveId" errors
+**Solutions:**
+- Use CSV space names directly: No transforming "OWNER-FUND-INITIATION" to "owner-fund-initiation-first"
+- Keep visit type separate: Handle "First"/"Subsequent" as metadata, not part of ID
+- Check space lookup logic: Ensure move.id matches space.space_name exactly
+
 ## 🚀 Quick References
 
 ### Documentation
@@ -147,16 +206,14 @@ this.setState(prevState => ({
 - **Player rules**: See `docs/PLAYER_GUIDE.md`
 - **History**: See `docs/CHANGELOG.md`
 
-### Debug Features
+### Debug & Performance Features
 - Console logging with "beginning/finished" patterns
-- Component version tracking
+- Component version tracking  
 - URL params: `?debug=true&logLevel=debug`
-
-### Performance Notes
+- componentFinished events for coordinated updates
 - Efficient card lookups for 404-card dataset
-- Professional animation systems (CardAnimations.js, PlayerMovementVisualizer.js)
-- Memory cleanup for event listeners
-- Works on mobile + desktop
+- Professional animation systems with memory cleanup
+- Mobile + desktop compatibility
 
 ---
 

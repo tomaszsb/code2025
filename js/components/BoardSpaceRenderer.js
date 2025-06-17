@@ -175,6 +175,7 @@ window.BoardSpaceRenderer = {
       <div 
         key={space.space_name} 
         className={classes.join(' ')}
+        data-space-id={space.space_name}
         onClick={() => onSpaceClick && onSpaceClick(space.space_name)}
       >
         {/* Space type indicator */}
@@ -245,6 +246,7 @@ window.BoardSpaceRenderer = {
                 <div 
                   key={player.id}
                   className={`player-token ${isCurrentPlayer ? 'current-player' : ''} ${animationClass}`}
+                  data-player-id={player.id}
                   style={{ backgroundColor: player.color }}
                   title={player.name}
                 >

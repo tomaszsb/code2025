@@ -58,7 +58,7 @@ window.StaticPlayerStatus = class StaticPlayerStatus extends React.Component {
     this.logDebug('Capturing player status');
     const { player, space } = this.props;
     if (!player || !space) {
-      this.logWarn('Missing player or space props, skipping status capture');
+      this.logDebug('Missing player or space props, skipping status capture - will retry when props are available');
       return;
     }
     

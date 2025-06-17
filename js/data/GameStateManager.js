@@ -45,7 +45,8 @@ class GameStateManager {
       'turnChanged': [],
       'gameStateChanged': [],
       'cardDrawn': [],
-      'cardPlayed': []
+      'cardPlayed': [],
+      'componentFinished': []  // NEW: For coordinated component updates
     };
     
     console.log('GameStateManager: Constructor completed');

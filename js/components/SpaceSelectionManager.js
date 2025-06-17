@@ -461,11 +461,9 @@ class SpaceSelectionManager {
     if (spaceData) {
       console.log('SpaceSelectionManager: Found space by exact space_name match:', spaceData.space_name);
     } else {
-      console.log('SpaceSelectionManager: Exact ID match failed, attempting visit-type aware resolution');
+      console.log('SpaceSelectionManager: Exact space_name match failed, attempting visit type resolution');
       
-      // LOGIC SPACE FIX: When logic spaces pass space names instead of IDs
-      // We need to determine the correct visit type and construct the proper ID
-      
+      // SIMPLIFIED: Since moveId is now the space name directly, just determine visit type
       const currentPlayer = window.GameStateManager.getCurrentPlayer();
       if (!currentPlayer) {
         console.error('SpaceSelectionManager: No current player for visit-type resolution');
@@ -474,16 +472,12 @@ class SpaceSelectionManager {
       
       // Determine if player has visited this space before
       const hasVisited = this.hasPlayerVisitedSpace(currentPlayer, moveId);
-      const visitType = hasVisited ? 'subsequent' : 'first';
+      const visitType = hasVisited ? 'Subsequent' : 'First';
       
       console.log(`SpaceSelectionManager: Player ${currentPlayer.name} ${hasVisited ? 'has' : 'has not'} visited ${moveId} before`);
       console.log(`SpaceSelectionManager: Using visit type: ${visitType}`);
       
-      // Construct the expected space ID format
-      const expectedSpaceId = moveId.toLowerCase().replace(/\s+/g, '-') + '-' + visitType;
-      console.log('SpaceSelectionManager: Looking for space ID:', expectedSpaceId);
-      
-      // Find space with the constructed name and visit type
+      // Find space with the space name and visit type
       spaceData = this.gameBoard.state.spaces.find(space => 
         space.space_name === moveId && space.visit_type === visitType
       );

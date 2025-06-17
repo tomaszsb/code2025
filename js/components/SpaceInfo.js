@@ -34,7 +34,9 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     this.eventHandlers = {
       resetButtons: this.handleResetButtons.bind(this),
       turnChanged: this.handleTurnChanged.bind(this),
-      spaceChanged: this.handleSpaceChanged.bind(this)
+      spaceChanged: this.handleSpaceChanged.bind(this),
+      spaceSelected: this.handleSpaceSelected.bind(this),
+      playerMoved: this.handlePlayerMoved.bind(this)
     };
     
     console.log('SpaceInfo: Constructor completed');
@@ -50,6 +52,8 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     if (window.GameStateManager) {
       window.GameStateManager.addEventListener('turnChanged', this.eventHandlers.turnChanged);
       window.GameStateManager.addEventListener('spaceChanged', this.eventHandlers.spaceChanged);
+      window.GameStateManager.addEventListener('spaceSelected', this.eventHandlers.spaceSelected);
+      window.GameStateManager.addEventListener('playerMoved', this.eventHandlers.playerMoved);
     }
     
     // Check manager availability
@@ -75,6 +79,8 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     if (window.GameStateManager) {
       window.GameStateManager.removeEventListener('turnChanged', this.eventHandlers.turnChanged);
       window.GameStateManager.removeEventListener('spaceChanged', this.eventHandlers.spaceChanged);
+      window.GameStateManager.removeEventListener('spaceSelected', this.eventHandlers.spaceSelected);
+      window.GameStateManager.removeEventListener('playerMoved', this.eventHandlers.playerMoved);
     }
   }
   
@@ -95,8 +101,48 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
   // Handle space change events
   handleSpaceChanged() {
     console.log('SpaceInfo: Handling space changed event');
+    console.log('SpaceInfo: Current space prop:', this.props.space?.space_name);
+    console.log('SpaceInfo: Current visit type:', this.props.visitType);
+    // Force a re-render and signal completion
+    this.setState(prevState => ({ renderKey: prevState.renderKey + 1 }), () => {
+      // Signal that SpaceInfo has finished updating
+      if (window.GameStateManager) {
+        window.GameStateManager.dispatchEvent('componentFinished', {
+          component: 'SpaceInfo',
+          action: 'spaceChanged'
+        });
+        console.log('SpaceInfo: Finished handling space changed event');
+      }
+    });
+  }
+  
+  // Handle space selection events
+  handleSpaceSelected(event) {
+    console.log('SpaceInfo: Handling space selected event', event.data);
+    if (event.data && event.data.spaceData) {
+      console.log('SpaceInfo: New space selected:', event.data.spaceData.space_name);
+    }
     // Force a re-render
     this.setState(prevState => ({ renderKey: prevState.renderKey + 1 }));
+  }
+  
+  // Handle player movement events
+  handlePlayerMoved(event) {
+    console.log('SpaceInfo: Handling player moved event', event.data);
+    if (event.data && event.data.toSpaceId) {
+      console.log('SpaceInfo: Player moved to space:', event.data.toSpaceId);
+    }
+    // Force a re-render and signal completion
+    this.setState(prevState => ({ renderKey: prevState.renderKey + 1 }), () => {
+      // Signal that SpaceInfo has finished updating
+      if (window.GameStateManager) {
+        window.GameStateManager.dispatchEvent('componentFinished', {
+          component: 'SpaceInfo',
+          action: 'playerMoved'
+        });
+        console.log('SpaceInfo: Finished handling player moved event');
+      }
+    });
   }
   
   // Get CSS class for space phase using SpaceInfoUtils
@@ -120,8 +166,10 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
       isRollingDice
     } = this.props;
     
+    console.log('SpaceInfo render - space:', space?.space_name, 'visitType:', visitType, 'renderKey:', renderKey);
     console.log('SpaceInfo render - diceRoll:', diceRoll, 'diceOutcomes:', diceOutcomes);
     console.log('SpaceInfo render - availableMoves:', availableMoves?.length || 0, 'onMoveSelect:', !!onMoveSelect);
+    console.log('SpaceInfo render - space object keys:', space ? Object.keys(space) : 'no space');
     
     // Expose current props globally for MovementEngine synchronization
     window.currentSpaceInfoProps = { diceRoll, diceOutcomes, hasRolledDice, availableMoves };

@@ -35,10 +35,10 @@ window.PlayerMovementVisualizer = {
   
   // Create overlay containers for visual effects
   createVisualizationContainers: function() {
-    const gameBoard = document.querySelector('.game-board');
+    const gameBoard = document.querySelector('.game-container');
     if (!gameBoard) {
-      console.warn('PlayerMovementVisualizer: Game board not found, deferring container creation');
-      return;
+      console.log('PlayerMovementVisualizer: Game container not found, will retry when needed');
+      return false;
     }
     
     // Create trail container
@@ -61,6 +61,9 @@ window.PlayerMovementVisualizer = {
       predictionContainer.className = 'path-prediction-container';
       gameBoard.appendChild(predictionContainer);
     }
+    
+    console.log('PlayerMovementVisualizer: Visualization containers created successfully');
+    return true;
   },
   
   // Register event listeners for movement tracking
@@ -99,11 +102,31 @@ window.PlayerMovementVisualizer = {
   
   // Create animated movement trail
   createMovementTrail: function(player, fromSpace, toSpace) {
+    // Ensure containers exist first
+    if (!this.createVisualizationContainers()) {
+      // Retry after React rendering completes
+      setTimeout(() => {
+        this.createMovementTrail(player, fromSpace, toSpace);
+      }, 500);
+      return;
+    }
+    
     const fromElement = document.querySelector(`[data-space-id="${fromSpace}"]`);
     const toElement = document.querySelector(`[data-space-id="${toSpace}"]`);
     
     if (!fromElement || !toElement) {
-      console.warn('PlayerMovementVisualizer: Could not find space elements for trail creation');
+      console.log('PlayerMovementVisualizer: Space elements not ready, will retry trail creation');
+      // Retry after a short delay to allow React rendering
+      setTimeout(() => {
+        const retryFromElement = document.querySelector(`[data-space-id="${fromSpace}"]`);
+        const retryToElement = document.querySelector(`[data-space-id="${toSpace}"]`);
+        
+        if (retryFromElement && retryToElement) {
+          this.createMovementTrail(player, fromSpace, toSpace);
+        } else {
+          console.log('PlayerMovementVisualizer: Space elements still not available after retry');
+        }
+      }, 250);
       return;
     }
     

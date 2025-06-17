@@ -52,12 +52,15 @@ class SpaceExplorer extends React.Component {
   componentDidMount() {
     console.log('SpaceExplorer: componentDidMount method is being used');
     
-    // Process dice data if props are available
-    this.processDiceDataFromProps();
+    // Process dice data only if space prop is available to prevent unnecessary state updates
+    if (this.props.space) {
+      this.processDiceDataFromProps();
+    }
     
     // Register event listeners with GameStateManager
     if (window.GameStateManager) {
       window.GameStateManager.addEventListener('gameStateChanged', this.handleGameStateChange);
+      window.GameStateManager.addEventListener('componentFinished', this.handleComponentFinished.bind(this));
     } else {
       console.warn('SpaceExplorer: GameStateManager not available, cannot register events');
     }
@@ -71,21 +74,58 @@ class SpaceExplorer extends React.Component {
     
     // Only process events that might affect explorer content
     if (event.data && ['playerMoved', 'cardDrawn', 'cardPlayed', 'newGame'].includes(event.data.changeType)) {
-      // Reprocess dice data when relevant game state changes
-      this.processDiceDataFromProps();
+      // Prevent processing if already processing to avoid render loops
+      if (this.isProcessingData) {
+        console.log('SpaceExplorer: Already processing data, skipping gameStateChange handling');
+        return;
+      }
+      
+      // Use setTimeout to prevent rapid successive updates
+      setTimeout(() => {
+        if (!this.isProcessingData) {
+          this.processDiceDataFromProps();
+        }
+      }, 50); // Small delay to debounce rapid events
     }
     
     console.log('SpaceExplorer: handleGameStateChange method completed');
+  }
+  
+  // NEW: Handler for componentFinished events - implements the "done" signal pattern
+  handleComponentFinished(event) {
+    console.log('SpaceExplorer: Received componentFinished signal from', event.data.component);
+    
+    // Only react to SpaceInfo finishing specific actions
+    if (event.data.component === 'SpaceInfo' && 
+        ['spaceChanged', 'playerMoved'].includes(event.data.action)) {
+      
+      console.log('SpaceExplorer: SpaceInfo finished updating, now safe to update explorer');
+      
+      // Now it's safe to update without causing loops
+      if (!this.isProcessingData) {
+        setTimeout(() => {
+          this.processDiceDataFromProps();
+        }, 50); // Small delay to ensure everything is settled
+      }
+    }
   }
   
   // Process dice data from props
   processDiceDataFromProps() {
     console.log('SpaceExplorer: processDiceDataFromProps method is being used');
     
+    // BUGFIX: Prevent unnecessary state updates to avoid render loops
+    if (this.isProcessingData) {
+      console.log('SpaceExplorer: Already processing, skipping to prevent loops');
+      return;
+    }
+    
+    this.isProcessingData = true;
+    
     const { space, diceRollData, visitType } = this.props;
     
-    if (space && diceRollData) {
-      try {
+    try {
+      if (space && diceRollData) {
         // Process dice data and update state
         const processedData = this.processDiceData(space, diceRollData, visitType);
         
@@ -93,56 +133,72 @@ class SpaceExplorer extends React.Component {
         const dataHasChanged = JSON.stringify(processedData) !== JSON.stringify(this.state.processedDiceData);
         
         if (dataHasChanged || !this.state.diceDataProcessed) {
+          console.log('SpaceExplorer: Updating state with new processed data');
           this.setState({ 
             processedDiceData: processedData,
             diceDataProcessed: true
           });
+        } else {
+          console.log('SpaceExplorer: Data unchanged, skipping state update');
         }
-      } catch (error) {
-        console.error('SpaceExplorer: Error processing dice data:', error.message);
-        
-        // Only update state if necessary
+      } else {
+        // Only clear processed data if we actually have data to clear
+        // This prevents unnecessary setState calls when space is already null/undefined
         if (this.state.processedDiceData !== null || !this.state.diceDataProcessed) {
+          console.log('SpaceExplorer: Clearing processed data');
           this.setState({ 
             processedDiceData: null,
             diceDataProcessed: true
           });
+        } else {
+          console.log('SpaceExplorer: Already in cleared state, skipping setState');
         }
       }
-    } else if (this.state.processedDiceData !== null || !this.state.diceDataProcessed) {
-      // Clear processed data if space or diceRollData is not available
-      // Only update state if it's changing
-      this.setState({ 
-        processedDiceData: null,
-        diceDataProcessed: true
-      });
+    } catch (error) {
+      console.error('SpaceExplorer: Error processing dice data:', error.message);
+      
+      // Only update state if necessary
+      if (this.state.processedDiceData !== null || !this.state.diceDataProcessed) {
+        this.setState({ 
+          processedDiceData: null,
+          diceDataProcessed: true
+        });
+      }
+    } finally {
+      // Always reset processing flag
+      setTimeout(() => {
+        this.isProcessingData = false;
+      }, 100);
     }
     
     console.log('SpaceExplorer: processDiceDataFromProps method completed');
   }
   
+  // Prevent unnecessary re-renders when props haven't meaningfully changed
+  shouldComponentUpdate(nextProps, nextState) {
+    // Check if space prop has actually changed (not just undefined vs null)
+    const spaceChanged = (this.props.space?.space_name) !== (nextProps.space?.space_name);
+    const visitTypeChanged = this.props.visitType !== nextProps.visitType;
+    const diceRollDataChanged = this.props.diceRollData !== nextProps.diceRollData;
+    const stateChanged = this.state.processedDiceData !== nextState.processedDiceData || 
+                        this.state.diceDataProcessed !== nextState.diceDataProcessed ||
+                        this.state.hasError !== nextState.hasError;
+    
+    const shouldUpdate = spaceChanged || visitTypeChanged || diceRollDataChanged || stateChanged;
+    
+    if (!shouldUpdate) {
+      console.log('SpaceExplorer: Preventing unnecessary re-render - no meaningful changes');
+    }
+    
+    return shouldUpdate;
+  }
+
   // Component lifecycle method - called when props or state change
   componentDidUpdate(prevProps, prevState) {
     console.log('SpaceExplorer: componentDidUpdate method is being used');
     
-    // Only reprocess dice data if relevant props have changed AND we're not already processing
-    if (
-      !this.isProcessingData && (
-        this.props.space !== prevProps.space || 
-        this.props.diceRollData !== prevProps.diceRollData ||
-        this.props.visitType !== prevProps.visitType ||
-        (!this.state.diceDataProcessed && prevState.diceDataProcessed !== this.state.diceDataProcessed)
-      )
-    ) {
-      console.log('SpaceExplorer: Relevant props changed, reprocessing dice data');
-      this.isProcessingData = true;
-      
-      // Use setTimeout to break the potential render cycle
-      setTimeout(() => {
-        this.processDiceDataFromProps();
-        this.isProcessingData = false;
-      }, 0);
-    }
+    // NEW: Using coordinated "done" signal pattern instead of automatic processing
+    // SpaceExplorer now waits for componentFinished signals before updating
     
     // Performance tracking for debugging
     this.renderCount++;
@@ -151,6 +207,8 @@ class SpaceExplorer extends React.Component {
       const renderInterval = currentTime - this.lastRenderTime;
       if (renderInterval < 100) {
         console.warn('SpaceExplorer: Multiple renders occurring rapidly, interval:', renderInterval.toFixed(2), 'ms');
+        console.warn('SpaceExplorer: Props changed - space:', this.props.space?.space_name, 'vs', prevProps.space?.space_name);
+        console.warn('SpaceExplorer: State processedData changed:', this.state.processedDiceData !== prevState.processedDiceData);
       }
     }
     this.lastRenderTime = currentTime;
@@ -165,6 +223,7 @@ class SpaceExplorer extends React.Component {
     // Remove GameStateManager event listeners
     if (window.GameStateManager) {
       window.GameStateManager.removeEventListener('gameStateChanged', this.handleGameStateChange);
+      window.GameStateManager.removeEventListener('componentFinished', this.handleComponentFinished);
     }
     
     // Clear any timers or resources if used

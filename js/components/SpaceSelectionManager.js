@@ -581,8 +581,13 @@ class SpaceSelectionManager {
    */
   getSelectedSpace = () => {
     const { selectedSpace, spaces } = this.gameBoard.state;
-    const space = spaces.find(space => space.space_name === selectedSpace);
-    console.log('SpaceSelectionManager: Getting selected space for info display:', space?.space_name || 'None');
+    // Look for space using both space_name and id for compatibility
+    const space = spaces.find(space => 
+      space.space_name === selectedSpace || 
+      space.name === selectedSpace || 
+      space.id === selectedSpace
+    );
+    console.log('SpaceSelectionManager: Getting selected space for info display:', space?.space_name || space?.name || 'None');
     return space;
   }
   
@@ -627,7 +632,7 @@ class SpaceSelectionManager {
     
     if (!currentPlayer || !selectedSpace) return true;
     
-    return !this.hasPlayerVisitedSpace(currentPlayer, selectedSpace.name);
+    return !this.hasPlayerVisitedSpace(currentPlayer, selectedSpace.space_name || selectedSpace.name);
   }
   
   /**

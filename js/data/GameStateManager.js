@@ -131,8 +131,12 @@ class GameStateManager {
       const spaceObj = {
         id: normalizedId,
         name: spaceName,
+        space_name: spaceName,  // CRITICAL FIX: Add space_name property for SpaceExplorer compatibility
         type: (row['phase'] || 'Default').toUpperCase(),
+        phase: (row['phase'] || 'Default').toUpperCase(),  // Add phase property for SpaceExplorer
         description: row['Event'] || '',
+        action: row['Action'] || '',     // Map CSV Action column for SpaceExplorer
+        outcome: row['Outcome'] || '',   // Map CSV Outcome column for SpaceExplorer
         nextSpaces: nextSpaces,
         visitType: (() => {
           const visitType = row['visit_type'] || 'First';
@@ -161,17 +165,19 @@ class GameStateManager {
         path: row['path'] || '',
         visit_type: row['visit_type'] || '',
         event: row['Event'] || '',  // CSV uses PascalCase
-        action: row['Action'] || '',  // CSV uses PascalCase
-        outcome: row['Outcome'] || '',  // CSV uses PascalCase
-        time: row['Time'] || '',  // CSV uses PascalCase
+        time: row['Time'] || '',  // CSV uses PascalCase  
         fee: row['Fee'] || '',  // CSV uses PascalCase
         
-        // Also preserve original CSV column names for backward compatibility
+        // Map card columns with proper case handling for SpaceExplorer
         'W Card': row['w_card'] || '',
         'B Card': row['b_card'] || '',
         'I Card': row['i_card'] || '',
         'L card': row['l_card'] || '',
         'E Card': row['e_card'] || '',
+        
+        // Also provide Time and Fee for SpaceExplorer resource section
+        'Time': row['Time'] || '',
+        'Fee': row['Fee'] || '',
         
         visit: {
           first: {
@@ -445,7 +451,7 @@ class GameStateManager {
     // Add the current space to visited spaces if not already there
     if (currentSpace) {
     // CRITICAL FIX: Use extractSpaceName to properly normalize the space name
-    const currentSpaceName = window.movementEngine?.extractSpaceName?.(currentSpace.name) || currentSpace.name;
+    const currentSpaceName = window.movementEngine?.extractSpaceName?.(currentSpace.space_name) || currentSpace.space_name;
     
     // Initialize visitedSpaces as Set if it's still an array (for backward compatibility)
     if (!player.visitedSpaces || Array.isArray(player.visitedSpaces)) {
@@ -470,14 +476,14 @@ class GameStateManager {
         timeToAdd = parseInt(currentSpace.Time, 10);
         // If parsing fails, default to 0
         if (isNaN(timeToAdd)) {
-          console.log('GameStateManager: Invalid time value in space', currentSpace.name, ':', currentSpace.Time);
+          console.log('GameStateManager: Invalid time value in space', currentSpace.space_name, ':', currentSpace.Time);
           timeToAdd = 0;
         }
       }
       
       // Add time to player's counter
       if (timeToAdd > 0) {
-        console.log('GameStateManager: Adding', timeToAdd, 'days to player time when leaving', currentSpace.name);
+        console.log('GameStateManager: Adding', timeToAdd, 'days to player time when leaving', currentSpace.space_name);
         player.resources.time += timeToAdd;
       }
     }
@@ -1225,7 +1231,7 @@ class GameStateManager {
     // Check space restrictions
     if (card.space_restriction) {
       const currentSpace = this.getCurrentSpace();
-      if (currentSpace && card.space_restriction !== currentSpace.name) {
+      if (currentSpace && card.space_restriction !== currentSpace.space_name) {
         return false;
       }
     }
@@ -1560,10 +1566,6 @@ class GameStateManager {
     }
   }
 
-  // Getter for gameStarted property
-  get gameStarted() {
-    return this._gameStarted;
-  }
 }
 
 // Create instance and export

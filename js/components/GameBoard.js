@@ -30,7 +30,7 @@ window.GameBoard = class GameBoard extends React.Component {
       showDiceRoll: false,     // Flag to show/hide dice roll component
       diceRollSpace: null,     // Space data for dice rolling
       diceRollVisitType: null, // Visit type for dice rolling
-      diceRollData: window.diceRollData || [], // Dice roll outcome data from CSV
+      diceRollData: GameState.diceRollData || window.diceRollData || [], // Dice roll outcome data from CSV
       showCardDisplay: false,   // Flag to show/hide card display component
       cardDrawAnimation: false, // Flag for card draw animation
       newCardData: null,       // Data for newly drawn card
@@ -227,9 +227,12 @@ window.GameBoard = class GameBoard extends React.Component {
   }
   
   render() {
+    // Create reference to BoardRenderer for JSX compatibility
+    const BoardRenderer = window.BoardRenderer;
+    
     // Use the BoardRenderer component to handle the rendering
     return (
-      <window.BoardRenderer
+      <BoardRenderer
         gameBoard={this}
         gameEnded={GameState.gameEnded}
         players={this.state.players}

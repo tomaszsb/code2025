@@ -156,7 +156,7 @@ class SpaceExplorerManager {
     const currentPlayer = window.GameStateManager.getCurrentPlayer();
     const currentSpaceId = currentPlayer ? currentPlayer.position : null;
     const currentSpace = currentSpaceId ? window.GameStateManager.findSpaceById(currentSpaceId) : null;
-    const spaceName = currentSpace ? currentSpace.name : '';
+    const spaceName = currentSpace ? (currentSpace.space_name || currentSpace.name) : '';
     
     // Dispatch event using GameStateManager
     if (window.GameStateManager) {

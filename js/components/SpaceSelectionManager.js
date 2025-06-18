@@ -386,10 +386,20 @@ class SpaceSelectionManager {
     console.log('SpaceSelectionManager: Space clicked:', spaceId);
     
     // Get current state
-    const { availableMoves, spaces } = this.gameBoard.state;
+    const { availableMoves, spaces, currentPlayerIndex, players } = this.gameBoard.state;
+    const currentPlayer = players[currentPlayerIndex];
     
-    // Find the clicked space
-    const clickedSpace = spaces.find(space => space.space_name === spaceId);
+    // Find the clicked space with correct visit type for space explorer
+    // Determine if current player has visited this space before
+    const hasVisited = this.hasPlayerVisitedSpace(currentPlayer, spaceId);
+    const visitType = hasVisited ? 'Subsequent' : 'First';
+    
+    console.log('SpaceSelectionManager: Player has visited', spaceId, ':', hasVisited, '- Using visit type:', visitType);
+    
+    // Find space with correct visit type for exploration
+    const clickedSpace = spaces.find(space => 
+      space.space_name === spaceId && space.visit_type === visitType
+    ) || spaces.find(space => space.space_name === spaceId); // Fallback to any version
     
     // Always update exploredSpace to the clicked space for space explorer
     const exploredSpaceData = clickedSpace;

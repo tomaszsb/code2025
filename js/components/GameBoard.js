@@ -82,6 +82,11 @@ window.GameBoard = class GameBoard extends React.Component {
       });
       console.log("GameBoard: Set middle column to current player's space:", currentPlayer.position);
       console.log("GameBoard: Captured initial player and space status", playerSnapshot, spaceSnapshot);
+      
+      // Update available moves for the current space after setting selectedSpace
+      setTimeout(() => {
+        this.spaceSelectionManager.updateAvailableMoves();
+      }, 100);
     } else {
       console.log("GameBoard: No current player available during mount");
     }

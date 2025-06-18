@@ -64,7 +64,7 @@ css/dice-animations.css         # 3D dice effects
 ```
 
 ### Development Rules
-- **No localStorage/sessionStorage** - Not supported in Claude.ai artifacts
+- **No localStorage/sessionStorage** - Not supported in Claude.ai artifacts (but works in local development)
 - **Event-driven communication** - Use GameStateManager events, not direct calls
 - **CSV-driven logic** - Game rules in data files, not code
 - **React setState pattern** - Always use function form with spread operator
@@ -168,35 +168,36 @@ this.setState(prevState => ({
 
 ## 🐛 Troubleshooting Guide
 
-### Space Panels Not Loading
-**Symptoms:** Space panel shows briefly then disappears, or doesn't update when player moves
-**Solutions:**
-- Check event listeners: Ensure components listen to correct events
-- Verify moveId format: Should be exact CSV space_name (e.g., "OWNER-FUND-INITIATION")
-- Check GameStateManager dispatches: Look for `playerMoved` events in console
-- Avoid name transformations: Use CSV data directly, no lowercase/hyphen conversions
+### CSV Field Name Mismatches
+**Symptoms:** Components show space names but missing content, empty descriptions, no movement choices
+**Cause:** Components using incorrect field names that don't match CSV headers
+**Solution:** Always check CSV headers in `data/Spaces.csv` for exact field names:
+- Use `space.Event` (not `space.description`)
+- Use `space.Action` (not `space.action`) 
+- Use `space.space_name` (not `space.name`)
+- Use `'w_card'` (not `'W Card'`)
 
-### Performance Issues (Rapid Re-rendering)  
+### Visit Type Resolution Issues
+**Symptoms:** Players see wrong space content (First content when should be Subsequent)
+**Cause:** Space lookups not accounting for visit history
+**Solution:** Always determine visit type before space lookup:
+```javascript
+const hasVisited = player.visitedSpaces?.has(spaceName);
+const visitType = hasVisited ? 'Subsequent' : 'First';
+const space = spaces.find(s => s.space_name === spaceName && s.visit_type === visitType);
+```
+
+### Performance Issues (Component Loops)
 **Symptoms:** Console shows "Multiple renders occurring rapidly" warnings
-**Solutions:**
-- Check for setState in componentDidUpdate (very dangerous)
-- Look for event handler loops: Component A updates → triggers Component B → triggers A again
-- Use componentFinished pattern: Let components signal when they're done
-- Add processing flags: `this.isProcessing` to prevent concurrent operations
-
-### DOM Element Not Found Errors
-**Symptoms:** "No player token found" or similar DOM query failures
-**Solutions:**
-- Add setTimeout delays: Wait 250ms+ for React rendering to complete
-- Use multiple fallback selectors: Try `.player-token.current-player`, then `.current-player`, etc.
-- Check component mounting order: Ensure UI components load before trying to find elements
-
-### Data Resolution Errors
-**Symptoms:** "Could not resolve space for moveId" errors
-**Solutions:**
-- Use CSV space names directly: No transforming "OWNER-FUND-INITIATION" to "owner-fund-initiation-first"
-- Keep visit type separate: Handle "First"/"Subsequent" as metadata, not part of ID
-- Check space lookup logic: Ensure move.id matches space.space_name exactly
+**Solution:** Use componentFinished pattern to prevent event loops:
+```javascript
+this.setState(newState, () => {
+  GameStateManager.dispatchEvent('componentFinished', {
+    component: 'ComponentName',
+    action: 'actionCompleted'
+  });
+});
+```
 
 ## 🚀 Quick References
 
@@ -214,6 +215,48 @@ this.setState(prevState => ({
 - Efficient card lookups for 404-card dataset
 - Professional animation systems with memory cleanup
 - Mobile + desktop compatibility
+
+## 🤖 Puppeteer Testing (For Non-Coders)
+
+**Note**: Project owner is non-technical - keep testing simple and focused
+
+### Quick Testing Patterns
+```javascript
+// Wait for game to load before testing
+await page.waitForFunction(() => window.GameStateManager?.isProperlyInitialized);
+
+// Take screenshots at key points
+await page.screenshot({ name: 'after_player_setup' });
+await page.screenshot({ name: 'game_board_loaded' });
+```
+
+### Key Test Points
+- Player setup completion
+- Game board rendering  
+- Basic movement functionality
+- Card system interaction
+
+## 🔄 Critical Coding Patterns
+
+### Prevent Stack Overflow
+```javascript
+// Always use this setState pattern
+this.setState(prevState => ({ ...prevState, newValue: x }));
+
+// Add processing flags for safety
+if (this.isProcessing) return;
+this.isProcessing = true;
+```
+
+### Safe Event Handling
+```javascript
+// Use componentFinished pattern to prevent loops
+GameStateManager.addEventListener('componentFinished', (event) => {
+  if (event.data.component === 'SpaceInfo') {
+    // Safe to update now
+  }
+});
+```
 
 ---
 

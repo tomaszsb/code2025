@@ -73,13 +73,10 @@ window.PlayerSetup = class PlayerSetup extends React.Component {
       console.log('GameStateManager not yet initialized, setting gameStarted will be handled later');
     }
     
-    // Add slight delay for animation
-    setTimeout(() => {
-      // Notify parent component if provided
-      if (this.props.onSetupComplete) {
-        this.props.onSetupComplete();
-      }
-    }, 800);
+    // Notify parent component immediately - no delay needed
+    if (this.props.onSetupComplete) {
+      this.props.onSetupComplete();
+    }
   }
   
   // Handle starting a new game
@@ -159,13 +156,10 @@ window.PlayerSetup = class PlayerSetup extends React.Component {
       }
     });
     
-    // Add slight delay for animation
-    setTimeout(() => {
-      // Notify parent component if provided
-      if (this.props.onSetupComplete) {
-        this.props.onSetupComplete();
-      }
-    }, 800);
+    // Notify parent component immediately - no delay needed
+    if (this.props.onSetupComplete) {
+      this.props.onSetupComplete();
+    }
   }
   
   // Render player color preview
@@ -190,6 +184,29 @@ window.PlayerSetup = class PlayerSetup extends React.Component {
     const { playerCount, playerNames, playerColors, error, hasSavedGame, showSetupForm, animationPhase } = this.state;
     
     const containerClass = `player-setup-container ${animationPhase}-phase`;
+    
+    // Show loading state when starting the game
+    if (animationPhase === 'starting') {
+      return (
+        <div className={containerClass}>
+          <div className="player-setup-content">
+            <div className="game-logo-container">
+              <img 
+                src="graphics/My ChatGPT image.png" 
+                alt="Project Management Game" 
+                className="game-logo"
+              />
+              <h1 className="game-title">Project Management Game</h1>
+            </div>
+            <div className="loading-game-message">
+              <div className="loading-spinner">🎲</div>
+              <h2>Loading Game...</h2>
+              <p>Setting up your project management adventure!</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
     
     return (
       <div className={containerClass}>

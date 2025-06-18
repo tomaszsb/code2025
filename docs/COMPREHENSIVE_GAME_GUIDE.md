@@ -1,7 +1,7 @@
 # Comprehensive Game Guide
 
 **Project**: Project Management Board Game  
-**Last Updated**: June 11, 2025  
+**Last Updated**: June 18, 2025  
 **Audience**: Players, Developers, and Game Modifiers
 
 > **Note**: For a concise player-only guide, see [PLAYER_GUIDE.md](PLAYER_GUIDE.md)

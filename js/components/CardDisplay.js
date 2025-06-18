@@ -1011,37 +1011,46 @@ window.CardDisplay = class CardDisplay extends React.Component {
         )}
         
         {/* Card detail overlay */}
-        {showCardDetail && selectedCard && (
-          <window.CardDetailView
-            card={selectedCard}
-            onClose={this.handleCloseCardDetail}
-            onPlayCard={this.handlePlayCard}
-            onDiscardCard={this.handleDiscardCard}
-          />
-        )}
+        {showCardDetail && selectedCard && (() => {
+          const CardDetailView = window.CardDetailView;
+          return (
+            <CardDetailView
+              card={selectedCard}
+              onClose={this.handleCloseCardDetail}
+              onPlayCard={this.handlePlayCard}
+              onDiscardCard={this.handleDiscardCard}
+            />
+          );
+        })()}
         
         {/* Card draw animation */}
-        {animateCardDraw && newCardType && newCardData && (
-          <window.CardDrawAnimation 
-            cardType={newCardType} 
-            cardData={newCardData} 
-          />
-        )}
+        {animateCardDraw && newCardType && newCardData && (() => {
+          const CardDrawAnimation = window.CardDrawAnimation;
+          return (
+            <CardDrawAnimation 
+              cardType={newCardType} 
+              cardData={newCardData} 
+            />
+          );
+        })()}
         
         {/* Work card dialog overlay */}
-        {showDiscardDialog && (
-          <window.WorkCardDialog
-            cards={cards}
-            isReplacingWCards={isReplacingWCards}
-            requiredWDiscards={requiredWDiscards}
-            requiredWReplacements={requiredWReplacements}
-            selectedForReplacement={selectedForReplacement}
-            discardedCount={discardedCount}
-            onDialogDiscard={this.handleDialogDiscard}
-            onSelectForReplacement={this.handleSelectForReplacement}
-            onConfirmReplacement={this.handleConfirmReplacement}
-          />
-        )}
+        {showDiscardDialog && (() => {
+          const WorkCardDialog = window.WorkCardDialog;
+          return (
+            <WorkCardDialog
+              cards={cards}
+              isReplacingWCards={isReplacingWCards}
+              requiredWDiscards={requiredWDiscards}
+              requiredWReplacements={requiredWReplacements}
+              selectedForReplacement={selectedForReplacement}
+              discardedCount={discardedCount}
+              onDialogDiscard={this.handleDialogDiscard}
+              onSelectForReplacement={this.handleSelectForReplacement}
+              onConfirmReplacement={this.handleConfirmReplacement}
+            />
+          );
+        })()}
         
         {/* Card limit dialog */}
         {showCardLimitDialog && this.renderCardLimitDialog()}

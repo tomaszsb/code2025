@@ -350,17 +350,12 @@ window.StaticPlayerStatus = class StaticPlayerStatus extends React.Component {
     } catch (error) {
       this.logError('Error in render method:', error);
       
-      // Update state and show the error UI
-      this.setState({
-        hasError: true,
-        errorMessage: error.message || 'Unknown error occurred'
-      });
-      
-      // Return a simple error UI for now (next render will show the full error UI)
+      // DO NOT call setState in render! Instead, return error UI directly
       return (
         <div className="static-player-status error">
           <h3>Rendering Error</h3>
-          <p>Please try again.</p>
+          <p>{error.message || 'Unknown error occurred'}</p>
+          <button onClick={() => this.forceUpdate()}>Retry</button>
         </div>
       );
     }

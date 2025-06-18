@@ -52,7 +52,21 @@
       "Bash(true)",
       "Bash(/home/tomas/.npm-global/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/x64-linux/rg -i \"current.*turn|turn.*panel\" /mnt/d/unravel/current_game/code2025/js --type js -A 5 -B 5)",
       "Bash(awk:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(sudo apt:*)",
+      "Bash(sudo apt install:*)",
+      "Bash(npm install:*)",
+      "Bash(apt list:*)",
+      "Bash(dpkg:*)",
+      "mcp__puppeteer__puppeteer_navigate",
+      "mcp__puppeteer__puppeteer_screenshot",
+      "Bash(pkill:*)",
+      "mcp__puppeteer__puppeteer_evaluate",
+      "Bash(curl:*)",
+      "mcp__puppeteer__puppeteer_fill",
+      "mcp__puppeteer__puppeteer_click",
+      "Bash(npm run lint)"
     ],
     "deny": []
   }

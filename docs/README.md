@@ -6,7 +6,7 @@ A sophisticated web-based board game that teaches project management concepts th
 
 ## 🎮 **Current Status: Mature, Feature-Rich Implementation**
 
-**Version 2.0** - This is a fully functional, production-ready game with advanced features and professional-quality user experience.
+**Version 2.4** - This is a fully functional, production-ready game with advanced features and professional-quality user experience.
 
 ### ✅ **Major Systems Completed**
 - **404-Card System**: Unified card mechanics with basic effects and experimental advanced features
@@ -35,6 +35,8 @@ http://localhost:8000/?debug=true&logLevel=debug
 ```
 
 **No build required** - This is a static web application with browser-based React compilation.
+
+⚠️ **IMPORTANT**: Game MUST be served via HTTP server. Opening `index.html` directly in browser will fail due to CORS restrictions preventing JavaScript module loading.
 
 ## 🎯 **Core Game Features**
 
@@ -230,8 +232,27 @@ The game is designed to be easily modified:
 - **Development Time**: 18+ months of iterative development
 - **Architecture**: Event-driven, data-driven, component-based
 
+## 🔧 **Known Issues & Troubleshooting**
+
+### **Critical Issues**
+- **Player Name Display Bug**: Names may show as "Player 1Alice" instead of "Alice" (visual bug only)
+- **JavaScript Stack Overflow**: May occur during gameplay causing browser freezing - refresh page if encountered
+- **Movement Mechanics**: Clicking spaces highlights but may not move player - use "End Turn" button to confirm moves
+
+### **Setup Issues**
+- **Game Won't Load**: Must use HTTP server, not direct file opening
+- **Blank Screen**: Game may show brief blank screen after "Start Game" - wait 2-3 seconds for loading
+- **Module Loading Errors**: Ensure all JavaScript files are accessible via HTTP server
+
+### **Gameplay Issues**
+- **Infinite Loops**: If game becomes unresponsive, refresh page and restart
+- **Card System**: Some card interactions may trigger stack overflow errors
+- **Movement**: Use available move buttons and "End Turn" to confirm moves
+
+*For comprehensive technical troubleshooting, see [COMPREHENSIVE_GAME_GUIDE.md](docs/COMPREHENSIVE_GAME_GUIDE.md)*
+
 ---
 
 **This project represents a mature, production-ready implementation of an educational board game with professional-quality user experience and clean, maintainable architecture.**
 
-*Last Updated: January 2025*
+*Last Updated: June 18, 2025*

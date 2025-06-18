@@ -564,24 +564,24 @@ class SpaceExplorer extends React.Component {
     console.log('SpaceExplorer: renderSpaceDetails method completed');
     return (
       <>
-        {space.description && (
+        {space.Event && (
           <div className="explorer-section">
-            <h4>Description:</h4>
-            <div className="explorer-description">{space.description}</div>
+            <h4>Event:</h4>
+            <div className="explorer-description">{space.Event}</div>
           </div>
         )}
         
-        {space.action && (
+        {space.Action && (
           <div className="explorer-section">
             <h4>Action:</h4>
-            <div className="explorer-action">{space.action}</div>
+            <div className="explorer-action">{space.Action}</div>
           </div>
         )}
         
-        {space.outcome && (
+        {space.Outcome && (
           <div className="explorer-section">
             <h4>Outcome:</h4>
-            <div className="explorer-outcome">{space.outcome}</div>
+            <div className="explorer-outcome">{space.Outcome}</div>
           </div>
         )}
       </>
@@ -599,13 +599,13 @@ class SpaceExplorer extends React.Component {
       return null;
     }
     
-    // Define card types and their styles
+    // Define card types and their styles - using correct CSV field names
     const cardTypes = [
-      { key: 'W Card', type: 'W', className: 'work-card' },
-      { key: 'B Card', type: 'B', className: 'business-card' },
-      { key: 'I Card', type: 'I', className: 'innovation-card' },
-      { key: 'L card', type: 'L', className: 'leadership-card' },
-      { key: 'E Card', type: 'E', className: 'environment-card' }
+      { key: 'w_card', type: 'W', className: 'work-card' },
+      { key: 'b_card', type: 'B', className: 'business-card' },
+      { key: 'i_card', type: 'I', className: 'innovation-card' },
+      { key: 'l_card', type: 'L', className: 'leadership-card' },
+      { key: 'e_card', type: 'E', className: 'environment-card' }
     ];
     
     // Filter to only cards that have values
@@ -670,6 +670,44 @@ class SpaceExplorer extends React.Component {
       </div>
     );
   }
+
+  // Render movement choices section (space_1, space_2, etc.)
+  renderMovementChoices() {
+    console.log('SpaceExplorer: renderMovementChoices method is being used');
+    
+    const { space } = this.props;
+    
+    if (!space) {
+      console.log('SpaceExplorer: renderMovementChoices method completed with null (no space)');
+      return null;
+    }
+    
+    // Define movement choice fields
+    const choiceFields = ['space_1', 'space_2', 'space_3', 'space_4', 'space_5'];
+    
+    // Filter to only choices that have values
+    const choicesToRender = choiceFields.filter(field => 
+      this.hasValidValue(space[field])
+    );
+    
+    if (choicesToRender.length === 0) {
+      console.log('SpaceExplorer: renderMovementChoices method completed with null (no choices)');
+      return null;
+    }
+    
+    console.log('SpaceExplorer: renderMovementChoices method completed');
+    return (
+      <div className="explorer-choices-section">
+        <h4>Movement Choices:</h4>
+        {choicesToRender.map((field, index) => (
+          <div key={field} className="explorer-choice-item">
+            <span className="choice-number">{index + 1}.</span>
+            <span className="choice-text">{space[field]}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
   
   render() {
     console.log('SpaceExplorer: render method is being used');
@@ -711,6 +749,7 @@ class SpaceExplorer extends React.Component {
           {this.renderSpaceDetails()}
           {this.renderCardSection()}
           {this.renderResourceSection()}
+          {this.renderMovementChoices()}
           {this.renderDiceTable()}
         </div>
       );

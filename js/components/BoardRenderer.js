@@ -88,14 +88,46 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
       return this.renderGameEndScreen(players);
     }
     
-    const currentPlayer = players[currentPlayerIndex];
-    const selectedSpaceObj = spaces.find(space => space.space_name === selectedSpace);
-    // Use spaceSelectionManager instead of directly calling isVisitingFirstTime from gameBoard
-    const visitType = gameBoard.spaceSelectionManager.isVisitingFirstTime() ? 'first' : 'subsequent';
+    // Don't render if spaces haven't loaded yet
+    if (!spaces || spaces.length === 0) {
+      return (
+        <div className="game-container">
+          <div className="loading-message">Loading game data...</div>
+        </div>
+      );
+    }
     
-    // Calculate hasDiceRollSpace by calling the method directly - ensuring fresh evaluation
-    const hasDiceRollSpace = gameBoard.diceManager.hasDiceRollSpace();
-    console.log('BoardRenderer: hasDiceRollSpace evaluated to:', hasDiceRollSpace);
+    const currentPlayer = players[currentPlayerIndex];
+    
+    // Find selected space object with correct visit type
+    let selectedSpaceObj = null;
+    if (selectedSpace && currentPlayer) {
+      // Determine if current player has visited this space before
+      const hasVisited = gameBoard?.spaceSelectionManager?.hasPlayerVisitedSpace && 
+                        gameBoard.spaceSelectionManager.hasPlayerVisitedSpace(currentPlayer, selectedSpace);
+      const visitType = hasVisited ? 'Subsequent' : 'First';
+      
+      // Find space with correct visit type
+      selectedSpaceObj = spaces.find(space => 
+        space.space_name === selectedSpace && space.visit_type === visitType
+      ) || spaces.find(space => space.space_name === selectedSpace); // Fallback to any version
+    }
+    
+    // Find selected space object for rendering
+    // Check if ENG-SCOPE-CHECK exists in spaces
+    const engScopeCheck = spaces.find(s => s.space_name === 'ENG-SCOPE-CHECK');
+    
+    // Use safe checks to prevent infinite recursion
+    const visitType = (gameBoard?.spaceSelectionManager && 
+                      typeof gameBoard.spaceSelectionManager.isVisitingFirstTime === 'function') 
+                      ? (gameBoard.spaceSelectionManager.isVisitingFirstTime() ? 'first' : 'subsequent')
+                      : 'first';
+    
+    // Calculate hasDiceRollSpace with safe checks
+    const hasDiceRollSpace = (gameBoard?.diceManager && 
+                             typeof gameBoard.diceManager.hasDiceRollSpace === 'function')
+                             ? gameBoard.diceManager.hasDiceRollSpace()
+                             : false;
     
     return (
       <div className="game-container">
@@ -135,10 +167,11 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
             {this.props.showSpaceExplorer && (
               <div className="space-explorer-container">
                 {window.SpaceExplorer && (() => {
+                  const SpaceExplorer = window.SpaceExplorer;
                   const spaceToExplore = exploredSpace || gameBoard.spaceSelectionManager?.getSelectedSpace();
                   // Always render SpaceExplorer but with proper null handling
                   return (
-                    <window.SpaceExplorer 
+                    <SpaceExplorer 
                       space={spaceToExplore || null}
                       visitType={exploredSpace ? 
                         (window.movementEngine && window.movementEngine.hasPlayerVisitedSpace && 

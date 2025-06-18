@@ -252,7 +252,11 @@ class MovementEngine {
     // FIXED: Check for spaces with no movement data, but skip spaces that use dice for movement
     if (currentSpace && this.hasEmptyMovementData(currentSpace) && !this.hasDiceMovementData(currentSpace, player)) {
       console.warn(`MovementEngine: Space ${currentSpace.space_name} has no movement data defined`);
-      console.warn('MovementEngine: This indicates incomplete CSV data setup');
+      if (currentSpace.space_name === 'FINISH') {
+        console.log('MovementEngine: FINISH space correctly has no movement data - game should end');
+      } else {
+        console.warn('MovementEngine: This indicates incomplete CSV data setup for non-terminal space');
+      }
       
       // Provide emergency fallback movements based on space type
       return this.getEmergencyFallbackMovements(player, currentSpace);
@@ -2014,6 +2018,12 @@ class MovementEngine {
     
     // Emergency fallback based on space name patterns
     const spaceName = spaceData.space_name;
+    
+    // Handle FINISH spaces - these should end the game
+    if (spaceName === 'FINISH') {
+      console.log('MovementEngine: Player reached FINISH space - game should end');
+      return []; // No movement options - game ends here
+    }
     
     // For REG-FDNY-PLAN-EXAM, provide logical next steps
     if (spaceName === 'REG-FDNY-PLAN-EXAM') {

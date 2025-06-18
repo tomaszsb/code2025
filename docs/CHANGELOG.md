@@ -4,6 +4,122 @@ All notable changes to the Project Management Board Game are documented in this 
 
 ---
 
+## [2.4.0] - June 18, 2025 - CSV Field Fixes & Component Rendering
+
+### 🔧 **CRITICAL FIXES COMPLETED**
+
+#### **Space Information Display (RESOLVED)**
+- **Fixed CSV field name mismatches** in SpaceExplorer.js and SpaceInfo.js - Components were using incorrect field names
+- **Fixed visit type resolution** in BoardRenderer.js and SpaceSelectionManager.js - Space lookups now account for First/Subsequent visits
+- **Fixed missing movement buttons** in current space panel - GameBoard now properly calculates availableMoves for current space
+- **Fixed visit tracking system** in GameStateManager.js - Corrected `currentSpace.name` → `currentSpace.space_name` field references
+
+**Technical Impact:**
+- Space Explorer now shows complete content (Event, Action, Outcome, Cards, Movement Choices)
+- Current space panel displays full information with clickable movement buttons
+- Proper First/Subsequent space content based on player visit history
+- Visit tracking system restored - players see correct space versions
+
+#### **Game Initialization Improvements (RESOLVED)**
+- **Removed 800ms delays** from PlayerSetup.js - Game starts immediately after "Start Game" button
+- **Added loading messages** during game initialization - Better user feedback during transition
+- **Fixed emergency fallback logic** in MovementEngine.js - FINISH spaces properly handled as game end
+
+**Technical Impact:**
+- Immediate game start response (no more blank screen delay)
+- Professional loading experience with clear status messages  
+- Proper game ending behavior when players reach FINISH spaces
+
+### 📊 **Field Name Standardization**
+
+#### **Component-CSV Alignment**
+- **SpaceExplorer.js**: `description` → `Event`, `action` → `Action`, `outcome` → `Outcome`
+- **SpaceInfo.js**: `description` → `Event`, `action` → `Action`, `outcome` → `Outcome` 
+- **Card fields**: `'W Card'` → `'w_card'`, `'B Card'` → `'b_card'`, etc.
+- **GameStateManager.js**: All `currentSpace.name` → `currentSpace.space_name`
+
+#### **Visit Type Resolution**
+- **BoardRenderer.js**: Added visit type detection for selectedSpaceObj lookup
+- **SpaceSelectionManager.js**: Added visit type detection for space exploration clicks
+- **Consistent logic**: Both current space and exploration use same visit type resolution
+
+### 🐛 **Debug Code Cleanup**
+- **Removed DEBUG statements** from BoardRenderer.js - Cleaned up space selection troubleshooting code
+- **Improved console logging** - Better distinction between errors and normal operation
+- **Enhanced warning messages** - CSV data warnings now properly categorize issues
+
+### 📁 **Files Modified**
+- `js/components/SpaceExplorer.js`: Fixed CSV field names and added movement choices rendering
+- `js/components/SpaceInfo.js`: Fixed CSV field names for Event/Action/Outcome display  
+- `js/components/BoardRenderer.js`: Fixed visit type resolution and removed debug code
+- `js/components/SpaceSelectionManager.js`: Fixed visit type detection for space clicks
+- `js/components/GameBoard.js`: Added proper availableMoves calculation for current space
+- `js/components/PlayerSetup.js`: Removed delays and added loading states
+- `js/components/SpaceInfoMoves.js`: Restored proper parent-child communication
+- `js/data/GameStateManager.js`: Fixed field name consistency throughout
+- `js/utils/movement/MovementEngine.js`: Added FINISH space handling and improved warnings
+
+---
+
+## [2.3.0] - June 17, 2025 - Stack Overflow Fixes (RESOLVED)
+
+### 🔧 **CRITICAL FIXES COMPLETED**
+
+#### **Stack Overflow Error (RESOLVED)**
+- **Fixed duplicate `gameStarted` getter** in GameStateManager.js:1564 - Primary cause of infinite recursion
+- **Fixed setState in render()** in StaticPlayerStatus.js:354-357 - Critical infinite render loop  
+- **Added safety checks** in BoardRenderer.js for manager method calls
+- **Game initialization restored** - Application loads without JavaScript crashes
+
+**Technical Impact:**
+- Game successfully initializes to player setup screen
+- No more "Maximum call stack size exceeded" errors
+- Browser automation testing now works properly
+
+---
+
+## [2.2.0] - June 17, 2025 - Critical Bug Fixes & Game Testing Issues
+
+### 🐛 **CRITICAL BUGS IDENTIFIED & DOCUMENTED**
+
+#### **Testing Session Results**
+- **Comprehensive Game Testing**: Full game testing session completed using browser automation
+- **3 Critical Issues Identified**: JavaScript stack overflow (RESOLVED), initialization delay, and CORS/file access problems
+
+#### **Bug #1: CORS/File Access Problem (RESOLVED)**
+- **Issue**: Game fails to load when using `file://` protocol due to browser security restrictions
+- **Impact**: Complete inability to run game without HTTP server
+- **Solution**: Must use HTTP server (`python3 -m http.server`) - documented in troubleshooting
+
+#### **Bug #2: JavaScript Stack Overflow (RESOLVED in v2.3.0)**
+- **Issue**: "Maximum call stack size exceeded" errors during gameplay
+- **Cause**: Duplicate getter definitions and setState in render() method
+- **Impact**: Prevented game initialization and caused browser crashes
+- **Location**: GameStateManager.js and StaticPlayerStatus.js
+- **Status**: FIXED - Game now initializes properly
+
+#### **Bug #3: Game Initialization Delay (RESOLVED in v2.4.0)**
+- **Issue**: Game shows blank screen briefly after clicking "Start Game"
+- **Cause**: Intentional 800ms delays for animations in PlayerSetup.js
+- **Solution**: Removed delays and added proper loading states
+- **Impact**: FIXED - Immediate game start with loading feedback
+
+### ✅ **SYSTEMS CONFIRMED WORKING**
+- Game loads properly with HTTP server
+- Player setup interface functions
+- Board renders with all spaces visible  
+- Space information panels display
+- Turn management UI appears functional
+- Card count display ("Show Cards 0")
+- Game state tracking (player status, money, time)
+
+### 📁 **Files Modified**
+- `docs/CHANGELOG.md`: Added comprehensive testing results and bug documentation
+- `docs/README.md`: Will be updated with troubleshooting section
+- `docs/COMPREHENSIVE_GAME_GUIDE.md`: Will be updated with known issues section
+
+---
+
 ## [2.1.0] - June 14, 2025 - Card Data Standardization & Field Alignment
 
 ### 🎯 **MAJOR DATA IMPROVEMENT**

@@ -178,15 +178,15 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
       return <div className="space-info empty">No space selected</div>;
     }
     
-    // Determine which description to show based on visitType
+    // Determine which description to show based on visitType - using correct CSV field name
     const descriptionToShow = (visitType && space.visit) 
-      ? (space.visit[visitType]?.description || space.description)
-      : space.description;
+      ? (space.visit[visitType]?.Event || space.Event)
+      : space.Event;
     
-    // Create a list of fields to display
+    // Create a list of fields to display - using correct CSV field names
     const fieldMappings = [
-      { key: 'action', label: 'Action', priority: 'high' },
-      { key: 'outcome', label: 'Outcome', priority: 'high' },
+      { key: 'Action', label: 'Action', priority: 'high' },
+      { key: 'Outcome', label: 'Outcome', priority: 'high' },
       { key: 'w_card', label: 'Work Type Card', priority: 'normal', isCard: true },
       { key: 'b_card', label: 'Bank Card', priority: 'normal', isCard: true },
       { key: 'i_card', label: 'Investor Card', priority: 'normal', isCard: true },

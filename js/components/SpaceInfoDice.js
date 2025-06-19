@@ -60,12 +60,42 @@ window.SpaceInfoDice = {
     
     console.log('SpaceInfoDice: Rendering dice outcomes, diceRoll =', diceRoll, 'diceOutcomes =', diceOutcomes);
     
-    if (!diceRoll) {
+    // If no dice outcomes available at all, don't show anything
+    if (!diceOutcomes || Object.keys(diceOutcomes).length === 0) {
       return null;
     }
     
+    // If we have dice outcomes but no dice roll yet, show potential outcomes
+    if (!diceRoll) {
+      return (
+        <div className="dice-outcomes-display potential-outcomes">
+          <div className="dice-outcome-header">
+            <div className="dice-result-title">
+              <h4>🎲 Possible Dice Outcomes:</h4>
+            </div>
+          </div>
+          
+          <div className="potential-outcomes-list">
+            {Object.entries(diceOutcomes).map(([rollKey, outcomes]) => {
+              // Handle case where outcomes might be an object with nested properties
+              const outcomeText = typeof outcomes === 'object' && outcomes !== null ? 
+                Object.entries(outcomes).map(([type, value]) => `${type}: ${value}`).join(', ') :
+                String(outcomes);
+              
+              return (
+                <div key={rollKey} className="potential-outcome-item">
+                  <strong>{rollKey}:</strong>
+                  <span className="outcome-summary"> {outcomeText}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+    
     // If we have a dice roll but no outcomes, show a simple message
-    if (!diceOutcomes || Object.keys(diceOutcomes).length === 0) {
+    if (Object.keys(diceOutcomes).length === 0) {
       return (
         <div className="dice-outcomes-display">
           <div className="dice-outcome-header">

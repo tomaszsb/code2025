@@ -10,6 +10,11 @@ window.BoardDisplay = class BoardDisplay extends React.Component {
       currentPlayerIndex: window.GameState.currentPlayerIndex
     };
     
+    // Timer references for proper cleanup
+    this.mountTimer = null;
+    this.resizeTimer = null;
+    this.gameStateTimer = null;
+    
     console.log('BoardDisplay: Panel initialized');
   }
   
@@ -24,7 +29,7 @@ window.BoardDisplay = class BoardDisplay extends React.Component {
     window.addEventListener('resize', this.handleWindowResize);
     
     // Force space sizes to be 120px x 120px
-    setTimeout(() => {
+    this.mountTimer = setTimeout(() => {
       const spaces = document.querySelectorAll('.board-space:not(.column-3-space)');
       const column3Spaces = document.querySelectorAll('.column-3-space');
       
@@ -55,6 +60,7 @@ window.BoardDisplay = class BoardDisplay extends React.Component {
       });
       
       console.log('BoardDisplay: Enforced 120px × 60px space sizes on initial mount');
+      this.mountTimer = null;
     }, 500); // Longer timeout for initial mount
     
     console.log('BoardDisplay: Panel mounted');
@@ -64,6 +70,20 @@ window.BoardDisplay = class BoardDisplay extends React.Component {
     // Clean up event listeners when component unmounts
     window.removeEventListener('gameStateUpdated', this.handleGameStateUpdate);
     window.removeEventListener('resize', this.handleWindowResize);
+    
+    // Clear all pending timers to prevent memory leaks
+    if (this.mountTimer) {
+      clearTimeout(this.mountTimer);
+      this.mountTimer = null;
+    }
+    if (this.resizeTimer) {
+      clearTimeout(this.resizeTimer);
+      this.resizeTimer = null;
+    }
+    if (this.gameStateTimer) {
+      clearTimeout(this.gameStateTimer);
+      this.gameStateTimer = null;
+    }
     
     console.log('BoardDisplay: Panel unmounted');
   }
@@ -75,7 +95,11 @@ window.BoardDisplay = class BoardDisplay extends React.Component {
     // No longer re-creating connectors after window resize
     
     // Force space sizes to be maintained on resize
-    setTimeout(() => {
+    // Clear any existing resize timer to prevent multiple timers
+    if (this.resizeTimer) {
+      clearTimeout(this.resizeTimer);
+    }
+    this.resizeTimer = setTimeout(() => {
       // Get all board spaces
       const spaces = document.querySelectorAll('.board-space:not(.column-3-space)');
       const column3Spaces = document.querySelectorAll('.column-3-space');
@@ -107,6 +131,7 @@ window.BoardDisplay = class BoardDisplay extends React.Component {
       });
       
       console.log('BoardDisplay: Enforced 120px × 60px space sizes on window resize');
+      this.resizeTimer = null;
     }, 100);
   }
   
@@ -123,7 +148,11 @@ window.BoardDisplay = class BoardDisplay extends React.Component {
       // No longer re-creating connectors after player changes
       
       // But we do need to ensure space sizes remain consistent
-      setTimeout(() => {
+      // Clear any existing game state timer to prevent multiple timers
+      if (this.gameStateTimer) {
+        clearTimeout(this.gameStateTimer);
+      }
+      this.gameStateTimer = setTimeout(() => {
         const spaces = document.querySelectorAll('.board-space:not(.column-3-space)');
         const column3Spaces = document.querySelectorAll('.column-3-space');
         
@@ -154,6 +183,7 @@ window.BoardDisplay = class BoardDisplay extends React.Component {
         });
         
         console.log('BoardDisplay: Enforced 120px × 60px space sizes after game state update');
+        this.gameStateTimer = null;
       }, 100);
     }
   }

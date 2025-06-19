@@ -45,8 +45,22 @@ window.App = class App extends React.Component {
     
     componentDidCatch(error, errorInfo) {
         console.error('Error caught in App component:', error);
+        console.error('Component stack:', errorInfo.componentStack);
+        
+        // Enhanced error handling with more user-friendly messages
+        let userMessage = error.message;
+        
+        // Check for common error types and provide better messages
+        if (error.message.includes('CSV') || error.message.includes('Failed to load')) {
+            userMessage = 'Failed to load game data. Please refresh the page to try again.';
+        } else if (error.message.includes('Network')) {
+            userMessage = 'Network error occurred. Please check your connection and refresh the page.';
+        } else if (error.message.includes('spaces') || error.message.includes('cards')) {
+            userMessage = 'Game data is corrupted or missing. Please refresh the page.';
+        }
+        
         this.setState({ 
-            error: error.message 
+            error: userMessage
         });
     }
     

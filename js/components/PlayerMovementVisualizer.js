@@ -20,9 +20,20 @@ window.PlayerMovementVisualizer = {
   positionHistory: new Map(),
   activeBreadcrumbs: new Map(),
   
+  // Timer tracking for proper cleanup
+  activeTimeouts: new Set(),
+  
+  // Bound function references for event listeners
+  boundHandlePlayerMovement: null,
+  boundHandleTurnTransition: null,
+  
   // Initialize the visualization system
   init: function() {
     console.log('PlayerMovementVisualizer: Initializing movement visualization system');
+    
+    // Bind event handler functions for proper cleanup
+    this.boundHandlePlayerMovement = this.handlePlayerMovement.bind(this);
+    this.boundHandleTurnTransition = this.handleTurnTransition.bind(this);
     
     // Create overlay containers
     this.createVisualizationContainers();
@@ -69,14 +80,22 @@ window.PlayerMovementVisualizer = {
   // Register event listeners for movement tracking
   registerEventListeners: function() {
     if (window.GameStateManager) {
-      window.GameStateManager.addEventListener('playerMoved', (event) => {
-        this.handlePlayerMovement(event.data);
-      });
-      
-      window.GameStateManager.addEventListener('turnChanged', (event) => {
-        this.handleTurnTransition(event.data);
-      });
+      window.GameStateManager.addEventListener('playerMoved', this.boundHandlePlayerMovement);
+      window.GameStateManager.addEventListener('turnChanged', this.boundHandleTurnTransition);
     }
+  },
+  
+  // Wrapper for setTimeout that tracks timers for cleanup
+  setTimeout: function(callback, delay) {
+    const timeoutId = setTimeout(() => {
+      // Remove from tracking when timer fires
+      this.activeTimeouts.delete(timeoutId);
+      callback();
+    }, delay);
+    
+    // Track the timeout for cleanup
+    this.activeTimeouts.add(timeoutId);
+    return timeoutId;
   },
   
   // Handle player movement with enhanced visualization
@@ -166,7 +185,7 @@ window.PlayerMovementVisualizer = {
     this.createTrailParticles(trail, player.color, distance);
     
     // Remove trail after animation
-    setTimeout(() => {
+    this.setTimeout(() => {
       if (trail.parentNode) {
         trail.parentNode.removeChild(trail);
       }
@@ -249,7 +268,7 @@ window.PlayerMovementVisualizer = {
     }
     
     // Auto-remove breadcrumb
-    setTimeout(() => {
+    this.setTimeout(() => {
       if (breadcrumb.parentNode) {
         breadcrumb.parentNode.removeChild(breadcrumb);
       }
@@ -540,6 +559,32 @@ window.PlayerMovementVisualizer = {
     this.activeTrails.clear();
     this.positionHistory.clear();
     this.activeBreadcrumbs.clear();
+  },
+  
+  // Comprehensive cleanup method for preventing memory leaks
+  destroy: function() {
+    console.log('PlayerMovementVisualizer: Destroying visualization system');
+    
+    // Clear all active timeouts
+    this.activeTimeouts.forEach(timeoutId => {
+      clearTimeout(timeoutId);
+    });
+    this.activeTimeouts.clear();
+    
+    // Remove event listeners
+    if (window.GameStateManager && this.boundHandlePlayerMovement && this.boundHandleTurnTransition) {
+      window.GameStateManager.removeEventListener('playerMoved', this.boundHandlePlayerMovement);
+      window.GameStateManager.removeEventListener('turnChanged', this.boundHandleTurnTransition);
+    }
+    
+    // Clear all visual effects
+    this.clearAllEffects();
+    
+    // Clear bound function references
+    this.boundHandlePlayerMovement = null;
+    this.boundHandleTurnTransition = null;
+    
+    console.log('PlayerMovementVisualizer: Destruction complete');
   }
 };
 

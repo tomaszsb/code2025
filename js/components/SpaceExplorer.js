@@ -40,10 +40,15 @@ class SpaceExplorer extends React.Component {
     this.lastRenderTime = 0;
     this.isProcessingData = false; // Flag to prevent concurrent processing
     
+    // Timer references for proper cleanup
+    this.gameStateTimeout = null;
+    this.componentFinishedTimeout = null;
+    
     // Bind methods to ensure proper this context
     this.handleGameStateChange = this.handleGameStateChange.bind(this);
     this.handleCloseExplorer = this.handleCloseExplorer.bind(this);
     this.processDiceDataFromProps = this.processDiceDataFromProps.bind(this);
+    this.handleComponentFinished = this.handleComponentFinished.bind(this);
     
     console.log('SpaceExplorer: Constructor completed');
   }
@@ -52,15 +57,13 @@ class SpaceExplorer extends React.Component {
   componentDidMount() {
     console.log('SpaceExplorer: componentDidMount method is being used');
     
-    // Process dice data only if space prop is available to prevent unnecessary state updates
-    if (this.props.space) {
-      this.processDiceDataFromProps();
-    }
+    // Always try to process dice data on mount
+    this.processDiceDataFromProps();
     
     // Register event listeners with GameStateManager
     if (window.GameStateManager) {
       window.GameStateManager.addEventListener('gameStateChanged', this.handleGameStateChange);
-      window.GameStateManager.addEventListener('componentFinished', this.handleComponentFinished.bind(this));
+      window.GameStateManager.addEventListener('componentFinished', this.handleComponentFinished);
     } else {
       console.warn('SpaceExplorer: GameStateManager not available, cannot register events');
     }
@@ -81,10 +84,15 @@ class SpaceExplorer extends React.Component {
       }
       
       // Use setTimeout to prevent rapid successive updates
-      setTimeout(() => {
+      // Clear any existing timeout to prevent multiple timers
+      if (this.gameStateTimeout) {
+        clearTimeout(this.gameStateTimeout);
+      }
+      this.gameStateTimeout = setTimeout(() => {
         if (!this.isProcessingData) {
           this.processDiceDataFromProps();
         }
+        this.gameStateTimeout = null;
       }, 50); // Small delay to debounce rapid events
     }
     
@@ -103,8 +111,13 @@ class SpaceExplorer extends React.Component {
       
       // Now it's safe to update without causing loops
       if (!this.isProcessingData) {
-        setTimeout(() => {
+        // Clear any existing timeout to prevent multiple timers
+        if (this.componentFinishedTimeout) {
+          clearTimeout(this.componentFinishedTimeout);
+        }
+        this.componentFinishedTimeout = setTimeout(() => {
           this.processDiceDataFromProps();
+          this.componentFinishedTimeout = null;
         }, 50); // Small delay to ensure everything is settled
       }
     }
@@ -113,6 +126,7 @@ class SpaceExplorer extends React.Component {
   // Process dice data from props
   processDiceDataFromProps() {
     console.log('SpaceExplorer: processDiceDataFromProps method is being used');
+    console.log('SpaceExplorer: DEBUG - Props check - space:', this.props.space?.space_name, 'diceRollData:', this.props.diceRollData?.length);
     
     // BUGFIX: Prevent unnecessary state updates to avoid render loops
     if (this.isProcessingData) {
@@ -165,10 +179,8 @@ class SpaceExplorer extends React.Component {
         });
       }
     } finally {
-      // Always reset processing flag
-      setTimeout(() => {
-        this.isProcessingData = false;
-      }, 100);
+      // Always reset processing flag immediately
+      this.isProcessingData = false;
     }
     
     console.log('SpaceExplorer: processDiceDataFromProps method completed');
@@ -196,6 +208,16 @@ class SpaceExplorer extends React.Component {
   // Component lifecycle method - called when props or state change
   componentDidUpdate(prevProps, prevState) {
     console.log('SpaceExplorer: componentDidUpdate method is being used');
+    
+    // Check if space or diceRollData props changed
+    const spaceChanged = prevProps.space?.space_name !== this.props.space?.space_name;
+    const diceDataChanged = prevProps.diceRollData !== this.props.diceRollData;
+    const visitTypeChanged = prevProps.visitType !== this.props.visitType;
+    
+    if (spaceChanged || diceDataChanged || visitTypeChanged) {
+      console.log('SpaceExplorer: Props changed, processing dice data - space:', spaceChanged, 'diceData:', diceDataChanged, 'visitType:', visitTypeChanged);
+      this.processDiceDataFromProps();
+    }
     
     // NEW: Using coordinated "done" signal pattern instead of automatic processing
     // SpaceExplorer now waits for componentFinished signals before updating
@@ -226,9 +248,20 @@ class SpaceExplorer extends React.Component {
       window.GameStateManager.removeEventListener('componentFinished', this.handleComponentFinished);
     }
     
-    // Clear any timers or resources if used
+    // Clear any pending timers to prevent memory leaks
+    if (this.gameStateTimeout) {
+      clearTimeout(this.gameStateTimeout);
+      this.gameStateTimeout = null;
+    }
+    if (this.componentFinishedTimeout) {
+      clearTimeout(this.componentFinishedTimeout);
+      this.componentFinishedTimeout = null;
+    }
+    
+    // Clear any other resources
     this.lastRenderTime = 0;
     this.renderCount = 0;
+    this.isProcessingData = false;
     
     console.log('SpaceExplorer: componentWillUnmount method completed');
   }
@@ -298,6 +331,8 @@ class SpaceExplorer extends React.Component {
   // Process dice data for the current space - optimized with better error handling
   processDiceData(space, diceRollData, visitTypeFromProps) {
     console.log('SpaceExplorer: processDiceData method is being used');
+    console.log('SpaceExplorer: DEBUG - space:', space?.space_name, 'visitType:', visitTypeFromProps);
+    console.log('SpaceExplorer: DEBUG - diceRollData length:', diceRollData?.length);
     
     if (!space || !diceRollData) {
       console.log('SpaceExplorer: processDiceData method completed with null (missing data)');
@@ -310,11 +345,25 @@ class SpaceExplorer extends React.Component {
                       (space.visitType && space.visitType.toLowerCase()) || 
                       'first';
       
+      console.log('SpaceExplorer: DEBUG - Looking for space_name:', space.space_name, 'visit_type:', visitType);
+      
+      // Debug: Show sample of diceRollData to understand structure
+      if (diceRollData.length > 0) {
+        console.log('SpaceExplorer: DEBUG - Sample dice data entry:', diceRollData[0]);
+        console.log('SpaceExplorer: DEBUG - Available space names in data:', 
+          [...new Set(diceRollData.map(d => d.space_name))].slice(0, 10));
+      }
+      
       // Only show outcomes that match both space name AND visit type (strict matching)
       const spaceDiceData = diceRollData.filter(data => 
         data['space_name'] === space.space_name && 
         data['visit_type'].toLowerCase() === visitType
       );
+      
+      console.log('SpaceExplorer: DEBUG - Found matching dice data entries:', spaceDiceData.length);
+      if (spaceDiceData.length > 0) {
+        console.log('SpaceExplorer: DEBUG - First matching entry:', spaceDiceData[0]);
+      }
       
       if (spaceDiceData.length === 0) {
         console.log('SpaceExplorer: processDiceData method completed with null (no matching dice data)');
@@ -711,6 +760,7 @@ class SpaceExplorer extends React.Component {
   
   render() {
     console.log('SpaceExplorer: render method is being used');
+    console.log('SpaceExplorer: DEBUG - Render props - space:', this.props.space?.space_name, 'diceRollData:', this.props.diceRollData?.length, 'visitType:', this.props.visitType);
     
     const { space } = this.props;
     const { hasError, errorMessage } = this.state;

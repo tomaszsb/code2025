@@ -30,6 +30,10 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
       renderKey: 0 // Used to force re-renders when needed
     };
     
+    // Processing flags to prevent infinite loops
+    this.isProcessingSpaceChange = false;
+    this.isProcessingPlayerMove = false;
+    
     // Store event handlers for proper cleanup
     this.eventHandlers = {
       resetButtons: this.handleResetButtons.bind(this),
@@ -100,9 +104,16 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
   
   // Handle space change events
   handleSpaceChanged() {
+    if (this.isProcessingSpaceChange) {
+      console.log('SpaceInfo: Ignoring space changed event - already processing');
+      return;
+    }
+    
+    this.isProcessingSpaceChange = true;
     console.log('SpaceInfo: Handling space changed event');
     console.log('SpaceInfo: Current space prop:', this.props.space?.space_name);
     console.log('SpaceInfo: Current visit type:', this.props.visitType);
+    
     // Force a re-render and signal completion
     this.setState(prevState => ({ renderKey: prevState.renderKey + 1 }), () => {
       // Signal that SpaceInfo has finished updating
@@ -113,6 +124,7 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
         });
         console.log('SpaceInfo: Finished handling space changed event');
       }
+      this.isProcessingSpaceChange = false;
     });
   }
   
@@ -128,10 +140,17 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
   
   // Handle player movement events
   handlePlayerMoved(event) {
+    if (this.isProcessingPlayerMove) {
+      console.log('SpaceInfo: Ignoring player moved event - already processing');
+      return;
+    }
+    
+    this.isProcessingPlayerMove = true;
     console.log('SpaceInfo: Handling player moved event', event.data);
     if (event.data && event.data.toSpaceId) {
       console.log('SpaceInfo: Player moved to space:', event.data.toSpaceId);
     }
+    
     // Force a re-render and signal completion
     this.setState(prevState => ({ renderKey: prevState.renderKey + 1 }), () => {
       // Signal that SpaceInfo has finished updating
@@ -142,6 +161,7 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
         });
         console.log('SpaceInfo: Finished handling player moved event');
       }
+      this.isProcessingPlayerMove = false;
     });
   }
   
@@ -178,10 +198,8 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
       return <div className="space-info empty">No space selected</div>;
     }
     
-    // Determine which description to show based on visitType - using correct CSV field name
-    const descriptionToShow = (visitType && space.visit) 
-      ? (space.visit[visitType]?.Event || space.Event)
-      : space.Event;
+    // Use the Event field directly since BoardRenderer already selected the correct visit type row
+    const descriptionToShow = space.Event;
     
     // Create a list of fields to display - using correct CSV field names
     const fieldMappings = [
@@ -201,7 +219,7 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     const normalPriorityFields = fieldMappings.filter(field => field.priority === 'normal');
     
     // Get CSS class for space type/phase
-    const phaseClass = this.getPhaseClass(space.type);
+    const phaseClass = this.getPhaseClass(space.phase);
     
     return (
       <div className={`space-info ${phaseClass}`} key={renderKey}>

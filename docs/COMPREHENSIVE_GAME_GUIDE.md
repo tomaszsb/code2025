@@ -105,8 +105,8 @@ The game features five card types with specific purposes:
 
 ## Architecture Overview
 
-### Core Pattern: Manager-Based + Event-Driven
-- **Manager Classes**: Specialized managers for major systems
+### Core Pattern: Component-Based + Event-Driven
+- **React Components**: 30+ specialized UI components with some manager classes
 - **Event System**: Components communicate through GameStateManager events
 - **Data-Driven**: CSV files drive game logic instead of hardcoded rules
 - **Staged Initialization**: 5-stage deterministic loading
@@ -127,7 +127,7 @@ The game features five card types with specific purposes:
 
 #### 3. Card System
 **Unified card architecture** with advanced features:
-- Single `data/cards.csv` with 398 cards and 48 metadata fields
+- Single `data/cards.csv` with 404 cards (398 production + 6 TEST) and 48 metadata fields
 - Advanced combo and chain reaction systems
 - Complex targeting patterns and multi-card interactions
 - Performance optimization with O(1) lookups
@@ -144,7 +144,7 @@ The game features five card types with specific purposes:
 
 #### CSV Files (Current Implementation)
 - **`data/Spaces.csv`**: Board spaces with Path and RequiresDiceRoll columns
-- **`data/cards.csv`**: Unified card data (398 cards, 5 types: W, B, I, L, E)
+- **`data/cards.csv`**: Unified card data (404 cards total: 398 production cards in 5 types W/B/I/L/E + 6 TEST cards)
 - **`data/DiceRoll Info.csv`**: Dice roll outcomes
 
 #### Data-Driven Features
@@ -207,17 +207,19 @@ this.setState(prevState => ({
 - **CSV-Driven Logic**: Never hardcode game rules - always use CSV data
 - **Event-Driven Communication**: Use GameStateManager events, not direct calls
 - **Property Name Standards**: Use snake_case for consistency (space_name, card_type, etc.)
+- **File Organization**: When modifying components, move them to proper locations (managers/, utils/) and update all dependencies
 
 ### File Organization
 ```
 js/components/
-├── managers/              # 12+ Manager classes for specialized systems
+├── managers/              # 2 Manager classes (with cleanup goals to organize more)
 │   ├── InitializationManager.js  # 5-stage app initialization
-│   ├── SpaceInfoManager.js       # Space information display
-│   ├── SpaceExplorerManager.js   # Space explorer panel operations
-│   ├── SpaceSelectionManager.js  # Space selection logic and UI
-│   ├── LogicSpaceManager.js      # Logic space handling
-│   └── BoardStyleManager.js      # Dynamic board styling
+│   └── SpaceInfoManager.js       # Space information display
+│   # Future organization goals:
+│   # ├── SpaceExplorerManager.js   # Move from main components/
+│   # ├── SpaceSelectionManager.js  # Move from main components/  
+│   # ├── LogicSpaceManager.js      # Move from main components/
+│   # └── BoardStyleManager.js      # Move from main components/
 ├── utils/                # Utility frameworks and helpers
 │   ├── CardDrawUtil.js           # Card drawing logic
 │   ├── CardTypeConstants.js      # Card type definitions
@@ -267,7 +269,7 @@ css/
 
 data/
 ├── Spaces.csv         # Game board definition with Path and RequiresDiceRoll
-├── cards.csv          # Unified card data (398 cards, 48 metadata fields)
+├── cards.csv          # Unified card data (404 cards: 398 production + 6 TEST, 48 metadata fields)
 └── DiceRoll Info.csv  # Dice outcomes and requirements
 ```
 
@@ -327,7 +329,7 @@ Moving forward, all components must use:
 These contain game content and are safest to modify:
 
 - **`data/Spaces.csv`**: Board spaces and their properties
-- **`data/cards.csv`**: All card data (398 cards, 5 types)
+- **`data/cards.csv`**: All card data (404 cards: 398 production + 6 TEST, 5 main types)
 - **`data/DiceRoll Info.csv`**: Dice roll outcomes
 
 ### 2. Visual Appearance Files
@@ -458,15 +460,220 @@ Players move by selecting from available spaces. The system uses CSV data to det
 ## Technical Performance Features
 
 ### Optimization Systems
-- **Advanced Indexing**: O(1) card lookups for 398-card dataset
+- **Advanced Indexing**: O(1) card lookups for 404-card dataset
 - **Efficient Rendering**: Optimized DOM updates and animations
 - **Memory Management**: Proper cleanup of event listeners and animations
 - **Responsive Design**: Works across desktop, tablet, and mobile devices
+
+### Memory Leak Prevention Patterns
+
+#### Event Listener Cleanup (Critical)
+Components must clean up event listeners to prevent memory leaks:
+
+```javascript
+class YourComponent extends React.Component {
+  constructor(props) {
+    super(props);
+    // Store bound function references for proper cleanup
+    this.handlePlayerMoved = this.handlePlayerMoved.bind(this);
+    this.handleTurnChanged = this.handleTurnChanged.bind(this);
+  }
+
+  componentDidMount() {
+    // Add listeners using bound references
+    GameStateManager.addEventListener('playerMoved', this.handlePlayerMoved);
+    GameStateManager.addEventListener('turnChanged', this.handleTurnChanged);
+  }
+
+  componentWillUnmount() {
+    // CRITICAL: Remove listeners using the same bound references
+    GameStateManager.removeEventListener('playerMoved', this.handlePlayerMoved);
+    GameStateManager.removeEventListener('turnChanged', this.handleTurnChanged);
+    
+    // Clear any timers or intervals
+    if (this.animationTimer) {
+      clearTimeout(this.animationTimer);
+      this.animationTimer = null;
+    }
+    
+    // Clear DOM references
+    this.elementRef = null;
+  }
+}
+```
+
+#### Animation and Timer Cleanup
+Always clear animations and timers to prevent memory leaks:
+
+```javascript
+componentWillUnmount() {
+  // Clear timeouts and intervals
+  if (this.animationTimer) clearTimeout(this.animationTimer);
+  if (this.updateInterval) clearInterval(this.updateInterval);
+  
+  // Cancel animation frames
+  if (this.animationFrame) cancelAnimationFrame(this.animationFrame);
+  
+  // Clear any DOM observers
+  if (this.resizeObserver) {
+    this.resizeObserver.disconnect();
+  }
+}
+```
+
+#### Common Memory Leak Sources
+- **Event listeners** not removed in componentWillUnmount
+- **Timers and intervals** not cleared when component unmounts
+- **Animation frames** not cancelled
+- **DOM references** not nullified
+- **Observer patterns** not disconnected
 
 ### Error Handling
 - **Graceful degradation**: System continues functioning with missing data
 - **User-friendly errors**: Clear error messages for players
 - **Debug support**: Comprehensive logging system for development
+
+## Advanced Debugging and Troubleshooting
+
+### Component Data Flow Architecture
+
+#### SpaceExplorer vs SpaceInfo Critical Differences
+The game has two components that display dice outcomes but they work differently:
+
+**SpaceInfo (Player Panel)**:
+- Receives pre-processed `diceOutcomes` prop from DiceManager
+- Data format: `{Roll 1: {W Cards: "Draw 2"}, Roll 2: {...}}`
+- Always displays current dice outcomes automatically
+
+**SpaceExplorer (Space Details Panel)**:
+- Receives raw `diceRollData` array from CSV data
+- Must manually filter by `space_name` and `visit_type`
+- Requires explicit prop change detection to update
+
+**Critical Fix Pattern**:
+```javascript
+// SpaceExplorer component lifecycle
+componentDidMount() {
+  // Always process, don't check if space exists first
+  this.processDiceDataFromProps();
+}
+
+componentDidUpdate(prevProps, prevState) {
+  // Check for meaningful prop changes
+  const spaceChanged = prevProps.space?.space_name !== this.props.space?.space_name;
+  const diceDataChanged = prevProps.diceRollData !== this.props.diceRollData;
+  const visitTypeChanged = prevProps.visitType !== this.props.visitType;
+  
+  if (spaceChanged || diceDataChanged || visitTypeChanged) {
+    this.processDiceDataFromProps();
+  }
+}
+```
+
+### UI State Management Issues
+
+#### End Turn Button State Logic
+The End Turn button is disabled when any of these conditions are true:
+- `!currentPlayer` - No current player
+- `!gameBoard.state.hasSelectedMove` - No move selected
+- `(hasDiceRollSpace && !hasRolledDice)` - Dice space but haven't rolled
+
+**Common Issue**: After dice rolls, single available moves aren't auto-selected, leaving `hasSelectedMove = false`.
+
+**Solution Pattern**:
+```javascript
+// In DiceManager after updating available moves
+if (movesToUpdate.length === 1) {
+  hasSelected = true;
+  selectedMove = movesToUpdate[0].id || movesToUpdate[0].name;
+  console.log('DiceManager: Auto-selecting single available move:', selectedMove);
+}
+
+this.gameBoard.setState({ 
+  availableMoves: movesToUpdate,
+  hasSelectedMove: hasSelected,  // Auto-select if only one move
+  selectedMove: selectedMove     // Auto-select if only one move
+});
+```
+
+### Card Drawing System Debug
+
+#### Data Format Mismatches
+The card drawing system has evolved and now uses multiple formats:
+
+**DiceOutcomeParser Output** (New Format):
+```javascript
+{
+  type: 'cards',
+  action: 'drawCards',
+  cards: { W: 2, B: 1 },
+  description: 'Draw 2 W cards, 1 B card'
+}
+```
+
+**DiceManager Expected Input** (Legacy Format):
+```javascript
+{
+  WCardOutcome: "2",
+  BCardOutcome: "1"
+}
+```
+
+**Fix Pattern**:
+```javascript
+// DiceManager.processCardDraws() should handle both formats
+if (Array.isArray(outcomes)) {
+  // New format
+  outcomes.forEach(outcome => {
+    if (outcome.type === 'cards' && outcome.cards) {
+      Object.entries(outcome.cards).forEach(([cardType, count]) => {
+        for (let i = 0; i < count; i++) {
+          window.GameStateManager.drawCard(currentPlayer.id, cardType);
+        }
+      });
+    }
+  });
+} else {
+  // Legacy format
+  const cardTypes = ['W', 'B', 'I', 'L', 'E'];
+  cardTypes.forEach(cardType => {
+    const cardOutcome = outcomes[`${cardType}CardOutcome`];
+    if (cardOutcome && cardOutcome !== 'n/a') {
+      const cardCount = parseInt(cardOutcome) || 1;
+      for (let i = 0; i < cardCount; i++) {
+        window.GameStateManager.drawCard(currentPlayer.id, cardType);
+      }
+    }
+  });
+}
+```
+
+### Playwright Debugging Patterns
+
+#### Console Log Filtering for Dice/Card Issues
+```javascript
+// Listen for specific debugging logs
+page.on('console', msg => {
+  if (msg.text().includes('SpaceExplorer') || 
+      msg.text().includes('processCardDraws') ||
+      msg.text().includes('hasSelectedMove') ||
+      msg.text().includes('DEBUG')) {
+    console.log(msg.text());
+  }
+});
+
+// Check game state after dice roll
+const gameState = await page.evaluate(() => {
+  return {
+    hasCurrentPlayer: !!window.GameStateManager?.getCurrentPlayer(),
+    hasSelectedMove: !!window.gameBoard?.state?.hasSelectedMove,
+    hasRolledDice: !!window.gameBoard?.state?.hasRolledDice,
+    lastDiceRoll: window.gameBoard?.state?.lastDiceRoll,
+    playerCards: window.GameStateManager?.getCurrentPlayer()?.cards?.length || 0,
+    diceOutcomes: !!window.gameBoard?.state?.diceOutcomes
+  };
+});
+```
 
 ---
 

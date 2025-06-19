@@ -19,12 +19,31 @@ class DiceManager {
     // Initialize pendingRequirements to store conditional requirements
     this.pendingRequirements = {};
     
+    // Timer tracking for proper cleanup
+    this.activeTimers = new Set();
+    
     // Register event listeners with GameStateManager
     this.registerEventListeners();
+    
+    // Check if spaces are already loaded and load initial outcomes if needed
+    this.checkAndLoadInitialOutcomes();
     
     console.log('DiceManager: Successfully initialized with event system');
   }
   
+  // Wrapper for setTimeout that tracks timers for cleanup
+  setTimeout(callback, delay) {
+    const timerId = setTimeout(() => {
+      // Remove from tracking when timer completes
+      this.activeTimers.delete(timerId);
+      callback();
+    }, delay);
+    
+    // Track the timer
+    this.activeTimers.add(timerId);
+    return timerId;
+  }
+
   // Register event listeners with GameStateManager
   registerEventListeners() {
     console.log('DiceManager: Registering event listeners');
@@ -40,7 +59,35 @@ class DiceManager {
     }
     window.GameStateManager.addEventListener('diceRolled', this.eventHandlers.diceRolled);
     
+    // Listen for spacesLoaded event to load initial potential outcomes
+    window.GameStateManager.addEventListener('spacesLoaded', this.handleSpacesLoaded.bind(this));
+    
     console.log('DiceManager: Event listeners registered');
+  }
+  
+  // Check if spaces are already loaded when DiceManager initializes
+  checkAndLoadInitialOutcomes() {
+    console.log('DiceManager: Checking if spaces are already loaded');
+    
+    // Check if GameStateManager exists and has spaces loaded
+    if (window.GameStateManager && window.GameStateManager.spaces && window.GameStateManager.spaces.length > 0) {
+      console.log('DiceManager: Spaces already loaded, loading initial potential outcomes immediately');
+      setTimeout(() => {
+        this.loadInitialPotentialOutcomes();
+      }, 100);
+    } else {
+      console.log('DiceManager: Spaces not yet loaded, will wait for spacesLoaded event');
+    }
+  }
+
+  // Handle spacesLoaded event to load initial potential outcomes
+  handleSpacesLoaded() {
+    console.log('DiceManager: Spaces loaded event received, loading initial potential outcomes');
+    
+    // Add a small delay to ensure all components are fully initialized
+    setTimeout(() => {
+      this.loadInitialPotentialOutcomes();
+    }, 100);
   }
   
   // Handle dice roll outcomes for display in space info
@@ -195,16 +242,39 @@ class DiceManager {
   // Process card draws from dice outcomes
   processCardDraws(outcomes, currentPlayer) {
     console.log('DiceManager: Processing card draws from dice outcome');
+    console.log('DiceManager: DEBUG - outcomes structure:', outcomes);
     
     if (!currentPlayer) return;
     
-    // Check for card outcomes based on roll result
+    // Check if outcomes is an array of outcome objects (new format)
+    if (Array.isArray(outcomes)) {
+      outcomes.forEach(outcome => {
+        if (outcome.type === 'cards' && outcome.action === 'drawCards' && outcome.cards) {
+          console.log('DiceManager: Found card draw outcome:', outcome.cards);
+          
+          // Process each card type in the outcome
+          Object.entries(outcome.cards).forEach(([cardType, count]) => {
+            console.log(`DiceManager: Drawing ${count} ${cardType} cards for player ${currentPlayer.id}`);
+            
+            // Draw the specified number of cards using GameStateManager
+            for (let i = 0; i < count; i++) {
+              window.GameStateManager.drawCard(currentPlayer.id, cardType);
+            }
+          });
+        }
+      });
+      return;
+    }
+    
+    // Legacy format support - Check for card outcomes based on roll result
     const cardTypes = ['W', 'B', 'I', 'L', 'E'];
     
     for (const cardType of cardTypes) {
       const cardOutcome = outcomes[`${cardType}CardOutcome`];
       
       if (cardOutcome && cardOutcome !== 'n/a' && cardOutcome !== '0') {
+        console.log(`DiceManager: Drawing ${cardOutcome} ${cardType} cards (legacy format)`);
+        
         // Parse the outcome to determine number of cards to draw
         const cardCount = parseInt(cardOutcome) || 1;
         
@@ -252,6 +322,7 @@ class DiceManager {
     }, 100);
     
     // Process card draws
+    console.log('DiceManager: About to call processCardDraws with outcomes:', outcomes, 'currentPlayer:', currentPlayer?.id);
     this.processCardDraws(outcomes, currentPlayer);
   }
   
@@ -320,10 +391,20 @@ class DiceManager {
     if (movesToUpdate.length > 0) {
       console.log(`DiceManager: Updating available moves after dice roll with ${movesToUpdate.length} moves from ${moveSource}:`, 
         movesToUpdate.map(m => m.name || 'unnamed').join(', '));
+      
+      // Auto-select move if there's only one option
+      let hasSelected = false;
+      let selectedMove = null;
+      if (movesToUpdate.length === 1) {
+        hasSelected = true;
+        selectedMove = movesToUpdate[0].id || movesToUpdate[0].name;
+        console.log('DiceManager: Auto-selecting single available move:', selectedMove);
+      }
+      
       this.gameBoard.setState({ 
         availableMoves: movesToUpdate,
-        hasSelectedMove: false,  // Allow player to select a move
-        selectedMove: null,      // Clear any previously selected move
+        hasSelectedMove: hasSelected,  // Auto-select if only one move
+        selectedMove: selectedMove,    // Auto-select if only one move
         isRollingDice: false,    // Ensure dice UI is hidden
         showDiceRoll: false      // Ensure dice UI is hidden
       });
@@ -430,42 +511,117 @@ class DiceManager {
       return false;
     }
     
-    // Get the current space
-    const currentSpaceId = currentPlayer.position;
-    const currentSpace = window.GameStateManager.findSpaceById(currentSpaceId);
+    // Get the current space - use the selected space if available, otherwise use player position
+    let currentSpace = null;
+    let currentSpaceId = null;
+    
+    // First try to get the selected space from GameBoard state
+    if (this.gameBoard.state.selectedSpace) {
+      currentSpaceId = this.gameBoard.state.selectedSpace;
+      console.log('DiceManager: Using selected space from GameBoard state:', currentSpaceId);
+    } else {
+      // Fallback to current player position
+      currentSpaceId = currentPlayer.position;
+      console.log('DiceManager: Using current player position:', currentSpaceId);
+    console.log('DiceManager: TESTING - about to find space with format conversion');
+    }
+    
+    // Find the actual space object - handle ID format conversion
+    currentSpace = window.GameStateManager.findSpaceById(currentSpaceId);
+    
+    // If not found with direct ID, try converting format (OWNER-SCOPE-INITIATION -> owner-scope-initiation-first)
+    if (!currentSpace && currentSpaceId) {
+      console.log('DiceManager: Space not found with direct ID, trying format conversion');
+      
+      // Convert to lowercase and add visit type suffix
+      const normalizedSpaceId = currentSpaceId.toLowerCase() + '-first';
+      console.log('DiceManager: Trying normalized ID:', normalizedSpaceId);
+      currentSpace = window.GameStateManager.findSpaceById(normalizedSpaceId);
+      
+      // If still not found, try subsequent
+      if (!currentSpace) {
+        const subsequentSpaceId = currentSpaceId.toLowerCase() + '-subsequent';
+        console.log('DiceManager: Trying subsequent ID:', subsequentSpaceId);
+        currentSpace = window.GameStateManager.findSpaceById(subsequentSpaceId);
+      }
+      
+      // If found with converted ID, update currentSpaceId for consistency
+      if (currentSpace) {
+        console.log('DiceManager: Found space with converted ID, using:', currentSpace.id || normalizedSpaceId);
+        currentSpaceId = currentSpace.id || normalizedSpaceId;
+      }
+    }
+    
     if (!currentSpace) {
-      console.log('DiceManager: No current space found');
+      console.log('DiceManager: No current space found for ID:', currentSpaceId, 'even after format conversion');
       return false;
     }
     
-    // Determine the visit type for this space
-    const visitType = this.gameBoard.spaceSelectionManager?.isVisitingFirstTime() ? 'First' : 'Subsequent';
-    console.log(`DiceManager: Checking if space ${currentSpace.name} needs dice roll. Visit type: ${visitType}`);
+    // Use the space_name property (as defined in CSV)
+    const spaceName = currentSpace.space_name;
+    console.log('DiceManager: Checking space:', spaceName);
+    
+    // Determine the visit type - use First as default since we're debugging OWNER-SCOPE-INITIATION
+    let visitType = 'First';
+    
+    // Try to determine visit type from space ID or spaceSelectionManager
+    if (currentSpaceId && currentSpaceId.includes('subsequent')) {
+      visitType = 'Subsequent';
+    } else if (this.gameBoard.spaceSelectionManager?.isVisitingFirstTime) {
+      visitType = this.gameBoard.spaceSelectionManager.isVisitingFirstTime() ? 'First' : 'Subsequent';
+    }
+    
+    console.log(`DiceManager: Checking if space ${spaceName} needs dice roll. Visit type: ${visitType}`);
     
     // Initialize variables to track decision and reason
     let needsDiceRoll = false;
     let reason = '';
     
     // Method 1: Check if there are dice roll entries in DiceRoll Info.csv
-    if (this.gameBoard.state.diceRollData) {
+    if (this.gameBoard.state.diceRollData && this.gameBoard.state.diceRollData.length > 0) {
       const hasDiceRollInData = this.gameBoard.state.diceRollData.some(data => 
-        data['space_name'] === currentSpace.name && 
-        data['visit_type'].toLowerCase() === visitType.toLowerCase()
+        data['space_name'] === spaceName && 
+        data['visit_type'] && data['visit_type'].toLowerCase() === visitType.toLowerCase()
       );
       
       if (hasDiceRollInData) {
         needsDiceRoll = true;
-        reason = `Found dice roll data for space ${currentSpace.name} and visit type ${visitType} in DiceRoll Info.csv`;
+        reason = `Found dice roll data for space ${spaceName} and visit type ${visitType} in DiceRoll Info.csv`;
         console.log(`DiceManager: ${reason}`);
+      } else {
+        console.log(`DiceManager: No dice roll data found for space ${spaceName} visit type ${visitType} in DiceRoll Info.csv`);
+        console.log('DiceManager: Available dice roll data spaces:', 
+          this.gameBoard.state.diceRollData.slice(0, 5).map(d => `${d.space_name}(${d.visit_type})`).join(', '));
+      }
+    } else {
+      console.log('DiceManager: No diceRollData available in GameBoard state - checking window.diceRollData');
+      
+      // Fallback to global diceRollData if GameBoard state doesn't have it yet
+      if (window.diceRollData && window.diceRollData.length > 0) {
+        const hasDiceRollInData = window.diceRollData.some(data => 
+          data['space_name'] === spaceName && 
+          data['visit_type'] && data['visit_type'].toLowerCase() === visitType.toLowerCase()
+        );
+        
+        if (hasDiceRollInData) {
+          needsDiceRoll = true;
+          reason = `Found dice roll data for space ${spaceName} and visit type ${visitType} in global diceRollData`;
+          console.log(`DiceManager: ${reason}`);
+        } else {
+          console.log(`DiceManager: No dice roll data found in global diceRollData either`);
+        }
+      } else {
+        console.log('DiceManager: No global diceRollData available either');
       }
     }
     
     // Method 2: Check the requires_dice_roll column in Spaces.csv
     if (!needsDiceRoll) {
       const requiresDiceRoll = currentSpace.requires_dice_roll;
-      if (requiresDiceRoll && requiresDiceRoll.toLowerCase() === 'yes') {
+      console.log(`DiceManager: Space ${spaceName} requires_dice_roll field:`, requiresDiceRoll);
+      if (requiresDiceRoll && (requiresDiceRoll.toLowerCase() === 'yes' || requiresDiceRoll.toLowerCase() === 'true')) {
         needsDiceRoll = true;
-        reason = `Space ${currentSpace.name} has requires_dice_roll=Yes in Spaces.csv`;
+        reason = `Space ${spaceName} has requires_dice_roll=${requiresDiceRoll} in Spaces.csv`;
         console.log(`DiceManager: ${reason}`);
       }
     }
@@ -490,9 +646,9 @@ class DiceManager {
     
     // Log the final decision
     if (!needsDiceRoll) {
-      console.log(`DiceManager: No dice roll required for space ${currentSpace.name} based on CSV data`);
+      console.log(`DiceManager: No dice roll required for space ${spaceName} based on CSV data`);
     } else {
-      console.log(`DiceManager: Dice roll required for space ${currentSpace.name}. Reason: ${reason}`);
+      console.log(`DiceManager: Dice roll required for space ${spaceName}. Reason: ${reason}`);
     }
     
     return needsDiceRoll;
@@ -697,7 +853,7 @@ class DiceManager {
     });
     
     // Simulate dice roll animation delay (1.2 seconds like the original DiceRoll component)
-    setTimeout(() => {
+    this.setTimeout(() => {
       // Generate random number between 1 and 6
       const result = Math.floor(Math.random() * 6) + 1;
       console.log('DiceManager: Direct dice roll result:', result);
@@ -914,6 +1070,7 @@ class DiceManager {
     }, 100);
     
     // Process card draws
+    console.log('DiceManager: About to call processCardDraws with outcomes:', outcomes, 'currentPlayer:', currentPlayer?.id);
     this.processCardDraws(outcomes, currentPlayer);
     
     console.log('DiceManager: Direct dice roll completed successfully');
@@ -929,10 +1086,70 @@ class DiceManager {
       return;
     }
     
+    // Get the new space information from event data
+    const newSpaceId = event.data?.toSpaceId;
+    let potentialOutcomes = null;
+    
+    // Check if the new space requires dice rolling and load potential outcomes
+    if (newSpaceId && this.hasDiceRollSpace(newSpaceId)) {
+      console.log('DiceManager: New space requires dice roll, loading potential outcomes');
+      
+      // Get the space object to extract the correct space_name
+      const spaceObject = window.GameStateManager.findSpaceById(newSpaceId);
+      if (!spaceObject) {
+        console.warn('DiceManager: Could not find space object for ID:', newSpaceId);
+        return;
+      }
+      
+      const spaceName = spaceObject.space_name;
+      console.log('DiceManager: Using space_name for potential outcomes:', spaceName);
+      
+      // Determine visit type for this space
+      const currentPlayer = window.GameStateManager.getCurrentPlayer();
+      const hasVisited = currentPlayer?.visitedSpaces?.has(spaceName);
+      const visitType = hasVisited ? 'Subsequent' : 'First';
+      
+      // Load potential dice outcomes using DiceRollLogic.outcomeParser
+      if (window.DiceRollLogic && window.DiceRollLogic.outcomeParser) {
+        const allOutcomes = window.DiceRollLogic.outcomeParser.getAllOutcomesForSpace(spaceName, visitType);
+        console.log('DiceManager: Loaded potential outcomes for', spaceName, visitType, allOutcomes);
+        
+        // Convert to display format - show what each dice roll would give
+        potentialOutcomes = {};
+        for (let roll = 1; roll <= 6; roll++) {
+          if (allOutcomes[roll] && allOutcomes[roll].length > 0) {
+            // Format outcomes for display
+            const formattedOutcomes = {};
+            for (const outcome of allOutcomes[roll]) {
+              if (outcome.type === 'cards' && outcome.action === 'drawCards') {
+                const cardEntries = Object.entries(outcome.cards);
+                if (cardEntries.length > 0) {
+                  const [cardType, count] = cardEntries[0];
+                  formattedOutcomes['W Cards'] = `Draw ${count}`;
+                }
+              } else if (outcome.type === 'movement' && outcome.destination) {
+                formattedOutcomes['Next Step'] = outcome.destination;
+              } else if (outcome.type === 'raw') {
+                formattedOutcomes['Effect'] = outcome.text;
+              }
+            }
+            
+            if (Object.keys(formattedOutcomes).length > 0) {
+              potentialOutcomes[`Roll ${roll}`] = formattedOutcomes;
+            }
+          }
+        }
+        
+        console.log('DiceManager: Potential outcomes formatted for display:', potentialOutcomes);
+      } else {
+        console.warn('DiceManager: DiceRollLogic.outcomeParser not available for loading potential outcomes');
+      }
+    }
+    
     // Reset dice roll state when player moves
     this.gameBoard.setState({
       hasRolledDice: false,
-      diceOutcomes: null,
+      diceOutcomes: potentialOutcomes, // Show potential outcomes instead of null
       lastDiceRoll: null,
       showDiceRoll: false,
       // Reset conditional card requirements when moving to a new space
@@ -1038,15 +1255,120 @@ class DiceManager {
     }
   }
   
+  // Load initial potential outcomes for current player's space
+  loadInitialPotentialOutcomes() {
+    console.log('DiceManager: Loading initial potential outcomes');
+    
+    // Get current player and their position
+    const currentPlayer = window.GameStateManager?.getCurrentPlayer();
+    if (!currentPlayer || !currentPlayer.position) {
+      console.log('DiceManager: No current player or position for initial outcomes');
+      return;
+    }
+    
+    const currentSpaceId = currentPlayer.position;
+    console.log('DiceManager: Current player space for initial outcomes:', currentSpaceId);
+    
+    // Check if this space requires dice rolling
+    if (!this.hasDiceRollSpace(currentSpaceId)) {
+      console.log('DiceManager: Current space does not require dice rolling');
+      return;
+    }
+    
+    // Get the space object to extract the correct space_name
+    let spaceObject = window.GameStateManager.findSpaceById(currentSpaceId);
+    
+    // If not found with direct ID, try converting format (OWNER-SCOPE-INITIATION -> owner-scope-initiation-first)
+    if (!spaceObject && currentSpaceId) {
+      console.log('DiceManager: Space not found with direct ID for initial outcomes, trying format conversion');
+      
+      // Convert to lowercase and add visit type suffix
+      const normalizedSpaceId = currentSpaceId.toLowerCase() + '-first';
+      console.log('DiceManager: Trying normalized ID for initial outcomes:', normalizedSpaceId);
+      spaceObject = window.GameStateManager.findSpaceById(normalizedSpaceId);
+      
+      // If still not found, try subsequent
+      if (!spaceObject) {
+        const subsequentSpaceId = currentSpaceId.toLowerCase() + '-subsequent';
+        console.log('DiceManager: Trying subsequent ID for initial outcomes:', subsequentSpaceId);
+        spaceObject = window.GameStateManager.findSpaceById(subsequentSpaceId);
+      }
+    }
+    
+    if (!spaceObject) {
+      console.warn('DiceManager: Could not find space object for initial outcomes, ID:', currentSpaceId);
+      return;
+    }
+    
+    const spaceName = spaceObject.space_name;
+    console.log('DiceManager: Using space_name for initial outcomes:', spaceName);
+    
+    // Determine visit type
+    const hasVisited = currentPlayer?.visitedSpaces?.has(spaceName);
+    const visitType = hasVisited ? 'Subsequent' : 'First';
+    
+    // Load potential outcomes
+    let potentialOutcomes = null;
+    if (window.DiceRollLogic && window.DiceRollLogic.outcomeParser) {
+      const allOutcomes = window.DiceRollLogic.outcomeParser.getAllOutcomesForSpace(spaceName, visitType);
+      console.log('DiceManager: Initial outcomes loaded for', spaceName, visitType, allOutcomes);
+      
+      // Convert to display format - same formatting as in handlePlayerMovedEvent
+      potentialOutcomes = {};
+      for (let roll = 1; roll <= 6; roll++) {
+        if (allOutcomes[roll] && allOutcomes[roll].length > 0) {
+          // Format outcomes for display
+          const formattedOutcomes = {};
+          for (const outcome of allOutcomes[roll]) {
+            if (outcome.type === 'cards' && outcome.action === 'drawCards') {
+              const cardEntries = Object.entries(outcome.cards);
+              if (cardEntries.length > 0) {
+                const [cardType, count] = cardEntries[0];
+                formattedOutcomes['W Cards'] = `Draw ${count}`;
+              }
+            } else if (outcome.type === 'movement' && outcome.destination) {
+              formattedOutcomes['Next Step'] = outcome.destination;
+            } else if (outcome.type === 'raw') {
+              formattedOutcomes['Effect'] = outcome.text;
+            }
+          }
+          
+          if (Object.keys(formattedOutcomes).length > 0) {
+            potentialOutcomes[`Roll ${roll}`] = formattedOutcomes;
+          }
+        }
+      }
+      
+      console.log('DiceManager: Initial potential outcomes formatted:', potentialOutcomes);
+    } else {
+      console.warn('DiceManager: DiceRollLogic.outcomeParser not available for initial outcomes');
+    }
+    
+    // Update GameBoard state with initial potential outcomes
+    if (potentialOutcomes && Object.keys(potentialOutcomes).length > 0) {
+      this.gameBoard.setState({
+        diceOutcomes: potentialOutcomes
+      });
+      console.log('DiceManager: GameBoard state updated with initial potential outcomes');
+    }
+  }
+  
   // Clean up resources when no longer needed
   cleanup() {
     console.log('DiceManager: Cleaning up resources');
+    
+    // Clear all active timers to prevent memory leaks
+    this.activeTimers.forEach(timerId => {
+      clearTimeout(timerId);
+    });
+    this.activeTimers.clear();
     
     // Remove all event listeners to prevent memory leaks
     window.GameStateManager.removeEventListener('playerMoved', this.eventHandlers.playerMoved);
     window.GameStateManager.removeEventListener('turnChanged', this.eventHandlers.turnChanged);
     window.GameStateManager.removeEventListener('gameStateChanged', this.eventHandlers.gameStateChanged);
     window.GameStateManager.removeEventListener('diceRolled', this.eventHandlers.diceRolled);
+    window.GameStateManager.removeEventListener('spacesLoaded', this.handleSpacesLoaded.bind(this));
     
     console.log('DiceManager: Cleanup completed');
   }

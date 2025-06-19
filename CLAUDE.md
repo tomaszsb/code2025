@@ -70,6 +70,9 @@ css/dice-animations.css         # 3D dice effects
 - **React setState pattern** - Always use function form with spread operator
 - **Use CSV data directly** - No transforming space names (see Data Standards below)
 - **Coordinate component updates** - Use componentFinished signals (see Patterns below)
+- **File organization** - When editing files, move them to proper folders (managers/, utils/) and update all imports
+- **Memory management** - Always clean up event listeners, timers, and DOM references in componentWillUnmount
+- **Error handling** - Wrap CSV loading and critical operations in try-catch blocks
 
 ## 🔧 Common Development Patterns
 
@@ -139,7 +142,7 @@ this.setState(prevState => ({
 
 ## 🃏 Card System Facts
 
-### Actual Card Counts (399 production cards)
+### Actual Card Counts (398 production cards)
 - **B (Bank)**: 60 cards - Provide loans with `loan_amount` and `loan_rate`
 - **I (Investor)**: 39 cards - Provide funding with `investment_amount`  
 - **L (Life)**: 49 cards - Personal events with special effects
@@ -199,6 +202,18 @@ this.setState(newState, () => {
 });
 ```
 
+### SpaceExplorer Missing Dice Outcomes
+**Symptoms:** Player panel shows dice outcomes but SpaceExplorer doesn't
+**Cause:** `processDiceDataFromProps()` not called on prop changes  
+**Solution:** Call in `componentDidMount()` and `componentDidUpdate()` when props change
+**Details:** See `docs/COMPREHENSIVE_GAME_GUIDE.md` - Component Data Flow section
+
+### End Turn Button Disabled After Dice
+**Symptoms:** Button visible but disabled even with available moves after dice roll
+**Cause:** Single moves not auto-selected (`hasSelectedMove = false`)
+**Solution:** Auto-select in DiceManager when `movesToUpdate.length === 1`
+**Details:** See `docs/COMPREHENSIVE_GAME_GUIDE.md` - UI State Management section
+
 ## 🚀 Quick References
 
 ### Documentation
@@ -257,6 +272,78 @@ GameStateManager.addEventListener('componentFinished', (event) => {
   }
 });
 ```
+
+### Memory Leak Prevention (IMPORTANT)
+```javascript
+// Always clean up event listeners in componentWillUnmount
+componentWillUnmount() {
+  // Remove specific listeners
+  GameStateManager.removeEventListener('playerMoved', this.handlePlayerMoved);
+  
+  // Clear timers and intervals
+  if (this.animationTimer) {
+    clearTimeout(this.animationTimer);
+  }
+  
+  // Clear any DOM references
+  this.elementRef = null;
+}
+
+// Store bound function references for proper cleanup
+constructor(props) {
+  super(props);
+  this.handlePlayerMoved = this.handlePlayerMoved.bind(this);
+}
+
+componentDidMount() {
+  GameStateManager.addEventListener('playerMoved', this.handlePlayerMoved);
+}
+```
+
+### Error Handling Pattern
+```javascript
+// Wrap CSV loading and critical operations
+try {
+  const spaces = await loadCSV('data/Spaces.csv');
+  this.setState({ spaces, isLoaded: true });
+} catch (error) {
+  console.error('Failed to load spaces:', error);
+  this.setState({ 
+    error: 'Failed to load game data. Please refresh the page.',
+    isLoaded: false 
+  });
+}
+
+// Add error boundaries for component crashes
+componentDidCatch(error, errorInfo) {
+  console.error('Component error:', error, errorInfo);
+  this.setState({ hasError: true });
+}
+```
+
+## 📋 Code Review Recommendations
+
+### ✅ **Implemented (Worth Addressing)**
+- **Memory Leak Prevention**: Added cleanup patterns for event listeners and timers
+- **Error Handling**: Added try-catch patterns for CSV loading and component crashes
+
+### 🟡 **Consider If Issues Arise**
+- **React 18 Update**: Easy upgrade if performance becomes an issue
+- **Input Sanitization**: Add for player names if display problems occur
+- **Basic Accessibility**: Add ARIA labels and keyboard support for inclusivity
+
+### ❌ **Intentionally Not Implementing**
+- **Build System**: Browser-based compilation is intentional and appropriate
+- **State Management Libraries**: Current event-driven system works well
+- **TypeScript**: Would complicate development for non-technical users
+- **Complex Testing**: Playwright covers the important scenarios
+
+### 💭 **Design Philosophy**
+This project prioritizes **simplicity and maintainability** over enterprise patterns. The architecture choices are intentional:
+- Browser-based compilation keeps development simple
+- Event-driven communication prevents tight coupling
+- CSV-driven logic makes game rules easily editable
+- No build system reduces complexity for non-technical users
 
 ---
 

@@ -15,6 +15,9 @@ class CardManager {
       gameStateChanged: this.handleGameStateChangedEvent.bind(this)
     };
     
+    // Timer tracking for proper cleanup
+    this.timers = new Set();
+    
     // Register event listeners with GameStateManager
     this.registerEventListeners();
     
@@ -1847,6 +1850,10 @@ class CardManager {
   // Clean up resources when no longer needed - New method
   cleanup = () => {
     console.log('CardManager: Cleaning up resources');
+    
+    // Clear all timers to prevent memory leaks
+    this.timers.forEach(timer => clearTimeout(timer));
+    this.timers.clear();
     
     // Remove all event listeners to prevent memory leaks
     window.GameStateManager.removeEventListener('cardDrawn', this.eventHandlers.cardDrawn);

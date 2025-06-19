@@ -93,11 +93,21 @@ class GameStateManager {
   processSpacesData(spacesData) {
     console.log('GameStateManager: processSpacesData method is being used');
     
-    // Initially set gameStarted to false to ensure the player setup screen is shown
-    this._gameStarted = false;
-    
-    // Mark as properly initialized early to prevent premature getCurrentPlayer calls
-    this.isProperlyInitialized = true;
+    try {
+      // Validate input data
+      if (!spacesData || !Array.isArray(spacesData)) {
+        throw new Error('Invalid spaces data: expected array');
+      }
+      
+      if (spacesData.length === 0) {
+        throw new Error('No spaces data provided');
+      }
+      
+      // Initially set gameStarted to false to ensure the player setup screen is shown
+      this._gameStarted = false;
+      
+      // Mark as properly initialized early to prevent premature getCurrentPlayer calls
+      this.isProperlyInitialized = true;
     
     // Filter out invalid spaces
     const validSpaces = spacesData.filter(row => row['space_name'] && row['space_name'].trim() !== '');
@@ -193,31 +203,82 @@ class GameStateManager {
     });
     
     console.log('GameStateManager: processSpacesData method completed');
+    
+    } catch (error) {
+      console.error('GameStateManager: Error processing spaces data:', error);
+      this.isProperlyInitialized = false;
+      
+      // Set error state that can be accessed by components
+      this.dataError = {
+        type: 'spaces',
+        message: 'Failed to process game board data. Please refresh the page.',
+        originalError: error.message
+      };
+      
+      // Dispatch error event
+      this.dispatchEvent('gameStateChanged', {
+        changeType: 'error',
+        errorType: 'dataProcessing',
+        component: 'GameStateManager',
+        message: this.dataError.message
+      });
+      
+      throw error; // Re-throw to halt initialization
+    }
   }
   
   // Build space cache after loading spaces
   buildSpaceCache() {
     console.log('GameStateManager: buildSpaceCache method is being used');
     
-    // Clear existing caches
-    this.spaceCache.byId.clear();
-    this.spaceCache.byName.clear();
-    this.spaceCache.byNormalizedName.clear();
-    
-    // Populate caches
-    this.spaces.forEach(space => {
-      this.spaceCache.byId.set(space.id, space);
-      this.spaceCache.byName.set(space.name, space);
-      
-      const normalizedName = window.movementEngine?.extractSpaceName?.(space.name) || space.name;
-      // Group spaces by normalized name for quick access to all variants
-      if (!this.spaceCache.byNormalizedName.has(normalizedName)) {
-        this.spaceCache.byNormalizedName.set(normalizedName, []);
+    try {
+      // Validate that spaces array exists
+      if (!this.spaces || !Array.isArray(this.spaces)) {
+        throw new Error('Cannot build cache: spaces data is not available');
       }
-      this.spaceCache.byNormalizedName.get(normalizedName).push(space);
-    });
-    
-    console.log('GameStateManager: buildSpaceCache method completed');
+      
+      // Clear existing caches
+      this.spaceCache.byId.clear();
+      this.spaceCache.byName.clear();
+      this.spaceCache.byNormalizedName.clear();
+      
+      // Populate caches
+      this.spaces.forEach((space, index) => {
+        try {
+          if (!space || !space.id || !space.name) {
+            console.warn(`GameStateManager: Skipping invalid space at index ${index}:`, space);
+            return;
+          }
+          
+          this.spaceCache.byId.set(space.id, space);
+          this.spaceCache.byName.set(space.name, space);
+          
+          const normalizedName = window.movementEngine?.extractSpaceName?.(space.name) || space.name;
+          // Group spaces by normalized name for quick access to all variants
+          if (!this.spaceCache.byNormalizedName.has(normalizedName)) {
+            this.spaceCache.byNormalizedName.set(normalizedName, []);
+          }
+          this.spaceCache.byNormalizedName.get(normalizedName).push(space);
+        } catch (spaceError) {
+          console.error(`GameStateManager: Error processing space at index ${index}:`, spaceError);
+          // Continue processing other spaces
+        }
+      });
+      
+      console.log('GameStateManager: buildSpaceCache method completed');
+      
+    } catch (error) {
+      console.error('GameStateManager: Error building space cache:', error);
+      
+      // Set error state
+      this.dataError = {
+        type: 'cache',
+        message: 'Failed to build game index. Please refresh the page.',
+        originalError: error.message
+      };
+      
+      throw error; // Re-throw as this is critical for game functionality
+    }
   }
   
   // Event registration

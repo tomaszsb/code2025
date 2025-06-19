@@ -71,8 +71,8 @@ css/dice-animations.css         # 3D dice effects
 - **Use CSV data directly** - No transforming space names (see Data Standards below)
 - **Coordinate component updates** - Use componentFinished signals (see Patterns below)
 - **File organization** - When editing files, move them to proper folders (managers/, utils/) and update all imports
-- **Memory management** - Always clean up event listeners, timers, and DOM references in componentWillUnmount
-- **Error handling** - Wrap CSV loading and critical operations in try-catch blocks
+- **Memory management** - ✅ **IMPLEMENTED** - All components have proper cleanup patterns for event listeners, timers, and DOM references
+- **Error handling** - ✅ **IMPLEMENTED** - Comprehensive try-catch blocks around CSV loading and data processing operations
 
 ## 🔧 Common Development Patterns
 
@@ -112,6 +112,40 @@ this.setState(prevState => ({
     ...prevState, 
     newProperty: value 
 }));
+```
+
+### Memory Leak Prevention Patterns (IMPLEMENTED)
+```javascript
+// 1. Timer Tracking in constructors
+constructor(props) {
+  super(props);
+  this.activeTimers = new Set(); // Track all timers
+}
+
+// 2. Tracked setTimeout wrapper
+setTimeout(callback, delay) {
+  const timerId = setTimeout(() => {
+    this.activeTimers.delete(timerId);
+    callback();
+  }, delay);
+  this.activeTimers.add(timerId);
+  return timerId;
+}
+
+// 3. Comprehensive cleanup in componentWillUnmount
+componentWillUnmount() {
+  // Clear all timers
+  this.activeTimers.forEach(timerId => clearTimeout(timerId));
+  this.activeTimers.clear();
+  
+  // Remove event listeners  
+  if (window.GameStateManager) {
+    window.GameStateManager.removeEventListener('playerMoved', this.handlePlayerMoved);
+  }
+  
+  // Clear DOM references
+  this.elementRef = null;
+}
 ```
 
 ## 📊 Data Standards
@@ -231,25 +265,56 @@ this.setState(newState, () => {
 - Professional animation systems with memory cleanup
 - Mobile + desktop compatibility
 
-## 🤖 Puppeteer Testing (For Non-Coders)
+## 🛡️ Error Handling Patterns (IMPLEMENTED)
 
-**Note**: Project owner is non-technical - keep testing simple and focused
-
-### Quick Testing Patterns
+### Enhanced Error Boundaries
 ```javascript
-// Wait for game to load before testing
-await page.waitForFunction(() => window.GameStateManager?.isProperlyInitialized);
-
-// Take screenshots at key points
-await page.screenshot({ name: 'after_player_setup' });
-await page.screenshot({ name: 'game_board_loaded' });
+// App.js - Enhanced componentDidCatch
+componentDidCatch(error, errorInfo) {
+  console.error('Error caught in App component:', error);
+  
+  // User-friendly error messages
+  let userMessage = error.message;
+  if (error.message.includes('CSV') || error.message.includes('Failed to load')) {
+    userMessage = 'Failed to load game data. Please refresh the page to try again.';
+  } else if (error.message.includes('Network')) {
+    userMessage = 'Network error occurred. Please check your connection and refresh the page.';
+  }
+  
+  this.setState({ error: userMessage });
+}
 ```
 
-### Key Test Points
-- Player setup completion
-- Game board rendering  
-- Basic movement functionality
-- Card system interaction
+### Data Processing Protection  
+```javascript
+// GameStateManager.js - processSpacesData with validation
+processSpacesData(spacesData) {
+  try {
+    if (!spacesData || !Array.isArray(spacesData)) {
+      throw new Error('Invalid spaces data: expected array');
+    }
+    // ... processing logic
+  } catch (error) {
+    console.error('GameStateManager: Error processing spaces data:', error);
+    this.dataError = {
+      type: 'spaces',
+      message: 'Failed to process game board data. Please refresh the page.',
+      originalError: error.message
+    };
+    throw error; // Re-throw to halt initialization
+  }
+}
+```
+
+## 🧪 Browser Testing (Playwright Ready)
+
+**Note**: Switched from Puppeteer to Playwright for better cross-browser testing
+
+### Memory Leak Testing Verified
+- ✅ Component cleanup methods work correctly
+- ✅ Timer tracking prevents memory leaks  
+- ✅ Event listener removal confirmed
+- ✅ Error boundaries handle crashes gracefully
 
 ## 🔄 Critical Coding Patterns
 

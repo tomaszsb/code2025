@@ -5,7 +5,7 @@ const path = require('path');
 console.log('🔍 Verifying Card Drawing Fix Implementation...\n');
 
 // Check if the DiceManager file exists and contains the fix
-const diceManagerPath = path.join(__dirname, 'js/components/DiceManager.js');
+const diceManagerPath = path.join(__dirname, '../js/components/DiceManager.js');
 
 try {
     const diceManagerContent = fs.readFileSync(diceManagerPath, 'utf8');
@@ -40,7 +40,7 @@ try {
     console.log(`   📊 CSV data integration: ${usesCsvData ? '✅' : '❌'}`);
     
     // Check for SpaceInfoCards button intelligence
-    const spaceInfoCardsPath = path.join(__dirname, 'js/components/SpaceInfoCards.js');
+    const spaceInfoCardsPath = path.join(__dirname, '../js/components/SpaceInfoCards.js');
     let hasButtonIntelligence = false;
     try {
         const spaceInfoCardsContent = fs.readFileSync(spaceInfoCardsPath, 'utf8');
@@ -52,7 +52,7 @@ try {
     }
     
     // Check for SpaceInfo button prevention
-    const spaceInfoPath = path.join(__dirname, 'js/components/SpaceInfo.js');
+    const spaceInfoPath = path.join(__dirname, '../js/components/SpaceInfo.js');
     let hasButtonPrevention = false;
     try {
         const spaceInfoContent = fs.readFileSync(spaceInfoPath, 'utf8');
@@ -86,7 +86,7 @@ try {
     ];
     
     csvFiles.forEach(file => {
-        const exists = fs.existsSync(path.join(__dirname, file));
+        const exists = fs.existsSync(path.join(__dirname, '..', file));
         console.log(`   ${exists ? '✅' : '❌'} ${file}`);
     });
     

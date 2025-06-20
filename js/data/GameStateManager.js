@@ -937,10 +937,12 @@ class GameStateManager {
   // Draw a card of the specified type
   drawCard(playerId, cardType, filters = {}) {
     console.log('GameStateManager: drawCard method is being used');
+    console.log(`GameStateManager: drawCard called with playerId=${playerId}, cardType=${cardType}, filters=`, filters);
     
     // Validate inputs
     if (!playerId || !cardType) {
       console.error('GameStateManager: Invalid parameters for drawCard');
+      console.error(`GameStateManager: playerId=${playerId}, cardType=${cardType}`);
       return null;
     }
     
@@ -948,49 +950,97 @@ class GameStateManager {
     const player = this.players.find(p => p.id === playerId);
     if (!player) {
       console.error('GameStateManager: Player not found for drawing card');
+      console.error(`GameStateManager: Available players:`, this.players.map(p => p.id));
       return null;
     }
+    console.log(`GameStateManager: Found player ${player.name} for card drawing`);
     
     // Use new card querying system if unified data is available
     let availableCards = [];
+    console.log('GameStateManager: Checking card data sources...');
+    
     if (window.InitializationManager && window.InitializationManager.loadedData && window.InitializationManager.loadedData.allCards) {
+      console.log('GameStateManager: Using unified card system from InitializationManager');
+      console.log(`GameStateManager: Total cards in InitializationManager: ${window.InitializationManager.loadedData.allCards.length}`);
+      
       // Use unified card system
       availableCards = window.queryCards(
         window.InitializationManager.loadedData.allCards, 
         { card_type: cardType, ...filters }
       );
+      console.log(`GameStateManager: Found ${availableCards.length} cards of type ${cardType} using queryCards`);
+      
     } else if (this.cardCollections && this.cardCollections[cardType]) {
+      console.log('GameStateManager: Using legacy card system from cardCollections');
+      console.log(`GameStateManager: Available card types in collections:`, Object.keys(this.cardCollections));
+      
       // Fallback to legacy system
       availableCards = this.cardCollections[cardType];
+      console.log(`GameStateManager: Found ${availableCards.length} cards of type ${cardType} in legacy system`);
+      
+    } else {
+      console.error('GameStateManager: No card data sources available!');
+      console.error('GameStateManager: InitializationManager exists:', !!window.InitializationManager);
+      console.error('GameStateManager: InitializationManager.loadedData exists:', !!(window.InitializationManager && window.InitializationManager.loadedData));
+      console.error('GameStateManager: allCards exists:', !!(window.InitializationManager && window.InitializationManager.loadedData && window.InitializationManager.loadedData.allCards));
+      console.error('GameStateManager: cardCollections exists:', !!this.cardCollections);
+      console.error('GameStateManager: cardCollections keys:', this.cardCollections ? Object.keys(this.cardCollections) : 'N/A');
     }
     
     if (availableCards.length === 0) {
       console.log(`GameStateManager: No ${cardType} cards available to draw`);
+      console.log('GameStateManager: This could indicate a card loading issue or all cards of this type are already drawn');
       return null;
     }
     
+    console.log(`GameStateManager: About to select from ${availableCards.length} available cards`);
+    console.log('GameStateManager: First few available cards:', availableCards.slice(0, 3).map(c => ({
+      card_name: c.card_name || c.name,
+      card_id: c.card_id || c.id,
+      card_type: c.card_type
+    })));
+    
     // Random selection or weighted selection based on distribution_level
     const selectedCard = this.selectCard(availableCards);
+    
+    if (!selectedCard) {
+      console.error('GameStateManager: selectCard returned null or undefined');
+      return null;
+    }
+    
+    console.log('GameStateManager: Selected card:', {
+      card_name: selectedCard.card_name || selectedCard.name,
+      card_id: selectedCard.card_id || selectedCard.id,
+      card_type: selectedCard.card_type
+    });
     
     // Create a unique instance for the player
     const drawnCard = { ...selectedCard };
     drawnCard.id = drawnCard.card_id || `${cardType}-card-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     drawnCard.type = cardType;
     
+    console.log('GameStateManager: Created drawn card instance with id:', drawnCard.id);
+    
     // Add the card to the player's hand
     if (!player.cards) {
+      console.log('GameStateManager: Initializing player cards array');
       player.cards = [];
     }
+    
+    const cardCountBefore = player.cards.length;
     player.cards.push(drawnCard);
+    console.log(`GameStateManager: Added card to player hand. Cards before: ${cardCountBefore}, after: ${player.cards.length}`);
     
     // Work cards represent scope (costs), not income
     // They should not add money - only Bank/Investor cards add money
     // Work cards are just added to hand for scope calculation
     
     // Save the updated state
+    console.log('GameStateManager: Saving game state...');
     this.saveState();
     
     // Dispatch event
+    console.log('GameStateManager: Dispatching cardDrawn event...');
     this.dispatchEvent('cardDrawn', {
       playerId: playerId,
       player: player,
@@ -999,9 +1049,10 @@ class GameStateManager {
     });
     
     console.log(`GameStateManager: Player ${player.name} drew card ${drawnCard.card_name || drawnCard.id}`);
+    console.log('GameStateManager: Final drawn card object:', drawnCard);
     
     // Return the drawn card for UI feedback
-    console.log('GameStateManager: drawCard method completed');
+    console.log('GameStateManager: drawCard method completed successfully');
     return drawnCard;
   }
   

@@ -188,6 +188,7 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
     
     console.log('SpaceInfo render - space:', space?.space_name, 'visitType:', visitType, 'renderKey:', renderKey);
     console.log('SpaceInfo render - diceRoll:', diceRoll, 'diceOutcomes:', diceOutcomes);
+    console.log('SpaceInfo render - diceOutcomes type:', typeof diceOutcomes, 'keys:', diceOutcomes ? Object.keys(diceOutcomes) : 'null');
     console.log('SpaceInfo render - availableMoves:', availableMoves?.length || 0, 'onMoveSelect:', !!onMoveSelect);
     console.log('SpaceInfo render - space object keys:', space ? Object.keys(space) : 'no space');
     
@@ -265,7 +266,18 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
             {/* Show roll button */}
             {!this.props.isRollingDice && (
               <button 
-                onClick={onRollDice}
+                onClick={() => {
+                  console.log('SpaceInfo: Roll Dice button clicked, calling DiceManager directly');
+                  if (window.currentGameBoard?.diceManager?.handleRollDiceClick) {
+                    window.currentGameBoard.diceManager.handleRollDiceClick();
+                  } else {
+                    console.error('SpaceInfo: DiceManager not available!');
+                    // Fallback to prop if available
+                    if (onRollDice) {
+                      onRollDice();
+                    }
+                  }
+                }}
                 className={`roll-dice-btn ${hasRolledDice ? 'used' : ''}`}
                 disabled={hasRolledDice || this.props.isRollingDice}
                 title={hasRolledDice ? 'Already rolled dice this turn' : 'Roll dice for this space'}
@@ -360,8 +372,9 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
                       <div>{space[field.key]}</div>
                     )}
                     
-                    {/* Always show draw button for card fields that have "Draw X" format */}
+                    {/* Show draw button for manual card fields only (not dice-driven outcomes) */}
                     {space[field.key].includes("Draw") && 
+                      this.shouldShowCardButton(field.key, space[field.key]) &&
                       this.renderDrawCardsButton(field.label, space[field.key])}
                   </div>
                 </div>
@@ -388,6 +401,49 @@ window.SpaceInfo = class SpaceInfo extends React.Component {
         </div>
       </div>
     );
+  }
+  
+  // Determine if a card button should be shown for this field
+  shouldShowCardButton(fieldKey, fieldValue) {
+    // Only show buttons for original space CSV fields, not dice-generated outcomes
+    
+    // Get current player and check if dice have been rolled this turn
+    const currentPlayer = window.GameStateManager?.getCurrentPlayer?.();
+    const gameBoard = window.currentGameBoard;
+    
+    // If dice have been rolled and created outcomes, don't show buttons for card types that dice already drew
+    if (gameBoard?.state?.hasRolledDice && gameBoard?.state?.diceOutcomes) {
+      const diceOutcomes = gameBoard.state.diceOutcomes;
+      
+      // Map field keys to card type codes to check against dice outcomes
+      const fieldToCardType = {
+        'w_card': 'W Cards',
+        'b_card': 'B Cards', 
+        'i_card': 'I Cards',
+        'l_card': 'L Cards',
+        'e_card': 'E Cards'
+      };
+      
+      const cardTypeKey = fieldToCardType[fieldKey];
+      
+      if (cardTypeKey && diceOutcomes[cardTypeKey]) {
+        const diceOutcome = diceOutcomes[cardTypeKey].toString();
+        // If dice outcome contains "Draw", it means dice already processed this card type
+        if (diceOutcome.toLowerCase().includes('draw')) {
+          console.log(`SpaceInfo: Not showing ${fieldKey} button - dice already drew ${cardTypeKey}: ${diceOutcome}`);
+          return false;
+        }
+      }
+    }
+    
+    // Only show buttons for actual CSV space fields (e_card, w_card, etc.)
+    const validCardFields = ['w_card', 'b_card', 'i_card', 'l_card', 'e_card'];
+    if (!validCardFields.includes(fieldKey)) {
+      return false;
+    }
+    
+    // Show button for valid manual card fields
+    return true;
   }
 };
 

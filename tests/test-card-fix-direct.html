@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Direct Card Drawing Fix Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .result { margin: 10px 0; padding: 10px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        button { padding: 10px 20px; margin: 5px; font-size: 16px; }
+        .card-count { font-weight: bold; font-size: 18px; }
+        .dice-result { font-weight: bold; color: #007bff; }
+        iframe { width: 100%; height: 600px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Direct Card Drawing Fix Test</h1>
+    
+    <div class="test-section">
+        <h3>Live Game Test</h3>
+        <p>This test opens the actual game and monitors for double card drawing.</p>
+        <button onclick="startLiveTest()" id="startBtn">Start Live Test</button>
+        <button onclick="resetTest()" id="resetBtn">Reset Test</button>
+    </div>
+    
+    <div id="game-container" class="test-section" style="display: none;">
+        <h3>Game Instance</h3>
+        <iframe id="gameFrame" src="about:blank"></iframe>
+    </div>
+    
+    <div id="results" class="test-section">
+        <h3>Test Results</h3>
+        <div id="test-output">Click "Start Live Test" to begin monitoring...</div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Expected Fix Behavior</h3>
+        <div class="result info">
+            <strong>OWNER-SCOPE-INITIATION Dice Outcomes:</strong><br>
+            • Dice result 1-2: Should draw exactly 1 W card<br>
+            • Dice result 3-4: Should draw exactly 2 W cards<br>
+            • Dice result 5-6: Should draw exactly 3 W cards<br>
+            <br>
+            <strong>Fix Implementation:</strong><br>
+            ✅ Turn-based tracking prevents multiple processCardDraws calls<br>
+            ✅ Processing flag prevents concurrent calls<br>
+            ✅ Tracking clears on turn change<br>
+        </div>
+    </div>
+
+    <script>
+        let testResults = [];
+        let gameFrame = null;
+        let monitoringInterval = null;
+        
+        function logResult(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            testResults.push({
+                time: timestamp,
+                message: message,
+                type: type
+            });
+            updateDisplay();
+        }
+        
+        function updateDisplay() {
+            const output = document.getElementById('test-output');
+            if (testResults.length === 0) {
+                output.innerHTML = 'Click "Start Live Test" to begin monitoring...';
+                return;
+            }
+            
+            output.innerHTML = testResults.map(result => 
+                `<div class="result ${result.type}">[${result.time}] ${result.message}</div>`
+            ).join('');
+            
+            // Auto-scroll to bottom
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function resetTest() {
+            testResults = [];
+            updateDisplay();
+            
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+                monitoringInterval = null;
+            }
+            
+            document.getElementById('game-container').style.display = 'none';
+            document.getElementById('startBtn').disabled = false;
+            
+            logResult('🔄 Test reset', 'info');
+        }
+        
+        function startLiveTest() {
+            logResult('🚀 Starting live card drawing test...', 'info');
+            document.getElementById('startBtn').disabled = true;
+            
+            // Show game container and load game
+            const container = document.getElementById('game-container');
+            container.style.display = 'block';
+            
+            gameFrame = document.getElementById('gameFrame');
+            gameFrame.src = '/';
+            
+            logResult('🎮 Loading game instance...', 'info');
+            
+            // Wait for game to load, then start monitoring
+            gameFrame.onload = function() {
+                logResult('✅ Game loaded successfully', 'success');
+                startMonitoring();
+            };
+            
+            gameFrame.onerror = function() {
+                logResult('❌ Failed to load game', 'error');
+                document.getElementById('startBtn').disabled = false;
+            };
+        }
+        
+        function startMonitoring() {
+            logResult('👀 Starting card drawing monitoring...', 'info');
+            logResult('📋 Instructions:', 'info');
+            logResult('   1. Start a new game in the iframe above', 'info');
+            logResult('   2. Move to OWNER-SCOPE-INITIATION (or start there)', 'info');
+            logResult('   3. Roll dice multiple times', 'info');
+            logResult('   4. This monitor will detect if double processing occurs', 'info');
+            
+            // Monitor console logs from the game frame
+            monitoringInterval = setInterval(() => {
+                try {
+                    const gameWindow = gameFrame.contentWindow;
+                    
+                    // Check if we can access the game window (same origin)
+                    if (gameWindow && gameWindow.console) {
+                        // Monitor for specific console patterns that indicate card drawing
+                        // This is limited by cross-origin restrictions, so we'll monitor differently
+                        checkGameState(gameWindow);
+                    }
+                } catch (error) {
+                    // Cross-origin restrictions prevent direct access
+                    // That's expected for security reasons
+                }
+            }, 2000);
+            
+            logResult('🔍 Monitoring started (check every 2 seconds)', 'success');
+            logResult('⚠️  Due to browser security, automatic detection is limited', 'warning');
+            logResult('📝 Please manually verify:', 'warning');
+            logResult('   • Console logs show "ALREADY PROCESSED CARD DRAWS THIS TURN"', 'warning');
+            logResult('   • Card counts match expected dice results', 'warning');
+        }
+        
+        function checkGameState(gameWindow) {
+            try {
+                // Try to access GameStateManager if available
+                if (gameWindow.GameStateManager) {
+                    const currentPlayer = gameWindow.GameStateManager.getCurrentPlayer();
+                    if (currentPlayer && currentPlayer.cards) {
+                        const wCardCount = currentPlayer.cards.W ? currentPlayer.cards.W.length : 0;
+                        logResult(`📊 Current W card count: ${wCardCount}`, 'info');
+                    }
+                }
+                
+                // Check for DiceManager processing logs
+                if (gameWindow.currentGameBoard && gameWindow.currentGameBoard.diceManager) {
+                    const diceManager = gameWindow.currentGameBoard.diceManager;
+                    if (diceManager.processedCardDrawsThisTurn) {
+                        const processedCount = diceManager.processedCardDrawsThisTurn.size;
+                        if (processedCount > 0) {
+                            logResult(`🎯 Processed card draws this turn: ${processedCount}`, 'success');
+                        }
+                    }
+                }
+            } catch (error) {
+                // Expected due to security restrictions
+            }
+        }
+        
+        // Initialize
+        window.addEventListener('load', () => {
+            logResult('📄 Direct test page loaded', 'info');
+            logResult('🎯 Ready to test card drawing fix', 'info');
+        });
+    </script>
+</body>
+</html>

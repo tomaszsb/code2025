@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Button Elimination Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .result { margin: 10px 0; padding: 10px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        button { padding: 10px 20px; margin: 5px; font-size: 16px; }
+        iframe { width: 100%; height: 600px; border: 1px solid #ccc; }
+        .expected-behavior { background-color: #f8f9fa; padding: 15px; border-left: 4px solid #007bff; }
+    </style>
+</head>
+<body>
+    <h1>Button Elimination Test</h1>
+    
+    <div class="expected-behavior">
+        <h3>🎯 Expected Behavior After Fix</h3>
+        <ul>
+            <li><strong>Before dice roll:</strong> Only manual space buttons visible (e.g., "Draw 3 Expeditor Cards")</li>
+            <li><strong>After dice roll (W cards drawn):</strong> W card buttons disappear, other manual buttons remain</li>
+            <li><strong>Correct behavior:</strong> If dice draw W cards → W card buttons vanish, E card buttons stay</li>
+            <li><strong>Key principle:</strong> Buttons only appear for card types NOT automatically drawn by dice</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test Instructions</h3>
+        <ol>
+            <li>Open the main game below</li>
+            <li>Start a new game</li>
+            <li>Go to OWNER-SCOPE-INITIATION space</li>
+            <li>Roll dice</li>
+            <li><strong>Verify:</strong> "Draw 3 Expeditor Cards" button is visible initially</li>
+            <li><strong>Verify:</strong> After dice roll, NO W card buttons appear (they should be hidden)</li>
+            <li><strong>Verify:</strong> After dice roll, E card button remains (dice didn't draw E cards)</li>
+            <li><strong>Verify:</strong> Cards are drawn automatically by dice (check player hand)</li>
+        </ol>
+        <button onclick="openTestGame()">Open Test Game</button>
+    </div>
+    
+    <div id="game-container" class="test-section" style="display: none;">
+        <h3>Test Game Instance</h3>
+        <iframe id="gameFrame" src="about:blank"></iframe>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔧 Fix Details</h3>
+        <div class="result info">
+            <strong>Problem:</strong> Wrong buttons were disappearing - E card button vanished instead of W card button
+        </div>
+        <div class="result success">
+            <strong>Solution:</strong> Fixed shouldShowCardButton() logic to match card types correctly:
+            <ul>
+                <li>✅ If dice draw W cards → Hide W card buttons, keep others</li>
+                <li>✅ If dice draw E cards → Hide E card buttons, keep others</li>
+                <li>✅ Field-to-card-type mapping ensures correct button targeting</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🧪 Technical Implementation</h3>
+        <div class="result info">
+            <strong>SpaceInfo.js Changes:</strong>
+            <ul>
+                <li>Added shouldShowCardButton() with proper card type matching</li>
+                <li>Field-to-card-type mapping: w_card → "W Cards", e_card → "E Cards", etc.</li>
+                <li>Check dice outcomes by card type, not field value</li>
+                <li>Hide buttons only for card types that dice actually drew</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function openTestGame() {
+            const container = document.getElementById('game-container');
+            container.style.display = 'block';
+            
+            const gameFrame = document.getElementById('gameFrame');
+            gameFrame.src = '/';
+            
+            // Scroll to the game
+            container.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Auto-load instructions
+        window.addEventListener('load', () => {
+            console.log('Button Elimination Test loaded');
+            console.log('Key test: Verify NO manual card buttons appear for dice outcomes');
+        });
+    </script>
+</body>
+</html>

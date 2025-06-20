@@ -71,7 +71,8 @@
       "Bash(python:*)",
       "Bash(npx playwright:*)",
       "Bash(mkdir:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(timeout 30 npx playwright test simple-debug.spec.js)"
     ],
     "deny": []
   }

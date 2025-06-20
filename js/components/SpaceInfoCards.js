@@ -26,9 +26,54 @@ window.SpaceInfoCards = {
     const buttonId = `draw-${cardType}-${amount}-${spaceId}`;
     
     // Use SpaceInfoManager to check if button has been used
-    const isButtonUsed = window.SpaceInfoManager ? 
+    let isButtonUsed = window.SpaceInfoManager ? 
       window.SpaceInfoManager.isButtonUsed(playerId, buttonId) : 
       false;
+    
+    // CRITICAL: Check if dice have already processed this card type this turn
+    if (!isButtonUsed && window.currentGameBoard?.diceManager) {
+      const diceManager = window.currentGameBoard.diceManager;
+      if (diceManager.processedCardDrawsThisTurn && diceManager.processedCardDrawsThisTurn.size > 0) {
+        // Check if any processed draws match this card type and amount
+        const processedKeys = Array.from(diceManager.processedCardDrawsThisTurn);
+        console.log('SpaceInfoCards: Checking if dice already processed this card type...', processedKeys);
+        
+        // Check if dice processed the same card type that this button would draw
+        // Map button card types to dice card type codes
+        const cardTypeMapping = {
+          'Work Type': 'W',
+          'Bank': 'B', 
+          'Investor': 'I',
+          'Life': 'L',
+          'Expeditor': 'E'
+        };
+        
+        const buttonCardCode = cardTypeMapping[cardType];
+        if (buttonCardCode) {
+          // Check if dice already drew cards of this type
+          const hasProcessedThisCardType = processedKeys.some(key => 
+            key.includes(playerId) && key.includes('cardDraw')
+          );
+          
+          if (hasProcessedThisCardType) {
+            // Additional check: look at the actual dice outcomes to see if they drew this card type
+            const gameBoard = window.currentGameBoard;
+            if (gameBoard?.state?.diceOutcomes) {
+              const diceOutcomes = gameBoard.state.diceOutcomes;
+              const cardOutcomeKey = `${buttonCardCode} Cards`;
+              
+              if (diceOutcomes[cardOutcomeKey] && diceOutcomes[cardOutcomeKey].toLowerCase().includes('draw')) {
+                isButtonUsed = true;
+                if (window.SpaceInfoManager) {
+                  window.SpaceInfoManager.markButtonUsed(playerId, buttonId);
+                  console.log(`SpaceInfoCards: Auto-marked ${cardType} button as used - dice already drew ${buttonCardCode} cards: ${buttonId}`);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
     
     // Log the button state for debugging
     console.log(`SpaceInfoCards: Button ${buttonId} used status:`, isButtonUsed);

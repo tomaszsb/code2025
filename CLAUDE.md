@@ -2,19 +2,30 @@
 
 **For Claude Code development sessions on the Project Management Board Game**
 
-## 🎯 Project Summary
+**NOTE**: This file is optimized for Claude Code AI development sessions. Keep content functional and concise - no emojis or unnecessary formatting that slows down information retrieval during coding tasks.
+
+## Project Summary
 **Single-page web app** - Project management board game using vanilla HTML/CSS/JavaScript with React (via CDN). Players navigate project phases from initiation to completion.
 
-## ⚡ Quick Start
+## Essential Commands
 ```bash
-# Development - any static server
+# Development servers (pick one)
 python -m http.server 8000
-# Debug mode
-http://localhost:8000/?debug=true&logLevel=debug
+npx serve .
+php -S localhost:8000
+
+# Testing URLs
+http://localhost:8000/                              # Main game
+http://localhost:8000/?debug=true&logLevel=debug     # Debug mode
+http://localhost:8000/tests/test-card-fix-direct.html   # Card system test
+http://localhost:8000/tests/test-button-elimination.html # Button prevention test
+
+# Quick verification
+node tests/verify-fix.js  # Code verification
 ```
 **No build required** - Browser-based Babel compilation for JSX (via Babel standalone).
 
-## 🏗️ Architecture (Critical)
+## Architecture (Critical)
 
 ### Core Pattern: Component-Based + Event-Driven
 - **30+ React Components**: Complete UI system with specialized components
@@ -26,7 +37,7 @@ http://localhost:8000/?debug=true&logLevel=debug
 - `Index.html` → `js/main.js` → `InitializationManager` → `App.js`
 - All components must load in specific sequence (critical!)
 
-## 📁 Key Files & Locations
+## Key Files & Locations
 
 ### Must-Know Files
 ```
@@ -49,7 +60,7 @@ css/dice-animations.css         # 3D dice effects
 [6 other component CSS files]   # Space info, board rendering, etc.
 ```
 
-## ⚠️ Critical Constraints
+## Critical Constraints
 
 ### Loading Order (MUST FOLLOW)
 ```html
@@ -71,10 +82,11 @@ css/dice-animations.css         # 3D dice effects
 - **Use CSV data directly** - No transforming space names (see Data Standards below)
 - **Coordinate component updates** - Use componentFinished signals (see Patterns below)
 - **File organization** - When editing files, move them to proper folders (managers/, utils/) and update all imports
-- **Memory management** - ✅ **IMPLEMENTED** - All components have proper cleanup patterns for event listeners, timers, and DOM references
-- **Error handling** - ✅ **IMPLEMENTED** - Comprehensive try-catch blocks around CSV loading and data processing operations
+- **Memory management** - **IMPLEMENTED** - All components have proper cleanup patterns for event listeners, timers, and DOM references
+- **Error handling** - **IMPLEMENTED** - Comprehensive try-catch blocks around CSV loading and data processing operations
+- **Data Access Consistency** - **CRITICAL PRIORITY** - Audit and standardize data access patterns across all components
 
-## 🔧 Common Development Patterns
+## Common Development Patterns
 
 ### Coordinated Updates Pattern (CRITICAL)
 ```javascript
@@ -148,7 +160,37 @@ componentWillUnmount() {
 }
 ```
 
-## 📊 Data Standards
+### Data Access Patterns (STANDARD)
+```javascript
+// ARCHITECTURE CLARIFICATION:
+// GameState and GameStateManager are the SAME OBJECT
+// Line 1687 in GameStateManager.js: window.GameState = window.GameStateManager;
+
+// BOTH PATTERNS ARE EQUIVALENT (use either for consistency):
+window.GameState.spaces              // Backward compatibility alias
+window.GameStateManager.spaces       // Primary object name
+window.GameState.getCurrentPlayer()  // Both call the same method
+window.GameStateManager.getCurrentPlayer()  // on the same instance
+
+// RECOMMENDED STANDARD PATTERN (use GameState alias for brevity):
+if (window.GameState?.spaces && player.position) {
+  const currentSpace = window.GameState.spaces.find(s => 
+    s.space_name === player.position && s.visit_type === 'First'
+  );
+}
+
+// STYLE PREFERENCE:
+// Use window.GameState for new code (shorter, more familiar)
+// Both GameState and GameStateManager are acceptable (same object)
+
+// Panel Consistency Guidelines
+// Left Panel (StaticPlayerStatus): Player state BEFORE landing (accumulated resources)
+// Middle Panel (SpaceInfo): Current space requirements and actions (decision area)  
+// Right Panel (PlayerInfo): Current space effects and requirements (result display)
+// Data Rule: Left panel = player data, Middle/Right panels = space data
+```
+
+## Data Standards
 
 ### CSV Column Mapping
 - **Spaces**: `space_name`, `phase` (game phases like SETUP, DESIGN, CONSTRUCTION)
@@ -174,7 +216,23 @@ componentWillUnmount() {
 - **TurnManager**: Listen to `turnChanged`, `playerMoved` 
 - **SpaceExplorerManager**: Listen to `playerMoved`
 
-## 🃏 Card System Facts
+### Common Event Flow Examples
+```javascript
+// 1. Player Movement Chain
+Player clicks move → DiceManager processes → fires 'playerMoved' 
+→ SpaceInfo updates → fires 'componentFinished' 
+→ SpaceExplorer updates → UI synchronized
+
+// 2. Turn Change Chain  
+End Turn clicked → TurnManager processes → fires 'turnChanged'
+→ All components receive event → Update current player display
+
+// 3. Card Draw Chain
+Dice outcome → DiceManager.processCardDraws() → fires 'cardDrawn'
+→ CardDisplay updates → Player sees new cards
+```
+
+## Card System Facts
 
 ### Actual Card Counts (398 production cards)
 - **B (Bank)**: 60 cards - Provide loans with `loan_amount` and `loan_rate`
@@ -184,7 +242,7 @@ componentWillUnmount() {
 - **E (Expeditor)**: 74 cards - Process acceleration and efficiency
 - **TEST**: 6 advanced testing cards with experimental features
 
-### Card Features - ✅ Fully Standardized
+### Card Features - Fully Standardized
 - **Immediate Effects**: `Apply Work`, `Apply Card`, `Apply Loan`, `Apply Investment`
 - **Semantic Consistency**: All fields match card descriptions exactly
 - **Time Effects**: Structured as `time_effect` (positive = add time, negative = reduce time)
@@ -197,13 +255,13 @@ componentWillUnmount() {
 - **Duration Effects**: Turn-based with `duration` and `duration_count`
 - **6-Card Limits**: Per type, with visual indicators and forced discard
 
-### Data Quality Improvements
+### Data Quality Status
 - **Zero Text Parsing**: All effects available as structured data
 - **Enhanced Flavor Text**: Engaging narratives across all card types
 - **Complete Descriptions**: All dice effects and conditional logic properly detailed
 - **Performance Ready**: Optimized for efficient CardManager processing
 
-## 🐛 Troubleshooting Guide
+## Troubleshooting Guide
 
 ### CSV Field Name Mismatches
 **Symptoms:** Components show space names but missing content, empty descriptions, no movement choices
@@ -222,6 +280,18 @@ componentWillUnmount() {
 const hasVisited = player.visitedSpaces?.has(spaceName);
 const visitType = hasVisited ? 'Subsequent' : 'First';
 const space = spaces.find(s => s.space_name === spaceName && s.visit_type === visitType);
+```
+
+### Dice Roll Button Not Working
+**Symptoms:** Roll Dice button shows "no special effect triggered", no cards drawn
+**Cause:** Button connected to `noop()` instead of DiceManager.handleRollDiceClick
+**Solution:** Direct connection in SpaceInfo.js bypasses prop-passing failures:
+```javascript
+onClick={() => {
+  if (window.currentGameBoard?.diceManager?.handleRollDiceClick) {
+    window.currentGameBoard.diceManager.handleRollDiceClick();
+  }
+}}
 ```
 
 ### Performance Issues (Component Loops)
@@ -248,13 +318,50 @@ this.setState(newState, () => {
 **Solution:** Auto-select in DiceManager when `movesToUpdate.length === 1`
 **Details:** See `docs/COMPREHENSIVE_GAME_GUIDE.md` - UI State Management section
 
-## 🚀 Quick References
+## Critical Issues
 
-### Documentation
-- **Full details**: See `docs/COMPREHENSIVE_GAME_GUIDE.md`
-- **Architecture**: See `docs/README.md` 
-- **Player rules**: See `docs/PLAYER_GUIDE.md`
-- **History**: See `docs/CHANGELOG.md`
+**No critical issues currently identified.**
+
+## Resolved Issues
+
+### Data Access Architecture Clarification - ✅ RESOLVED
+**Previous Misconception:** Components appeared to use inconsistent data sources (GameState vs GameStateManager)
+**Actual Architecture:** GameState and GameStateManager are the SAME OBJECT (aliases)
+**Evidence:** Line 1687 in GameStateManager.js: `window.GameState = window.GameStateManager;`
+**Impact:** No data synchronization issues - both references access identical data
+**Component Examples:**
+- BoardSpaceRenderer: `window.GameState.getCurrentPlayer()` 
+- DiceManager: `window.GameStateManager.getCurrentPlayer()`  
+- Both call the same method on the same instance
+**Result:** This is a code style preference, not a critical data access issue
+
+### Panel Time Display Consistency - ✅ FIXED
+**Issue:** Right panel (PlayerInfo) showed player's time resource instead of current space's time requirement
+**Root Cause:** PlayerInfo component accessed non-existent `window.spacesData` instead of `window.GameState.spaces`
+**Solution:** Updated PlayerInfo to access correct data source and show space time requirement
+**Files Fixed:** `js/components/PlayerInfo.js` (lines 131-137)
+**Result:** 
+- Left panel (StaticPlayerStatus): Shows player's accumulated time ("0 days")
+- Middle panel (SpaceInfo): Shows space time requirement ("1 day") 
+- Right panel (PlayerInfo): Shows space time requirement ("1 day")
+
+### Card Drawing Duplication Bug - ✅ FIXED
+**Issue:** Manual card buttons appeared for automatic dice outcomes, allowing duplicate card draws
+**Root Cause:** `SpaceInfoDice.js` was creating interactive buttons for dice outcomes display
+**Solution:** Removed button rendering from dice outcomes - they are now display-only
+**Files Fixed:** `SpaceInfoDice.js` (lines 199-213)
+**Result:** Dice outcomes show what happened automatically, manual buttons only appear for space CSV fields
+
+## Quick References
+
+### Documentation Cross-References
+- **Complete Technical Guide**: `docs/COMPREHENSIVE_GAME_GUIDE.md` - Deep dive into architecture, debugging patterns, and component data flow
+- **Project Overview**: `docs/README.md` - High-level features, tech stack, and project stats
+- **Player Instructions**: `docs/PLAYER_GUIDE.md` - Simple gameplay guide for end users
+- **Development Roadmap**: `docs/FUTURE_DEVELOPMENT_PLAN.md` - Planned enhancements and mobile optimization
+- **Project History**: `docs/CHANGELOG.md` - Version history and major changes
+- **Bug Analysis**: `docs/CARD_DRAWING_FIX_SUMMARY.md` - Comprehensive card duplication fix analysis
+- **CSV Data Progress**: `docs/CSV_DATA_POPULATION_PROGRESS.md` - Data migration status
 
 ### Debug & Performance Features
 - Console logging with "beginning/finished" patterns
@@ -265,7 +372,7 @@ this.setState(newState, () => {
 - Professional animation systems with memory cleanup
 - Mobile + desktop compatibility
 
-## 🛡️ Error Handling Patterns (IMPLEMENTED)
+## Error Handling Patterns (IMPLEMENTED)
 
 ### Enhanced Error Boundaries
 ```javascript
@@ -306,17 +413,17 @@ processSpacesData(spacesData) {
 }
 ```
 
-## 🧪 Browser Testing (Playwright Ready)
+## Browser Testing (Playwright Ready)
 
 **Note**: Switched from Puppeteer to Playwright for better cross-browser testing
 
-### Memory Leak Testing Verified
-- ✅ Component cleanup methods work correctly
-- ✅ Timer tracking prevents memory leaks  
-- ✅ Event listener removal confirmed
-- ✅ Error boundaries handle crashes gracefully
+### Memory Leak Testing Status
+- Component cleanup methods work correctly
+- Timer tracking prevents memory leaks  
+- Event listener removal confirmed
+- Error boundaries handle crashes gracefully
 
-## 🔄 Critical Coding Patterns
+## Critical Coding Patterns
 
 ### Prevent Stack Overflow
 ```javascript
@@ -386,24 +493,24 @@ componentDidCatch(error, errorInfo) {
 }
 ```
 
-## 📋 Code Review Recommendations
+## Code Review Recommendations
 
-### ✅ **Implemented (Worth Addressing)**
+### Implemented (Worth Addressing)
 - **Memory Leak Prevention**: Added cleanup patterns for event listeners and timers
 - **Error Handling**: Added try-catch patterns for CSV loading and component crashes
 
-### 🟡 **Consider If Issues Arise**
+### Consider If Issues Arise
 - **React 18 Update**: Easy upgrade if performance becomes an issue
 - **Input Sanitization**: Add for player names if display problems occur
 - **Basic Accessibility**: Add ARIA labels and keyboard support for inclusivity
 
-### ❌ **Intentionally Not Implementing**
+### Intentionally Not Implementing
 - **Build System**: Browser-based compilation is intentional and appropriate
 - **State Management Libraries**: Current event-driven system works well
 - **TypeScript**: Would complicate development for non-technical users
 - **Complex Testing**: Playwright covers the important scenarios
 
-### 💭 **Design Philosophy**
+### Design Philosophy
 This project prioritizes **simplicity and maintainability** over enterprise patterns. The architecture choices are intentional:
 - Browser-based compilation keeps development simple
 - Event-driven communication prevents tight coupling

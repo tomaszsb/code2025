@@ -126,6 +126,17 @@ window.PlayerInfo = class PlayerInfo extends React.Component {
     const { player, isCurrentPlayer, showCardDisplay, onToggleCardDisplay } = this.props;
     const { cardCount } = this.state;
     
+    // Get current space data for time display
+    let currentSpaceTime = `${player.resources.time} days`; // Default to player time
+    if (window.GameState?.spaces && player.position) {
+      const currentSpace = window.GameState.spaces.find(s => 
+        s.space_name === player.position && s.visit_type === 'First'
+      );
+      if (currentSpace && currentSpace.Time && currentSpace.Time !== 'n/a') {
+        currentSpaceTime = currentSpace.Time;
+      }
+    }
+    
     if (!player) {
       return <div className="player-info empty">No player selected</div>;
     }
@@ -339,7 +350,7 @@ window.PlayerInfo = class PlayerInfo extends React.Component {
             </div>
             <div className="resource" style={resourceItemStyle}>
               <span className="resource-label">Time:</span>
-              <span className="resource-value">{player.resources.time} days</span>
+              <span className="resource-value">{currentSpaceTime}</span>
             </div>
             
             {/* Financial Status Section - Surplus or Deficit */}

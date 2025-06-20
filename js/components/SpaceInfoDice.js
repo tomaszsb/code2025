@@ -59,9 +59,11 @@ window.SpaceInfoDice = {
     const { diceOutcomes, diceRoll } = this.props;
     
     console.log('SpaceInfoDice: Rendering dice outcomes, diceRoll =', diceRoll, 'diceOutcomes =', diceOutcomes);
+    console.log('SpaceInfoDice: diceOutcomes type =', typeof diceOutcomes, 'keys =', diceOutcomes ? Object.keys(diceOutcomes) : 'null');
     
     // If no dice outcomes available at all, don't show anything
     if (!diceOutcomes || Object.keys(diceOutcomes).length === 0) {
+      console.log('SpaceInfoDice: No dice outcomes available - returning null');
       return null;
     }
     
@@ -121,22 +123,29 @@ window.SpaceInfoDice = {
       other: { title: 'Other Effects', outcomes: {} }
     };
     
-    // Sort outcomes by category
+    // Process outcomes using STANDARDIZED direct format only
     Object.entries(diceOutcomes).forEach(([type, value]) => {
       // Skip the moves array which isn't for display
       if (type === 'moves') return; 
       
-      // Categorize outcomes - make case-insensitive and flexible pattern matching
+      console.log('SpaceInfoDice: Processing outcome type =', type, 'value =', value);
+      
+      // Use direct format only - no nested handling needed
       const typeLC = type.toLowerCase();
+      console.log('SpaceInfoDice: typeLC =', typeLC, 'charAt(0) =', typeLC.charAt(0));
       
       if (type === 'Next Step' || typeLC.includes('step') || typeLC.includes('move')) {
+        console.log('SpaceInfoDice: Categorized as movement:', type);
         categories.movement.outcomes[type] = value;
       } else if (typeLC.includes('card') || ['w', 'b', 'i', 'l', 'e'].includes(typeLC.charAt(0))) {
+        console.log('SpaceInfoDice: Categorized as cards:', type);
         categories.cards.outcomes[type] = value;
       } else if (typeLC.includes('time') || typeLC.includes('fee') || 
                 typeLC.includes('cost') || typeLC.includes('pay')) {
+        console.log('SpaceInfoDice: Categorized as resources:', type);
         categories.resources.outcomes[type] = value;
       } else {
+        console.log('SpaceInfoDice: Categorized as other:', type);
         categories.other.outcomes[type] = value;
       }
     });
@@ -188,22 +197,13 @@ window.SpaceInfoDice = {
                   <h5 className="outcome-category-title">{category.title}</h5>
                   <ul className="outcome-list">
                     {outcomes.map(([type, value]) => {
-                      // Prepare for card draw buttons
-                      const showDrawButton = window.SpaceInfoUtils.shouldShowDrawCardButton(type, value);
-                      const cardType = window.SpaceInfoUtils.extractCardType(type);
-                      
-                      console.log('SpaceInfoDice: Outcome:', type, '=', value, 
-                                'Show button:', showDrawButton, 'Card type:', cardType);
+                      console.log('SpaceInfoDice: Outcome:', type, '=', value);
                       
                       return (
                         <li key={type} className="outcome-item">
                           <span className="outcome-type">{type.replace(/Cards|Card/i, '').trim()}:</span> 
                           <span className="outcome-value">{value}</span>
-                          {showDrawButton && (
-                            <div className="outcome-action-button">
-                              {this.renderDrawCardsButton(cardType, value)}
-                            </div>
-                          )}
+                          {/* REMOVED: Dice outcomes should NOT create manual buttons - they are display only */}
                         </li>
                       );
                     })}

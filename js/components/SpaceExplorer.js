@@ -209,14 +209,30 @@ class SpaceExplorer extends React.Component {
   componentDidUpdate(prevProps, prevState) {
     console.log('SpaceExplorer: componentDidUpdate method is being used');
     
+    // BUGFIX: Prevent processing if already processing to avoid infinite loops
+    if (this.isProcessingData) {
+      console.log('SpaceExplorer: Skipping componentDidUpdate processing - already processing data');
+      return;
+    }
+    
     // Check if space or diceRollData props changed
     const spaceChanged = prevProps.space?.space_name !== this.props.space?.space_name;
     const diceDataChanged = prevProps.diceRollData !== this.props.diceRollData;
     const visitTypeChanged = prevProps.visitType !== this.props.visitType;
     
-    if (spaceChanged || diceDataChanged || visitTypeChanged) {
+    // Only process if props actually changed AND we're not already processing
+    if ((spaceChanged || diceDataChanged || visitTypeChanged) && !this.isProcessingData) {
       console.log('SpaceExplorer: Props changed, processing dice data - space:', spaceChanged, 'diceData:', diceDataChanged, 'visitType:', visitTypeChanged);
-      this.processDiceDataFromProps();
+      // Use setTimeout to debounce rapid updates
+      if (this.updateTimeout) {
+        clearTimeout(this.updateTimeout);
+      }
+      this.updateTimeout = setTimeout(() => {
+        if (!this.isProcessingData) {
+          this.processDiceDataFromProps();
+        }
+        this.updateTimeout = null;
+      }, 50); // 50ms debounce
     }
     
     // NEW: Using coordinated "done" signal pattern instead of automatic processing
@@ -256,6 +272,10 @@ class SpaceExplorer extends React.Component {
     if (this.componentFinishedTimeout) {
       clearTimeout(this.componentFinishedTimeout);
       this.componentFinishedTimeout = null;
+    }
+    if (this.updateTimeout) {
+      clearTimeout(this.updateTimeout);
+      this.updateTimeout = null;
     }
     
     // Clear any other resources

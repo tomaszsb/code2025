@@ -222,7 +222,14 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
                   availableMoves={availableMoves}
                   onMoveSelect={gameBoard.spaceSelectionManager.handleMoveSelection}
                   onDrawCards={gameBoard.handleDrawCards}
-                  onRollDice={hasDiceRollSpace ? gameBoard.diceManager.handleRollDiceClick : null}
+                  onRollDice={() => {
+                    console.log('BoardRenderer: Roll Dice clicked, calling DiceManager');
+                    if (gameBoard.diceManager && typeof gameBoard.diceManager.handleRollDiceClick === 'function') {
+                      gameBoard.diceManager.handleRollDiceClick();
+                    } else {
+                      console.error('BoardRenderer: DiceManager not available or handleRollDiceClick not a function');
+                    }
+                  }}
                   hasRolledDice={hasRolledDice}
                   hasDiceRollSpace={hasDiceRollSpace}
                   isRollingDice={gameBoard.state.isRollingDice}

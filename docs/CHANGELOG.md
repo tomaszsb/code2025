@@ -4,6 +4,50 @@ All notable changes to the Project Management Board Game are documented in this 
 
 ---
 
+## [2.4.2] - June 20, 2025 - Time Display Consistency Fix
+
+### 🔧 **TIME DISPLAY FIXES COMPLETED**
+
+#### **Panel Time Display Consistency (RESOLVED)**
+- **Fixed time display inconsistency** across game panels - Right panel now shows space time requirement instead of player time resource
+- **Clarified panel purposes** - Left panel shows player status, middle/right panels show space requirements
+- **Corrected data source access** - PlayerInfo now accesses GameState.spaces instead of non-existent spacesData
+
+**Technical Impact:**
+- Left panel (StaticPlayerStatus): Shows player's accumulated time resource (e.g., "0 days")
+- Middle panel (SpaceInfo): Shows current space time requirement (e.g., "1 day") 
+- Right panel (PlayerInfo): Shows current space time requirement (e.g., "1 day")
+
+**Files Modified:**
+- `js/components/PlayerInfo.js` - Updated to show space time instead of player time, fixed data source reference
+- `js/components/StaticPlayerStatus.js` - Verified correct display of player time resource
+
+**Architecture Clarification:**
+- **Data Access Architecture Resolved** - GameState and GameStateManager are aliases (same object)
+- **Evidence** - Line 1687 in GameStateManager.js: `window.GameState = window.GameStateManager;`
+- **Result** - No data inconsistency issues, just coding style preference
+
+---
+
+## [2.4.1] - June 20, 2025 - Card Button Duplication Fix
+
+### 🔧 **CRITICAL FIX COMPLETED**
+
+#### **Card Drawing Button Logic (RESOLVED)**
+- **Fixed duplicate card buttons** in SpaceInfoDice.js - Dice outcomes were creating manual buttons for automatic actions
+- **Separated display from interaction** - Dice outcomes now display-only, manual space buttons remain interactive
+- **Eliminated card duplication pathway** - Players can no longer manually draw cards that dice already drew automatically
+
+**Technical Impact:**
+- Dice outcomes show what happened automatically without creating clickable buttons
+- Manual card buttons only appear for space CSV fields that dice didn't affect
+- Proper separation between automatic dice actions and manual space actions
+
+**Files Modified:**
+- `js/components/SpaceInfoDice.js` - Removed button rendering from dice outcomes display (lines 199-213)
+
+---
+
 ## [2.4.0] - June 18, 2025 - CSV Field Fixes & Component Rendering
 
 ### 🔧 **CRITICAL FIXES COMPLETED**

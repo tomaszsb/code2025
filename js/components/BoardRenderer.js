@@ -111,6 +111,17 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
       selectedSpaceObj = spaces.find(space => 
         space.space_name === selectedSpace && space.visit_type === visitType
       ) || spaces.find(space => space.space_name === selectedSpace); // Fallback to any version
+      
+      // Debug logging for panel disappearing issue
+      if (!selectedSpaceObj) {
+        console.warn('BoardRenderer: No selectedSpaceObj found for:', {
+          selectedSpace,
+          visitType,
+          playerPosition: currentPlayer?.position,
+          spacesCount: spaces?.length,
+          hasSpaceInData: spaces.some(s => s.space_name === selectedSpace)
+        });
+      }
     }
     
     // Find selected space object for rendering
@@ -169,10 +180,24 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
                 {window.SpaceExplorer && (() => {
                   const SpaceExplorer = window.SpaceExplorer;
                   const spaceToExplore = exploredSpace || gameBoard.spaceSelectionManager?.getSelectedSpace();
+                  
+                  // Default to current player position if no space to explore
+                  const fallbackSpace = spaceToExplore || currentPlayer?.position;
+                  
+                  // Only log warning if we truly have no space to show
+                  if (!fallbackSpace) {
+                    console.warn('BoardRenderer: No spaceToExplore found for SpaceExplorer:', {
+                      exploredSpace,
+                      selectedSpaceFromManager: gameBoard.spaceSelectionManager?.getSelectedSpace(),
+                      selectedSpace,
+                      currentPlayerPosition: currentPlayer?.position
+                    });
+                  }
+                  
                   // Always render SpaceExplorer but with proper null handling
                   return (
                     <SpaceExplorer 
-                      space={spaceToExplore || null}
+                      space={fallbackSpace || null}
                       visitType={exploredSpace ? 
                         (window.movementEngine && window.movementEngine.hasPlayerVisitedSpace && 
                          window.movementEngine.hasPlayerVisitedSpace(currentPlayer, exploredSpace.space_name || exploredSpace.name) ? 'subsequent' : 'first')
@@ -213,7 +238,7 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
             {/* Current space info - middle column */}
             <div className="player-panel middle-panel" style={{flex: '1 1 auto', minWidth: '40%'}}>
               {/* Space information with Roll Dice button added */}
-              {selectedSpaceObj && (
+              {selectedSpaceObj ? (
                 <SpaceInfo 
                   space={selectedSpaceObj}
                   visitType={visitType}
@@ -236,6 +261,13 @@ window.BoardRenderer = class BoardRenderer extends React.Component {
                   selectedMoveId={selectedMove}
                   isLogicSpace={gameBoard.state.isLogicSpace}
                 />
+              ) : (
+                <div className="space-info empty">
+                  <h3>Loading space information...</h3>
+                  <p>selectedSpace: {selectedSpace || 'null'}</p>
+                  <p>currentPlayer: {currentPlayer?.id || 'null'}</p>
+                  <p>spaces loaded: {spaces?.length || 0}</p>
+                </div>
               )}
               {/* Debug info */}
               <div className="debug-info" style={{ display: 'none' }}>

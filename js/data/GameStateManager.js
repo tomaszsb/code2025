@@ -458,17 +458,19 @@ class GameStateManager {
   }
   
   
-  // Find a space by ID - cache only (no fallbacks)
+  // Find a space by ID - cache only (clean implementation)
   findSpaceById(spaceId) {
-    console.log('GameStateManager: findSpaceById method is being used');
+    console.log('GameStateManager: findSpaceById method is being used for:', spaceId);
     
     // Look in cache - single source of truth
     const space = this.spaceCache.byId.get(spaceId);
     
-    // If not found, it doesn't exist (no fallbacks)
+    // If not found, log debug info
     if (!space) {
       console.log('GameStateManager: Space not found in cache for ID:', spaceId);
       console.log('GameStateManager: Available space IDs:', Array.from(this.spaceCache.byId.keys()).slice(0, 10));
+    } else {
+      console.log('GameStateManager: Successfully found space:', space.space_name);
     }
     
     console.log('GameStateManager: findSpaceById method completed');
@@ -558,18 +560,12 @@ class GameStateManager {
     
     console.log('GameStateManager: Moving to space:', newSpace.space_name, 'Type:', newSpace.phase);
     
-    // Set new position
-    player.position = spaceId;
+    // Set new position - ensure we only store the space name, not visit type suffix
+    const cleanSpaceName = newSpace ? newSpace.space_name : spaceId.replace(/-first$|-subsequent$/, '');
+    player.position = cleanSpaceName;
     
-    // SIMPLE FIX: If moving to a space that's been visited before, use the subsequent version
-    if (newSpace && player.visitedSpaces && player.visitedSpaces.has(window.movementEngine?.extractSpaceName?.(newSpace.space_name) || newSpace.space_name)) {
-      const subsequentSpaceId = spaceId.replace('-first', '-subsequent');
-      const subsequentSpace = this.findSpaceById(subsequentSpaceId);
-      if (subsequentSpace) {
-        console.log(`GameStateManager: Player has visited ${newSpace.space_name} before, moving to subsequent version:`, subsequentSpaceId);
-        player.position = subsequentSpaceId;
-      }
-    }
+    // Note: Player position always stores just the space name, not visit type
+    // Visit type is determined dynamically based on visitedSpaces when needed
     
     // NOTE: We do NOT add the new space to visitedSpaces here
     // Spaces are only added to visitedSpaces when LEAVING them (see above)

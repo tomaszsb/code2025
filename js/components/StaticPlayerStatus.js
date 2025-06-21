@@ -43,15 +43,122 @@ window.StaticPlayerStatus = class StaticPlayerStatus extends React.Component {
     this.logInfo('Component did mount - capturing initial player status');
     // Capture the initial player status and space info when landing on a space
     this.capturePlayerStatus();
+    
+    // BACKUP FIX: Also listen directly to playerMoved events as a fallback
+    this.handlePlayerMovedEvent = this.handlePlayerMovedEvent.bind(this);
+    if (window.GameStateManager) {
+      window.GameStateManager.addEventListener('playerMoved', this.handlePlayerMovedEvent);
+      this.logInfo('Added direct playerMoved event listener as backup');
+    }
   }
   
   componentDidUpdate(prevProps) {
     // Update the static status when the player changes or a new turn begins
-    if (prevProps.player?.id !== this.props.player?.id || 
-        prevProps.space?.id !== this.props.space?.id) {
+    
+    // Check for meaningful changes in player or space
+    const playerChanged = prevProps.player?.id !== this.props.player?.id ||
+                         prevProps.player?.position !== this.props.player?.position ||
+                         JSON.stringify(prevProps.player?.resources) !== JSON.stringify(this.props.player?.resources) ||
+                         JSON.stringify(prevProps.player?.cards) !== JSON.stringify(this.props.player?.cards);
+    
+    const spaceChanged = prevProps.space?.id !== this.props.space?.id ||
+                        prevProps.space?.space_name !== this.props.space?.space_name;
+    
+    if (playerChanged || spaceChanged) {
       this.logInfo('Props changed, updating player status');
       this.capturePlayerStatus();
     }
+  }
+  
+  // Cleanup event listeners
+  componentWillUnmount() {
+    this.logInfo('Component will unmount - cleaning up event listeners');
+    if (window.GameStateManager && this.handlePlayerMovedEvent) {
+      window.GameStateManager.removeEventListener('playerMoved', this.handlePlayerMovedEvent);
+    }
+  }
+  
+  // BACKUP FIX: Direct event handler for playerMoved events
+  handlePlayerMovedEvent(event) {
+    this.logInfo('Direct playerMoved event received:', event.data);
+    
+    if (!event.data || !event.data.player) {
+      this.logWarn('Invalid playerMoved event data');
+      return;
+    }
+    
+    const movedPlayer = event.data.player;
+    const currentProps = this.props;
+    
+    // Only update if this affects the current player being displayed
+    if (currentProps.player && movedPlayer.id === currentProps.player.id) {
+      this.logInfo('Player moved event matches current displayed player - forcing update');
+      
+      // Find the new space the player moved to  
+      if (window.GameState && window.GameState.spaces) {
+        const newSpace = window.GameState.spaces.find(s => s.space_name === movedPlayer.position);
+        if (newSpace) {
+          this.logInfo('Found new space for direct update:', newSpace.space_name);
+          
+          // Force a direct recapture with the new data
+          this.capturePlayerStatusWithData(movedPlayer, newSpace);
+          this.logInfo('Forced update via direct event handler completed');
+        }
+      }
+    }
+  }
+  
+  // Helper method to capture player status with specific data
+  capturePlayerStatusWithData(player, space) {
+    this.logDebug('Capturing player status with provided data');
+    
+    if (!player || !space) {
+      this.logDebug('Missing player or space data, cannot capture status');
+      return;
+    }
+    
+    // Use the same logic as capturePlayerStatus but with provided data
+    const scope = this.extractScope(player);
+    const playerMoney = player.resources?.money || 0;
+    const totalScopeCost = scope.totalCost || 0;
+    
+    let actualSurplus = 0;
+    let actualDeficit = 0;
+    
+    if (playerMoney >= totalScopeCost) {
+      actualSurplus = playerMoney - totalScopeCost;
+    } else {
+      actualDeficit = totalScopeCost - playerMoney;
+    }
+    
+    const cardCounts = this.countCardsByType(player.cards || []);
+    
+    this.logDebug('Financial Status Calculation - Money:', playerMoney, 'Scope Cost:', totalScopeCost);
+    this.logDebug('Calculated - Surplus:', actualSurplus, 'Deficit:', actualDeficit);
+    this.logDebug('Card counts by type:', cardCounts);
+    
+    this.setState({
+      playerStatus: {
+        name: player.name,
+        color: player.color,
+        money: playerMoney,
+        time: player.resources?.time || 0,
+        position: player.position,
+        financialStatus: {
+          surplus: actualSurplus,
+          deficit: actualDeficit
+        },
+        scope: scope,
+        cardCounts: cardCounts,
+        totalCards: player.cards ? player.cards.length : 0
+      },
+      spaceInfo: {
+        name: space.space_name,
+        type: space.phase
+      }
+    });
+    
+    this.logInfo('Direct player status capture completed');
   }
   
   capturePlayerStatus() {

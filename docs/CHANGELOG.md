@@ -2,48 +2,121 @@
 
 All notable changes to the Project Management Board Game are documented in this file.
 
----
+## [2.4.4] - June 20, 2025 - Left Panel Height and Scrollbar Fix
+
+### UI/UX Enhancement: StaticPlayerStatus Panel Optimization
+
+#### Left Panel Height and Scrollbar Issues (RESOLVED)
+- Fixed left panel (StaticPlayerStatus) height constraints that caused poor user experience
+- Eliminated unwanted scrollbar that hid player information
+- Optimized panel dimensions for better content visibility at a glance
+
+Root Cause Identified:
+- CSS specificity conflicts where inherited selectors overrode component styles with fixed 300px height constraint
+- Computed styles showed `height: 300px, maxHeight: 300px, overflow: auto` despite custom CSS rules
+
+Technical Solution:
+- Applied ultra-specific CSS selectors with `!important` declarations to ensure proper height behavior
+- Implemented balanced height constraints: minimum 400px, maximum 70vh, auto height for content
+
+Files Modified:
+- `css/static-player-status.css` - Ultra-specific selectors with proper height rules
+- `css/main.css` - Left panel container height optimization
+
+Technical Implementation:
+```css
+.info-panels-container .player-panel .static-player-status {
+  min-height: 400px !important; /* Reasonable minimum height */
+  max-height: 70vh !important; /* Prevent excessive height */
+  height: auto !important; /* Allow content-based height */
+  overflow: visible !important; /* No scrollbar needed */
+}
+```
+
+Impact:
+- Panel height: 504px (was 300px) - optimal size for all content
+- Scrollbar: Completely eliminated (was present and disruptive)
+- Content sections: All visible without scrolling (Resources, Financial Status, Cards, Scope)
+- User experience: Significantly improved - all player information visible at a glance
+- Responsive design: Prevents both too-small panels and excessive height
+
+Architecture Notes:
+- PlayerMoved event listener infrastructure added to GameBoard.js for future movement update support
+- CSS specificity solution ensures compatibility across different panel contexts
+- Height optimization maintains responsive behavior across different screen sizes
+
+## [2.4.3] - June 20, 2025 - Panel Disappearing Fix
+
+### Panel Visibility Fixes Completed
+
+#### Panel Disappearing During Turn Transitions (RESOLVED)
+- Fixed critical UI bug where middle and right panels disappeared during turn transition animations
+- Identified dual root causes requiring both CSS z-index and data model fixes
+- Restored full panel functionality throughout all game state transitions
+
+Root Causes Identified:
+1. Z-Index Layer Conflict - Turn transition overlay (z-index 500) covered panels (z-index 5-100)
+2. Data Corruption - Player positions stored with visit type suffixes (`-first`, `-subsequent`) breaking space lookups
+
+Technical Solutions:
+1. CSS Layer Management - Elevated panel z-index to 600 across all relevant stylesheets
+2. Data Model Cleanup - Modified GameStateManager to store clean space names in player.position
+
+Files Modified:
+- `css/space-info.css` - Updated .space-info z-index to 600
+- `css/space-explorer.css` - Updated .space-explorer-container and .space-explorer z-index to 600  
+- `css/main.css` - Added z-index 600 to .middle-panel container
+- `js/data/GameStateManager.js` - Clean space name storage in movePlayer() method
+
+Impact:
+- Middle panel (SpaceInfo) remains visible during entire turn transition sequence
+- Right panel (SpaceExplorer) maintains proper display throughout animations
+- Turn transition graphic displays correctly without interfering with panel content
+- Space lookup logic now functions reliably with clean space names
+
+Architecture Enhancement:
+- Player positions now store only space names (e.g., "OWNER-FUND-INITIATION")
+- Visit types determined dynamically based on visitedSpaces tracking
+- Eliminated data corruption from visit type suffix storage
 
 ## [2.4.2] - June 20, 2025 - Time Display Consistency Fix
 
-### 🔧 **TIME DISPLAY FIXES COMPLETED**
+### Time Display Fixes Completed
 
-#### **Panel Time Display Consistency (RESOLVED)**
-- **Fixed time display inconsistency** across game panels - Right panel now shows space time requirement instead of player time resource
-- **Clarified panel purposes** - Left panel shows player status, middle/right panels show space requirements
-- **Corrected data source access** - PlayerInfo now accesses GameState.spaces instead of non-existent spacesData
+#### Panel Time Display Consistency (RESOLVED)
+- Fixed time display inconsistency across game panels - Right panel now shows space time requirement instead of player time resource
+- Clarified panel purposes - Left panel shows player status, middle/right panels show space requirements
+- Corrected data source access - PlayerInfo now accesses GameState.spaces instead of non-existent spacesData
 
-**Technical Impact:**
+Technical Impact:
 - Left panel (StaticPlayerStatus): Shows player's accumulated time resource (e.g., "0 days")
 - Middle panel (SpaceInfo): Shows current space time requirement (e.g., "1 day") 
 - Right panel (PlayerInfo): Shows current space time requirement (e.g., "1 day")
 
-**Files Modified:**
+Files Modified:
 - `js/components/PlayerInfo.js` - Updated to show space time instead of player time, fixed data source reference
 - `js/components/StaticPlayerStatus.js` - Verified correct display of player time resource
 
-**Architecture Clarification:**
-- **Data Access Architecture Resolved** - GameState and GameStateManager are aliases (same object)
-- **Evidence** - Line 1687 in GameStateManager.js: `window.GameState = window.GameStateManager;`
-- **Result** - No data inconsistency issues, just coding style preference
-
----
+Architecture Clarification:
+- Data Access Architecture Resolved - GameState and GameStateManager are aliases (same object)
+- Evidence - Line 1687 in GameStateManager.js: `window.GameState = window.GameStateManager;`
+- Result - No data inconsistency issues, just coding style preference
 
 ## [2.4.1] - June 20, 2025 - Card Button Duplication Fix
 
-### 🔧 **CRITICAL FIX COMPLETED**
+### Critical Fix Completed
 
-#### **Card Drawing Button Logic (RESOLVED)**
-- **Fixed duplicate card buttons** in SpaceInfoDice.js - Dice outcomes were creating manual buttons for automatic actions
-- **Separated display from interaction** - Dice outcomes now display-only, manual space buttons remain interactive
-- **Eliminated card duplication pathway** - Players can no longer manually draw cards that dice already drew automatically
+#### Card Drawing Button Logic (RESOLVED)
+- Fixed duplicate card buttons in SpaceInfoDice.js - Dice outcomes were creating manual buttons for automatic actions
+- Separated display from interaction - Dice outcomes now display-only, manual space buttons remain interactive
+- Eliminated card duplication pathway - Players can no longer manually draw cards that dice already drew automatically
 
-**Technical Impact:**
+Technical Impact:
 - Dice outcomes show what happened automatically without creating clickable buttons
 - Manual card buttons only appear for space CSV fields that dice didn't affect
 - Proper separation between automatic dice actions and manual space actions
 
-**Files Modified:**
+Files Modified:
 - `js/components/SpaceInfoDice.js` - Removed button rendering from dice outcomes display (lines 199-213)
 
 ---
@@ -74,25 +147,25 @@ All notable changes to the Project Management Board Game are documented in this 
 - Professional loading experience with clear status messages  
 - Proper game ending behavior when players reach FINISH spaces
 
-### 📊 **Field Name Standardization**
+### Field Name Standardization
 
-#### **Component-CSV Alignment**
-- **SpaceExplorer.js**: `description` → `Event`, `action` → `Action`, `outcome` → `Outcome`
-- **SpaceInfo.js**: `description` → `Event`, `action` → `Action`, `outcome` → `Outcome` 
-- **Card fields**: `'W Card'` → `'w_card'`, `'B Card'` → `'b_card'`, etc.
-- **GameStateManager.js**: All `currentSpace.name` → `currentSpace.space_name`
+#### Component-CSV Alignment
+- SpaceExplorer.js: `description` → `Event`, `action` → `Action`, `outcome` → `Outcome`
+- SpaceInfo.js: `description` → `Event`, `action` → `Action`, `outcome` → `Outcome` 
+- Card fields: `'W Card'` → `'w_card'`, `'B Card'` → `'b_card'`, etc.
+- GameStateManager.js: All `currentSpace.name` → `currentSpace.space_name`
 
-#### **Visit Type Resolution**
-- **BoardRenderer.js**: Added visit type detection for selectedSpaceObj lookup
-- **SpaceSelectionManager.js**: Added visit type detection for space exploration clicks
-- **Consistent logic**: Both current space and exploration use same visit type resolution
+#### Visit Type Resolution
+- BoardRenderer.js: Added visit type detection for selectedSpaceObj lookup
+- SpaceSelectionManager.js: Added visit type detection for space exploration clicks
+- Consistent logic: Both current space and exploration use same visit type resolution
 
-### 🐛 **Debug Code Cleanup**
-- **Removed DEBUG statements** from BoardRenderer.js - Cleaned up space selection troubleshooting code
-- **Improved console logging** - Better distinction between errors and normal operation
-- **Enhanced warning messages** - CSV data warnings now properly categorize issues
+### Debug Code Cleanup
+- Removed DEBUG statements from BoardRenderer.js - Cleaned up space selection troubleshooting code
+- Improved console logging - Better distinction between errors and normal operation
+- Enhanced warning messages - CSV data warnings now properly categorize issues
 
-### 📁 **Files Modified**
+### Files Modified
 - `js/components/SpaceExplorer.js`: Fixed CSV field names and added movement choices rendering
 - `js/components/SpaceInfo.js`: Fixed CSV field names for Event/Action/Outcome display  
 - `js/components/BoardRenderer.js`: Fixed visit type resolution and removed debug code
@@ -103,52 +176,48 @@ All notable changes to the Project Management Board Game are documented in this 
 - `js/data/GameStateManager.js`: Fixed field name consistency throughout
 - `js/utils/movement/MovementEngine.js`: Added FINISH space handling and improved warnings
 
----
-
 ## [2.3.0] - June 17, 2025 - Stack Overflow Fixes (RESOLVED)
 
-### 🔧 **CRITICAL FIXES COMPLETED**
+### Critical Fixes Completed
 
-#### **Stack Overflow Error (RESOLVED)**
-- **Fixed duplicate `gameStarted` getter** in GameStateManager.js:1564 - Primary cause of infinite recursion
-- **Fixed setState in render()** in StaticPlayerStatus.js:354-357 - Critical infinite render loop  
-- **Added safety checks** in BoardRenderer.js for manager method calls
-- **Game initialization restored** - Application loads without JavaScript crashes
+#### Stack Overflow Error (RESOLVED)
+- Fixed duplicate `gameStarted` getter in GameStateManager.js:1564 - Primary cause of infinite recursion
+- Fixed setState in render() in StaticPlayerStatus.js:354-357 - Critical infinite render loop  
+- Added safety checks in BoardRenderer.js for manager method calls
+- Game initialization restored - Application loads without JavaScript crashes
 
-**Technical Impact:**
+Technical Impact:
 - Game successfully initializes to player setup screen
 - No more "Maximum call stack size exceeded" errors
 - Browser automation testing now works properly
 
----
-
 ## [2.2.0] - June 17, 2025 - Critical Bug Fixes & Game Testing Issues
 
-### 🐛 **CRITICAL BUGS IDENTIFIED & DOCUMENTED**
+### Critical Bugs Identified & Documented
 
-#### **Testing Session Results**
-- **Comprehensive Game Testing**: Full game testing session completed using browser automation
-- **3 Critical Issues Identified**: JavaScript stack overflow (RESOLVED), initialization delay, and CORS/file access problems
+#### Testing Session Results
+- Comprehensive Game Testing: Full game testing session completed using browser automation
+- 3 Critical Issues Identified: JavaScript stack overflow (RESOLVED), initialization delay, and CORS/file access problems
 
-#### **Bug #1: CORS/File Access Problem (RESOLVED)**
-- **Issue**: Game fails to load when using `file://` protocol due to browser security restrictions
-- **Impact**: Complete inability to run game without HTTP server
-- **Solution**: Must use HTTP server (`python3 -m http.server`) - documented in troubleshooting
+#### Bug #1: CORS/File Access Problem (RESOLVED)
+- Issue: Game fails to load when using `file://` protocol due to browser security restrictions
+- Impact: Complete inability to run game without HTTP server
+- Solution: Must use HTTP server (`python3 -m http.server`) - documented in troubleshooting
 
-#### **Bug #2: JavaScript Stack Overflow (RESOLVED in v2.3.0)**
-- **Issue**: "Maximum call stack size exceeded" errors during gameplay
-- **Cause**: Duplicate getter definitions and setState in render() method
-- **Impact**: Prevented game initialization and caused browser crashes
-- **Location**: GameStateManager.js and StaticPlayerStatus.js
-- **Status**: FIXED - Game now initializes properly
+#### Bug #2: JavaScript Stack Overflow (RESOLVED in v2.3.0)
+- Issue: "Maximum call stack size exceeded" errors during gameplay
+- Cause: Duplicate getter definitions and setState in render() method
+- Impact: Prevented game initialization and caused browser crashes
+- Location: GameStateManager.js and StaticPlayerStatus.js
+- Status: FIXED - Game now initializes properly
 
-#### **Bug #3: Game Initialization Delay (RESOLVED in v2.4.0)**
-- **Issue**: Game shows blank screen briefly after clicking "Start Game"
-- **Cause**: Intentional 800ms delays for animations in PlayerSetup.js
-- **Solution**: Removed delays and added proper loading states
-- **Impact**: FIXED - Immediate game start with loading feedback
+#### Bug #3: Game Initialization Delay (RESOLVED in v2.4.0)
+- Issue: Game shows blank screen briefly after clicking "Start Game"
+- Cause: Intentional 800ms delays for animations in PlayerSetup.js
+- Solution: Removed delays and added proper loading states
+- Impact: FIXED - Immediate game start with loading feedback
 
-### ✅ **SYSTEMS CONFIRMED WORKING**
+### Systems Confirmed Working
 - Game loads properly with HTTP server
 - Player setup interface functions
 - Board renders with all spaces visible  
@@ -157,42 +226,40 @@ All notable changes to the Project Management Board Game are documented in this 
 - Card count display ("Show Cards 0")
 - Game state tracking (player status, money, time)
 
-### 📁 **Files Modified**
+### Files Modified
 - `docs/CHANGELOG.md`: Added comprehensive testing results and bug documentation
 - `docs/README.md`: Will be updated with troubleshooting section
 - `docs/COMPREHENSIVE_GAME_GUIDE.md`: Will be updated with known issues section
 
----
-
 ## [2.1.0] - June 14, 2025 - Card Data Standardization & Field Alignment
 
-### 🎯 **MAJOR DATA IMPROVEMENT**
+### Major Data Improvement
 
-#### **Complete Card Field Standardization**
-- **399 Cards Updated**: Comprehensive field alignment across all Expeditor (E) and Life (L) cards
-- **Semantic Consistency Achieved**: Every field now matches exactly what card descriptions say
-- **Zero Text Parsing Required**: All effects available as structured data for CardManager
+#### Complete Card Field Standardization
+- 399 Cards Updated: Comprehensive field alignment across all Expeditor (E) and Life (L) cards
+- Semantic Consistency Achieved: Every field now matches exactly what card descriptions say
+- Zero Text Parsing Required: All effects available as structured data for CardManager
 
-#### **Field Alignment Improvements**
-- **Target/Scope Accuracy**: "All players" effects correctly tagged as `target: "All Players"`, `scope: "Global"`
-- **Time Effects Precision**: All time modifications properly quantified (e.g., "3 ticks more" → `time_effect: 3`)
-- **Phase Restrictions**: Cards mentioning phases/types correctly restricted (e.g., "inspection" → `phase_restriction: "CONSTRUCTION"`)
-- **Card Interactions**: All card draw/discard effects structured (e.g., "Draw 1 Expeditor Card" → `draw_cards: 1`, `card_type_filter: "E"`)
-- **Money Effects**: All monetary costs and gains properly tracked (e.g., "Pay $1000" → `money_cost: -1000`)
-- **Dice Mechanics**: All dice-based effects standardized with triggers and outcomes
-- **Complex Logic**: Multi-step effects captured in conditional_logic field
+#### Field Alignment Improvements
+- Target/Scope Accuracy: "All players" effects correctly tagged as `target: "All Players"`, `scope: "Global"`
+- Time Effects Precision: All time modifications properly quantified (e.g., "3 ticks more" → `time_effect: 3`)
+- Phase Restrictions: Cards mentioning phases/types correctly restricted (e.g., "inspection" → `phase_restriction: "CONSTRUCTION"`)
+- Card Interactions: All card draw/discard effects structured (e.g., "Draw 1 Expeditor Card" → `draw_cards: 1`, `card_type_filter: "E"`)
+- Money Effects: All monetary costs and gains properly tracked (e.g., "Pay $1000" → `money_cost: -1000`)
+- Dice Mechanics: All dice-based effects standardized with triggers and outcomes
+- Complex Logic: Multi-step effects captured in conditional_logic field
 
-#### **Data Quality Enhancements**
-- **Enhanced Flavor Text**: Added engaging narratives to 15+ Bank cards and improved descriptions across all types
-- **Fixed Incomplete Descriptions**: Resolved 9 Life cards with incomplete dice roll descriptions
-- **Standardized Duration Effects**: Turn-based effects properly structured with duration and duration_count
+#### Data Quality Enhancements
+- Enhanced Flavor Text: Added engaging narratives to 15+ Bank cards and improved descriptions across all types
+- Fixed Incomplete Descriptions: Resolved 9 Life cards with incomplete dice roll descriptions
+- Standardized Duration Effects: Turn-based effects properly structured with duration and duration_count
 
-#### **Technical Impact**
-- **CardManager Optimization Ready**: All card effects now available as structured data instead of requiring text parsing
-- **Performance Improvement Potential**: 93-line text parsing function can be replaced with simple data column reading
-- **Game Logic Reliability**: Eliminates parsing errors and inconsistencies in card effect processing
+#### Technical Impact
+- CardManager Optimization Ready: All card effects now available as structured data instead of requiring text parsing
+- Performance Improvement Potential: 93-line text parsing function can be replaced with simple data column reading
+- Game Logic Reliability: Eliminates parsing errors and inconsistencies in card effect processing
 
-### 📁 **Files Modified**
+### Files Modified
 - `data/cards.csv`: Updated 40+ Expeditor and Life cards with comprehensive field alignment
 - `docs/CSV_DATA_POPULATION_PROGRESS.md`: Updated to reflect completion status
 - `docs/CHANGELOG.md`: Added this entry documenting the improvements

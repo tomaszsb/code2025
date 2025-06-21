@@ -4,9 +4,7 @@
 **Last Updated**: June 18, 2025  
 **Audience**: Players, Developers, and Game Modifiers
 
-> **Note**: For a concise player-only guide, see [PLAYER_GUIDE.md](PLAYER_GUIDE.md)
-
----
+**Note**: For a concise player-only guide, see [PLAYER_GUIDE.md](PLAYER_GUIDE.md)
 
 ## Table of Contents
 
@@ -15,19 +13,17 @@
 3. [For Modifiers: Safe Editing Guide](#for-modifiers-safe-editing-guide)
 4. [Game Mechanics Deep Dive](#game-mechanics-deep-dive)
 
----
-
 # For Players: How to Play
 
 ## Game Overview
 
-Welcome to the Project Management Game! This board game simulates managing a construction project from initial concept through completion. As a project manager, you'll navigate challenges, make strategic decisions, and manage resources to successfully complete your project.
+This board game simulates managing a construction project from initial concept through completion. As a project manager, you'll navigate challenges, make strategic decisions, and manage resources to successfully complete your project.
 
 ## Getting Started
 
-1. **Setup**: Enter your name and select a color
-2. **Starting Position**: All players begin at OWNER-SCOPE-INITIATION
-3. **Game Objective**: Navigate through all project phases while managing resources effectively
+1. Setup: Enter your name and select a color
+2. Starting Position: All players begin at OWNER-SCOPE-INITIATION
+3. Game Objective: Navigate through all project phases while managing resources effectively
 
 ## How to Play
 
@@ -35,105 +31,103 @@ Welcome to the Project Management Game! This board game simulates managing a con
 
 On your turn:
 
-1. **View Current Space**: The middle panel shows information about your current location
-2. **See Available Moves**: Blue buttons display where you can move next
-3. **Select Your Move**: Click a blue button to choose your destination
-4. **Roll Dice (if required)**: Some spaces require dice rolls to determine outcomes
-5. **Draw Cards (if directed)**: You may draw cards based on your space or dice results
-6. **End Turn**: Click "End Turn" to complete your move and pass play to the next player
+1. View Current Space: The middle panel shows information about your current location
+2. See Available Moves: Blue buttons display where you can move next
+3. Select Your Move: Click a blue button to choose your destination
+4. Roll Dice (if required): Some spaces require dice rolls to determine outcomes
+5. Draw Cards (if directed): You may draw cards based on your space or dice results
+6. End Turn: Click "End Turn" to complete your move and pass play to the next player
 
 ### Movement System
 
-- **Available Moves**: Click blue buttons in the Space Info panel to select destinations
-- **Movement Confirmation**: Your move executes when you click "End Turn"
-- **Dice-Based Outcomes**: Some spaces use dice rolls to determine next actions
-- **Path Types**: Main path, special detours, and side quest paths available
+- Available Moves: Click blue buttons in the Space Info panel to select destinations
+- Movement Confirmation: Your move executes when you click "End Turn"
+- Dice-Based Outcomes: Some spaces use dice rolls to determine next actions
+- Path Types: Main path, special detours, and side quest paths available
 
 ### Card System
 
 The game features five card types with specific purposes:
 
-1. **Work Type (W) Cards**: Define project scope and work requirements
-2. **Bank (B) Cards**: Provide loans and financial resources
-3. **Investor (I) Cards**: Offer investment capital with different terms
-4. **Life (L) Cards**: Represent unexpected life events affecting your project
-5. **Expeditor (E) Cards**: Provide special abilities to overcome challenges
+1. Work Type (W) Cards: Define project scope and work requirements
+2. Bank (B) Cards: Provide loans and financial resources
+3. Investor (I) Cards: Offer investment capital with different terms
+4. Life (L) Cards: Represent unexpected life events affecting your project
+5. Expeditor (E) Cards: Provide special abilities to overcome challenges
 
 #### Card Limits
-- **Maximum per type**: 6 cards of each type
-- **Visual indicators**: Card counts display current vs. maximum
-- **Automatic management**: System prompts to discard excess cards
+- Maximum per type: 6 cards of each type
+- Visual indicators: Card counts display current vs. maximum
+- Automatic management: System prompts to discard excess cards
 
 ### Dice Rolling
 
-- **When Required**: "Roll Dice" button appears on spaces requiring dice rolls
-- **Outcomes**: Results determine next spaces, resource changes, or cards drawn
-- **Visual Feedback**: 3D dice animation with clear outcome display
+- When Required: "Roll Dice" button appears on spaces requiring dice rolls
+- Outcomes: Results determine next spaces, resource changes, or cards drawn
+- Visual Feedback: 3D dice animation with clear outcome display
 
 ### Resource Management
 
-- **Money**: Track financial resources for project costs and fees
-- **Time**: Project timeline measured in days (more time = higher costs)
-- **Strategic Balance**: Manage speed vs. cost throughout the project
+- Money: Track financial resources for project costs and fees
+- Time: Project timeline measured in days (more time = higher costs)
+- Strategic Balance: Manage speed vs. cost throughout the project
 
 ## Game Phases
 
-1. **SETUP**: Define project scope and secure initial funding
-2. **OWNER**: Handle owner decisions and approvals  
-3. **FUNDING**: Secure financing from banks or investors
-4. **DESIGN**: Work with architects and engineers
-5. **REGULATORY**: Navigate building department approvals
-6. **CONSTRUCTION**: Build the project and handle construction issues
+1. SETUP: Define project scope and secure initial funding
+2. OWNER: Handle owner decisions and approvals  
+3. FUNDING: Secure financing from banks or investors
+4. DESIGN: Work with architects and engineers
+5. REGULATORY: Navigate building department approvals
+6. CONSTRUCTION: Build the project and handle construction issues
 
 ## Space Types and Visit Mechanics
 
-- **First vs. Subsequent Visits**: Spaces behave differently on repeat visits
-- **Path Categories**: Main path, special detours, side quests
-- **Special Spaces**: PM-DECISION-CHECK and other decision points
+- First vs. Subsequent Visits: Spaces behave differently on repeat visits
+- Path Categories: Main path, special detours, side quests
+- Special Spaces: PM-DECISION-CHECK and other decision points
 
 ## Tips for Success
 
-1. **Plan Your Route**: Look ahead to determine efficient paths
-2. **Manage Resources**: Monitor money and time carefully
-3. **Use Cards Strategically**: Play cards at optimal moments
-4. **Consider All Options**: Evaluate negotiation vs. accepting outcomes
-5. **Watch for Opportunities**: Pay attention to special move options
-
----
+1. Plan Your Route: Look ahead to determine efficient paths
+2. Manage Resources: Monitor money and time carefully
+3. Use Cards Strategically: Play cards at optimal moments
+4. Consider All Options: Evaluate negotiation vs. accepting outcomes
+5. Watch for Opportunities: Pay attention to special move options
 
 # For Developers: Technical Implementation
 
 ## Architecture Overview
 
 ### Core Pattern: Component-Based + Event-Driven
-- **React Components**: 30+ specialized UI components with some manager classes
-- **Event System**: Components communicate through GameStateManager events
-- **Data-Driven**: CSV files drive game logic instead of hardcoded rules
-- **Staged Initialization**: 5-stage deterministic loading
+- React Components: 30+ specialized UI components with some manager classes
+- Event System: Components communicate through GameStateManager events
+- Data-Driven: CSV files drive game logic instead of hardcoded rules
+- Staged Initialization: 5-stage deterministic loading
 
 ### Key Systems
 
 #### 1. State Management
-**`js/data/GameStateManager.js`** - Central state manager
+`js/data/GameStateManager.js` - Central state manager
 - Manages all game state and player data
 - Custom event system for component communication
 - localStorage persistence with backward compatibility
 
 #### 2. Movement System
-**`js/utils/movement/MovementEngine.js`** - Movement processing
+`js/utils/movement/MovementEngine.js` - Movement processing
 - CSV-driven movement rules
 - Complex space handling (PM-DECISION-CHECK, special paths)
 - Visit tracking and space type resolution
 
 #### 3. Card System
-**Unified card architecture** with advanced features:
+Unified card architecture with advanced features:
 - Single `data/cards.csv` with 404 cards (398 production + 6 TEST) and 48 metadata fields
 - Advanced combo and chain reaction systems
 - Complex targeting patterns and multi-card interactions
 - Performance optimization with O(1) lookups
 
 #### 4. Initialization System
-**`js/components/managers/InitializationManager.js`** - 5-stage loading:
+`js/components/managers/InitializationManager.js` - 5-stage loading:
 1. Utilities and core systems
 2. Component registry and movement engine
 3. GameStateManager and game state
@@ -143,9 +137,9 @@ The game features five card types with specific purposes:
 ### Data Layer
 
 #### CSV Files (Current Implementation)
-- **`data/Spaces.csv`**: Board spaces with Path and RequiresDiceRoll columns
-- **`data/cards.csv`**: Unified card data (404 cards total: 398 production cards in 5 types W/B/I/L/E + 6 TEST cards)
-- **`data/DiceRoll Info.csv`**: Dice roll outcomes
+- `data/Spaces.csv`: Board spaces with Path and RequiresDiceRoll columns
+- `data/cards.csv`: Unified card data (404 cards total: 398 production cards in 5 types W/B/I/L/E + 6 TEST cards)
+- `data/DiceRoll Info.csv`: Dice roll outcomes
 
 #### Data-Driven Features
 - Game mechanics defined in CSV files, not hardcoded
@@ -156,10 +150,10 @@ The game features five card types with specific purposes:
 ### Component Architecture
 
 #### Manager Pattern Implementation
-- **InitializationManager**: 5-stage app initialization
-- **SpaceInfoManager**: Space information display  
-- **CardManager**: Card drawing, effects, and management
-- **MovementEngine**: Movement logic processing
+- InitializationManager: 5-stage app initialization
+- SpaceInfoManager: Space information display  
+- CardManager: Card drawing, effects, and management
+- MovementEngine: Movement logic processing
 
 #### Communication Patterns
 ```javascript
@@ -187,27 +181,27 @@ this.setState(prevState => ({
 ```
 
 ### Modern Architecture Patterns
-- **Manager Pattern**: Specialized managers for major systems
-- **Event System**: Loose coupling through GameStateManager events
-- **Component Interfaces**: Standardized communication patterns
-- **Separation of Concerns**: Clear division between UI, logic, and data
-- **Data-Driven Configuration**: Game rules externalized to CSV files
-- **5-Stage Initialization**: Deterministic loading via InitializationManager
+- Manager Pattern: Specialized managers for major systems
+- Event System: Loose coupling through GameStateManager events
+- Component Interfaces: Standardized communication patterns
+- Separation of Concerns: Clear division between UI, logic, and data
+- Data-Driven Configuration: Game rules externalized to CSV files
+- 5-Stage Initialization: Deterministic loading via InitializationManager
 
 ### Performance Optimization
-- **Advanced Indexing**: Multi-dimensional card indexes for O(1) lookups
-- **Space Caching System**: byId, byName, byNormalizedName caches for instant space lookups
-- **Efficient Rendering**: Minimal DOM updates and optimized animations
-- **Memory Management**: Proper cleanup of event listeners and resources
-- **Animation Optimization**: 20+ keyframe animations with hardware acceleration
+- Advanced Indexing: Multi-dimensional card indexes for O(1) lookups
+- Space Caching System: byId, byName, byNormalizedName caches for instant space lookups
+- Efficient Rendering: Minimal DOM updates and optimized animations
+- Memory Management: Proper cleanup of event listeners and resources
+- Animation Optimization: 20+ keyframe animations with hardware acceleration
 
 ### Critical Development Constraints
-- **No localStorage/sessionStorage**: Not supported in Claude.ai artifacts - use React state instead
-- **Loading Order Dependencies**: Components must load in specific sequence (see above)
-- **CSV-Driven Logic**: Never hardcode game rules - always use CSV data
-- **Event-Driven Communication**: Use GameStateManager events, not direct calls
-- **Property Name Standards**: Use snake_case for consistency (space_name, card_type, etc.)
-- **File Organization**: When modifying components, move them to proper locations (managers/, utils/) and update all dependencies
+- No localStorage/sessionStorage: Not supported in Claude.ai artifacts - use React state instead
+- Loading Order Dependencies: Components must load in specific sequence (see above)
+- CSV-Driven Logic: Never hardcode game rules - always use CSV data
+- Event-Driven Communication: Use GameStateManager events, not direct calls
+- Property Name Standards: Use snake_case for consistency (space_name, card_type, etc.)
+- File Organization: When modifying components, move them to proper locations (managers/, utils/) and update all dependencies
 
 ### File Organization
 ```
@@ -280,13 +274,12 @@ data/
 python -m http.server 8000
 # or
 npx serve .
-# or simply open Index.html in browser
 
 # Debug mode access
 http://localhost:8000/?debug=true&logLevel=debug
 ```
 
-**No build system** - Static web application with browser-based Babel compilation for JSX.
+No build system - Static web application with browser-based Babel compilation for JSX.
 
 ### Critical Loading Order
 
@@ -299,27 +292,25 @@ Components must load in this sequence (defined in Index.html):
 6. UI components
 7. Main application script
 
-**This order is critical** - changing it will break the application due to dependency requirements.
+This order is critical - changing it will break the application due to dependency requirements.
 
 ### Data Standards
 
 #### CSV Column Mapping
 All CSV data follows these conventions:
-- **Column Headers**: Mixed case as they exist (space_name, Event, Action, space_1, Time, etc.)
-- **Internal Properties**: Always mapped to snake_case for consistency (space_1, visit_type, w_card)
-- **Movement Data**: Uses space_1, space_2, space_3, space_4, space_5 columns
-- **Card Data**: Uses w_card, b_card, i_card, l_card, e_card columns
-- **No Hardcoded Logic**: All game mechanics read from CSV files, not code constants
+- Column Headers: Mixed case as they exist (space_name, Event, Action, space_1, Time, etc.)
+- Internal Properties: Always mapped to snake_case for consistency (space_1, visit_type, w_card)
+- Movement Data: Uses space_1, space_2, space_3, space_4, space_5 columns
+- Card Data: Uses w_card, b_card, i_card, l_card, e_card columns
+- No Hardcoded Logic: All game mechanics read from CSV files, not code constants
 
 #### Property Name Standardization Rules
 Moving forward, all components must use:
-- **Space Objects**: `space.space_name` (not `space.name`)
-- **Move Objects**: `move.name` for space name, `move.id` for generated ID
-- **Card Objects**: Both `card.card_type` and `card.type` for type checking
-- **Card Fields**: Current CSV names (`work_type_restriction`, `work_cost`) with legacy fallbacks
-- **React setState**: Always use function form with spread operator to preserve state
-
----
+- Space Objects: `space.space_name` (not `space.name`)
+- Move Objects: `move.name` for space name, `move.id` for generated ID
+- Card Objects: Both `card.card_type` and `card.type` for type checking
+- Card Fields: Current CSV names (`work_type_restriction`, `work_cost`) with legacy fallbacks
+- React setState: Always use function form with spread operator to preserve state
 
 # For Modifiers: Safe Editing Guide
 
@@ -328,61 +319,61 @@ Moving forward, all components must use:
 ### 1. Game Data Files (Safest)
 These contain game content and are safest to modify:
 
-- **`data/Spaces.csv`**: Board spaces and their properties
-- **`data/cards.csv`**: All card data (404 cards: 398 production + 6 TEST, 5 main types)
-- **`data/DiceRoll Info.csv`**: Dice roll outcomes
+- `data/Spaces.csv`: Board spaces and their properties
+- `data/cards.csv`: All card data (404 cards: 398 production + 6 TEST, 5 main types)
+- `data/DiceRoll Info.csv`: Dice roll outcomes
 
 ### 2. Visual Appearance Files
 Control how the game looks:
 
-- **`css/main.css`**: Overall visual styling
-- **`css/card-components.css`**: Card appearance
-- **`css/game-components.css`**: Game UI styling
-- **`css/board-space-renderer.css`**: Board space appearance
+- `css/main.css`: Overall visual styling
+- `css/card-components.css`: Card appearance
+- `css/game-components.css`: Game UI styling
+- `css/board-space-renderer.css`: Board space appearance
 
 ### 3. Game Mechanics Files (More Advanced)
 Control game behavior - edit carefully:
 
-- **`js/components/CardManager.js`**: Card drawing and effects
-- **`js/components/DiceManager.js`**: Dice rolling behavior
-- **`js/components/TurnManager.js`**: Turn order and flow
-- **`js/utils/movement/MovementEngine.js`**: Player movement rules
+- `js/components/CardManager.js`: Card drawing and effects
+- `js/components/DiceManager.js`: Dice rolling behavior
+- `js/components/TurnManager.js`: Turn order and flow
+- `js/utils/movement/MovementEngine.js`: Player movement rules
 
 ## Common Modifications
 
 ### Change Card Limits
-**File**: `js/components/CardDisplay.js`  
-**Look for**: `const CARD_TYPE_LIMIT = 6;`  
-**Change to**: `const CARD_TYPE_LIMIT = 8;` (or desired number)
+File: `js/components/CardDisplay.js`  
+Look for: `const CARD_TYPE_LIMIT = 6;`  
+Change to: `const CARD_TYPE_LIMIT = 8;` (or desired number)
 
 ### Modify Dice Roll Outcomes
-**File**: `data/DiceRoll Info.csv`  
-**Edit**: Outcome values and descriptions for specific spaces
+File: `data/DiceRoll Info.csv`  
+Edit: Outcome values and descriptions for specific spaces
 
 ### Change Starting Resources
-**File**: `js/components/PlayerSetup.js`  
-**Look for**: Initial money and time values  
-**Change**: Starting amounts
+File: `js/components/PlayerSetup.js`  
+Look for: Initial money and time values  
+Change: Starting amounts
 
 ### Modify Card Effects
-**File**: `data/cards.csv`  
-**Edit**: Card descriptions, monetary values, and effects
+File: `data/cards.csv`  
+Edit: Card descriptions, monetary values, and effects
 
 ## Safe Editing Workflow
 
-1. **Always backup**: Copy the file and add ".backup" to the filename
-2. **One change at a time**: Don't modify multiple things simultaneously
-3. **Test immediately**: Check your change works and doesn't break anything
-4. **Take notes**: Document exactly what you changed
-5. **If something breaks**: Restore from backup and try a smaller change
+1. Always backup: Copy the file and add ".backup" to the filename
+2. One change at a time: Don't modify multiple things simultaneously
+3. Test immediately: Check your change works and doesn't break anything
+4. Take notes: Document exactly what you changed
+5. If something breaks: Restore from backup and try a smaller change
 
 ## Tips for Non-Programmers
 
-- **Comments are helpful**: Text after `//` or between `/* */` explains code
-- **Use search**: Ctrl+F to find keywords like "card limit" or space names
-- **Numbers are usually safe**: Values like `6`, `100`, `0.5` represent game values
-- **Text in quotes is safe**: Strings like `"You drew a card!"` can be changed
-- **Don't change structure**: Focus on changing values, not code organization
+- Comments are helpful: Text after `//` or between `/* */` explains code
+- Use search: Ctrl+F to find keywords like "card limit" or space names
+- Numbers are usually safe: Values like `6`, `100`, `0.5` represent game values
+- Text in quotes is safe: Strings like `"You drew a card!"` can be changed
+- Don't change structure: Focus on changing values, not code organization
 
 ---
 
@@ -674,6 +665,78 @@ const gameState = await page.evaluate(() => {
   };
 });
 ```
+
+---
+
+## Troubleshooting Common Issues
+
+### Player Experience Issues
+
+#### Left Panel Not Updating After Movement
+**Symptoms**: Player moves to a new space but the left panel (player status) shows old information
+**Cause**: Event flow interruption between game components
+**Solution**: The game includes dual-path update mechanisms - refresh page if issue persists
+**Technical Details**: See CLAUDE.md "Left Panel Update Issues" for complete fix documentation
+
+#### Console Errors During Dice Rolls
+**Symptoms**: Error messages like "Could not find space object for conditional requirements"
+**Cause**: Space lookup using incorrect ID format
+**Solution**: Fixed in current version - error should no longer occur
+**Technical Details**: DiceManager now uses proper space cache lookup with visit type consideration
+
+#### Panels Disappearing During Turn Transitions  
+**Symptoms**: Middle or right panels vanish when turn changes
+**Cause**: CSS z-index conflicts with turn transition overlay
+**Solution**: Fixed in current version - panels should remain visible
+**Technical Details**: Panel z-index increased to 600, above transition overlay (500)
+
+### Technical Debug Steps
+
+#### Enable Debug Mode
+Add URL parameters for enhanced logging:
+```
+http://localhost:8000/?debug=true&logLevel=debug
+```
+
+#### Console Investigation
+Key log patterns to look for:
+- `🔄 GameBoard: Player moved event received` - Confirms event flow
+- `StaticPlayerStatus [INFO]: Props changed` - Confirms panel updates  
+- `GameStateManager: Successfully found space` - Confirms space lookups
+- `DiceManager: Looking up space with ID` - Shows dice system operation
+
+#### Component State Inspection
+Access game state from browser console:
+```javascript
+// Check current player
+window.GameState.getCurrentPlayer()
+
+// Check player position
+window.GameState.getCurrentPlayer().position
+
+// Check visited spaces
+Array.from(window.GameState.getCurrentPlayer().visitedSpaces)
+
+// Check available spaces
+window.GameState.spaces.length
+
+// Check game board state
+window.currentGameBoard?.state
+```
+
+### Performance and Browser Issues
+
+#### Slow Loading or Freezing
+- Clear browser cache and refresh
+- Ensure JavaScript is enabled
+- Try a different browser (Chrome, Firefox, Safari tested)
+- Check console for error messages
+
+#### Memory Usage Concerns
+- The game includes comprehensive memory cleanup
+- Event listeners are properly removed on component unmount
+- Timers and animations are tracked and cleared
+- No known memory leaks in current version
 
 ---
 

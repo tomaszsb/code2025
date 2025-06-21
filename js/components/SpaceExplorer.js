@@ -800,10 +800,17 @@ class SpaceExplorer extends React.Component {
     // Show placeholder if no space is selected
     if (!space) {
       console.log('SpaceExplorer: render method completed with placeholder UI');
+      console.log('SpaceExplorer: DEBUG - props:', JSON.stringify(this.props, (key, value) => {
+        if (key === 'diceRollData') return `Array(${value?.length || 0})`;
+        return value;
+      }, 2));
+      
       return (
         <div className="space-explorer empty">
           <div className="explorer-placeholder">
-            <p>Click on any space on the board to explore details</p>
+            <h3>Space Explorer</h3>
+            <p>No space data available</p>
+            <small>Debug: space prop is {typeof space} ({String(space)})</small>
           </div>
         </div>
       );

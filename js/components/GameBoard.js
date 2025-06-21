@@ -17,6 +17,10 @@ window.GameBoard = class GameBoard extends React.Component {
     this.spaceSelectionManager = new window.SpaceSelectionManager(this);
     this.spaceExplorerManager = new window.SpaceExplorerManager(this);
     
+    // Bind event handlers to maintain consistent references
+    this.handleSpacesLoaded = this.handleSpacesLoaded.bind(this);
+    this.handlePlayerMoved = this.handlePlayerMoved.bind(this);
+    
     this.state = {
       players: GameState.players || [],
       currentPlayerIndex: GameState.currentPlayerIndex || 0,
@@ -45,15 +49,29 @@ window.GameBoard = class GameBoard extends React.Component {
     console.log("GameBoard: Space explorer is now always visible");
   }
        
+  // Enhanced setState wrapper that logs state changes for debugging
+  setState(updater, callback) {
+    // Log selectedSpace changes specifically for panel debugging
+    if (typeof updater === 'object' && 'selectedSpace' in updater) {
+      console.warn('GameBoard: selectedSpace being changed to:', updater.selectedSpace);
+      console.trace('GameBoard: setState call stack');
+    }
+    return super.setState(updater, callback);
+  }
+
   componentDidMount() {
     // Store global reference to this GameBoard instance
     window.currentGameBoard = this;
     console.log('GameBoard: Global reference established');
     
-    // Add event listener for when spaces are loaded
+    // Add event listeners for spaces loaded and player movement
     if (window.GameStateManager) {
-      window.GameStateManager.addEventListener('spacesLoaded', this.handleSpacesLoaded.bind(this));
-      console.log('GameBoard: Added spacesLoaded event listener');
+      window.GameStateManager.addEventListener('spacesLoaded', this.handleSpacesLoaded);
+      window.GameStateManager.addEventListener('playerMoved', this.handlePlayerMoved);
+      console.log('🎯 GameBoard: Added spacesLoaded and playerMoved event listeners - UPDATED 2025-06-20');
+      console.log('🎯 GameBoard: handlePlayerMoved function:', this.handlePlayerMoved);
+    } else {
+      console.error('❌ GameBoard: GameStateManager not available for event listeners');
     }
     
     // Update available moves using SpaceSelectionManager
@@ -126,14 +144,54 @@ window.GameBoard = class GameBoard extends React.Component {
     });
   }
   
+  // Handle player movement events to update left panel snapshots
+  handlePlayerMoved(event) {
+    console.log('🔄 GameBoard: Player moved event received - UPDATED 2025-06-20', event.data);
+    
+    if (!event.data || !event.data.player) {
+      console.warn('GameBoard: Invalid playerMoved event data');
+      return;
+    }
+    
+    const movedPlayer = event.data.player;
+    const currentPlayer = this.turnManager.getCurrentPlayer();
+    
+    // Only update snapshots if the moved player is the current player
+    if (!currentPlayer || movedPlayer.id !== currentPlayer.id) {
+      console.log('GameBoard: Player moved was not current player, skipping snapshot update');
+      return;
+    }
+    
+    // Get the new space the player moved to
+    const newSpace = this.state.spaces.find(s => s.space_name === movedPlayer.position);
+    
+    if (!newSpace) {
+      console.warn('GameBoard: Could not find space for player position:', movedPlayer.position);
+      return;
+    }
+    
+    // Create new snapshots of the player and space after movement
+    const playerSnapshot = this.turnManager.createPlayerSnapshot(movedPlayer);
+    const spaceSnapshot = { ...newSpace };
+    
+    console.log('GameBoard: Updating left panel snapshots after player movement');
+    
+    this.setState({
+      currentPlayerOnLanding: playerSnapshot,
+      currentSpaceOnLanding: spaceSnapshot,
+      selectedSpace: movedPlayer.position  // Also update the selected space
+    });
+  }
+  
   // Clean up any animations when unmounting
   componentWillUnmount() {
     console.log('GameBoard: Cleaning up resources on unmount');
     
-    // Remove event listener
+    // Remove event listeners
     if (window.GameStateManager) {
-      window.GameStateManager.removeEventListener('spacesLoaded', this.handleSpacesLoaded.bind(this));
-      console.log('GameBoard: Removed spacesLoaded event listener');
+      window.GameStateManager.removeEventListener('spacesLoaded', this.handleSpacesLoaded);
+      window.GameStateManager.removeEventListener('playerMoved', this.handlePlayerMoved);
+      console.log('GameBoard: Removed spacesLoaded and playerMoved event listeners');
     }
     
     // Clear global reference

@@ -1,7 +1,9 @@
-/* static-player-status.css file is beginning to be used */
-console.log('static-player-status.css file is beginning to be used');
+/* static-player-status.css file is beginning to be used - UPDATED 2025-06-20 */
+console.log('static-player-status.css file is beginning to be used - UPDATED 2025-06-20');
 
-/* Main container styling */
+/* Main container styling - BALANCED HEIGHT */
+.info-panels-container .player-panel .static-player-status,
+.player-panel .static-player-status,
 .static-player-status {
   margin: 10px;
   padding: 10px;
@@ -9,7 +11,18 @@ console.log('static-player-status.css file is beginning to be used');
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   background-color: #fff;
   max-width: 100%;
-  overflow: hidden;
+  min-height: 400px !important; /* Reasonable minimum height */
+  height: auto !important; /* Allow content to determine height */
+  max-height: 70vh !important; /* Prevent excessive height */
+  overflow: visible !important; /* No scrollbar needed */
+}
+
+/* Specific override for left panel positioning */
+.info-panels-container .player-panel:first-child .static-player-status {
+  height: auto !important;
+  min-height: 400px !important;
+  max-height: 70vh !important;
+  overflow: visible !important;
 }
 
 /* Border stylings for different player colors - will be applied via JS className */
@@ -260,8 +273,6 @@ console.log('static-player-status.css file is beginning to be used');
 /* Scope table */
 .static-player-status-scope-container {
   margin: 5px 0;
-  max-height: 200px;
-  overflow-y: auto;
 }
 
 .static-player-status-scope-table {

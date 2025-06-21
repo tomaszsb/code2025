@@ -35,7 +35,7 @@ window.App = class App extends React.Component {
     }
 
     checkGameState = () => {
-        if (window.GameStateManager) {
+        if (window.GameStateManager && window.GameStateManager.isProperlyInitialized) {
             this.setState({
                 gameStarted: window.GameStateManager.gameStarted,
                 isInitialized: window.GameStateManager.isProperlyInitialized

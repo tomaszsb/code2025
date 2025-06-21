@@ -72,7 +72,8 @@
       "Bash(npx playwright:*)",
       "Bash(mkdir:*)",
       "Bash(cat:*)",
-      "Bash(timeout 30 npx playwright test simple-debug.spec.js)"
+      "Bash(timeout 30 npx playwright test simple-debug.spec.js)",
+      "Bash(CI=true npx playwright test tests/debug-left-panel.spec.js --reporter=list)"
     ],
     "deny": []
   }

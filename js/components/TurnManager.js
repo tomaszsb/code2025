@@ -330,8 +330,29 @@ class TurnManager {
       
       console.log(`TurnManager: Player change from ${previousPlayerIndex} to ${window.GameStateManager.currentPlayerIndex}`);
       
-      // Get the space the player landed on
-      const newSpace = this.gameBoard.state.spaces.find(s => s.space_name === newPlayerPosition);
+      // Get the space the player landed on with correct visit type
+      let newSpace = null;
+      if (newPlayerPosition && window.GameStateManager.spaces) {
+        // Determine if player has visited this space before
+        const hasVisited = this.gameBoard?.spaceSelectionManager?.hasPlayerVisitedSpace && 
+                          this.gameBoard.spaceSelectionManager.hasPlayerVisitedSpace(newCurrentPlayer, newPlayerPosition);
+        const visitType = hasVisited ? 'Subsequent' : 'First';
+        
+        // Find space with correct visit type
+        newSpace = window.GameStateManager.spaces.find(s => 
+          s.space_name === newPlayerPosition && s.visit_type === visitType
+        ) || window.GameStateManager.spaces.find(s => s.space_name === newPlayerPosition);
+        
+        // Debug logging for space lookup
+        if (!newSpace) {
+          console.warn('TurnManager: No space found for:', {
+            newPlayerPosition,
+            visitType,
+            spacesAvailable: window.GameStateManager.spaces?.length,
+            hasSpaceInData: window.GameStateManager.spaces?.some(s => s.space_name === newPlayerPosition)
+          });
+        }
+      }
       
       // Create player and space snapshots
       const playerSnapshot = this.createPlayerSnapshot(newCurrentPlayer);

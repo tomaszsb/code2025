@@ -21,7 +21,7 @@
   position: absolute;
   top: 10px;
   right: 10px;
-  z-index: 100;
+  z-index: 600; /* Above turn transition overlay (500) */
 }
 
 .open-explorer-btn {
@@ -169,12 +169,16 @@
   min-height: 360px;
   max-height: none;
   overflow-y: visible;
+  z-index: 600; /* Above turn transition overlay (500) */
+  position: relative;
 }
 
 /* Ensure the space explorer content displays fully */
 .space-explorer {
   height: auto;
   overflow-y: visible;
+  z-index: 600; /* Above turn transition overlay (500) */
+  position: relative;
 }
 
 /* Fix table display in space explorer */

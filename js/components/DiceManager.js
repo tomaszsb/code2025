@@ -904,7 +904,16 @@ class DiceManager {
         console.log('DiceManager: Player visited spaces:', currentPlayer?.visitedSpaces);
         
         // Try to find the space object for conditional card requirements
-        const currentSpace = window.GameStateManager.findSpaceById(spaceId);
+        // Use the correct visit type we already calculated above
+        // Format the space ID exactly as stored in cache: normalized name + visit type
+        const normalizedSpaceName = spaceName
+          .replace(/[^\w\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .toLowerCase();
+        const spaceIdWithVisitType = normalizedSpaceName + '-' + visitType.toLowerCase();
+        
+        console.log('DiceManager: Looking up space with ID:', spaceIdWithVisitType);
+        const currentSpace = window.GameStateManager.findSpaceById(spaceIdWithVisitType);
         if (currentSpace) {
           // Check and store conditional card requirements if present
           const cardTypes = ['W card', 'B card', 'I card', 'L card', 'E Card'];

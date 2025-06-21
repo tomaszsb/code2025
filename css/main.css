@@ -108,7 +108,7 @@ body {
 }
 
 .info-panels-container {
-  min-height: 40vh;
+  min-height: 50vh;
 }
 
 /* Board container and Space Explorer */
@@ -143,10 +143,16 @@ body {
 
 .info-panels-container .player-panel:first-child {
   grid-column: 1 / 2; /* First column */
+  min-height: 50vh !important; /* Reasonable minimum height */
+  max-height: 75vh !important; /* Prevent excessive height */
+  height: auto !important; /* Allow content-based height */
+  overflow: visible !important; /* Remove any overflow restrictions */
 }
 
 .info-panels-container .player-panel.middle-panel {
   grid-column: 2 / 3; /* Middle (second) column */
+  z-index: 600; /* Above turn transition overlay (500) */
+  position: relative;
 }
 
 .info-panels-container .player-panel:last-child {

@@ -289,13 +289,20 @@ class TurnManager {
       if (negotiationResult.success) {
         console.log('TurnManager: Negotiation successful:', negotiationResult.message);
         
-        // Dispatch event for negotiation
+        // Dispatch event for negotiation - this triggers UI updates
         window.GameStateManager.dispatchEvent('gameStateChanged', {
           changeType: 'playerNegotiated',
           playerId: currentPlayer.id,
           player: currentPlayer,
           timePenalty: negotiationResult.timePenalty,
           message: negotiationResult.message
+        });
+        
+        // Trigger a player state update to refresh all panels
+        window.GameStateManager.dispatchEvent('playerMoved', {
+          player: currentPlayer,
+          newSpace: currentPlayer.position,
+          source: 'negotiation'
         });
         
         // Move to next player's turn since negotiation skips current player

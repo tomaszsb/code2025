@@ -44,6 +44,11 @@ window.StaticPlayerStatus = class StaticPlayerStatus extends React.Component {
     // Capture the initial player status and space info when landing on a space
     this.capturePlayerStatus();
     
+    // Expose this component globally for negotiate functionality
+    if (window.currentGameBoard) {
+      window.currentGameBoard.staticPlayerStatus = this;
+    }
+    
     // BACKUP FIX: Also listen directly to playerMoved events as a fallback
     this.handlePlayerMovedEvent = this.handlePlayerMovedEvent.bind(this);
     if (window.GameStateManager) {
@@ -218,6 +223,35 @@ window.StaticPlayerStatus = class StaticPlayerStatus extends React.Component {
     });
     
     this.logInfo('Captured player status on space landing');
+    
+    // Expose pre-landing state globally for negotiate functionality
+    if (window.currentGameBoard) {
+      window.currentGameBoard.preLandingPlayerState = {
+        playerId: player.id,
+        resources: {
+          money: playerMoney,
+          time: player.resources?.time || 0
+        },
+        cards: player.cards ? [...player.cards] : [],
+        position: player.position
+      };
+    }
+  }
+  
+  // Expose method to get pre-landing state
+  getPreLandingState() {
+    if (this.state.playerStatus) {
+      return {
+        playerId: this.props.player?.id,
+        resources: {
+          money: this.state.playerStatus.money,
+          time: this.state.playerStatus.time
+        },
+        cards: this.props.player?.cards ? [...this.props.player.cards] : [],
+        position: this.state.playerStatus.position
+      };
+    }
+    return null;
   }
   
   // Count cards by type (W, B, I, L, E)

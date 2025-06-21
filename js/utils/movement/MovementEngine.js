@@ -1808,7 +1808,29 @@ class MovementEngine {
    */
   canNegotiate(player) {
     const spaceData = this.getCurrentSpaceData(player);
-    return spaceData && spaceData.Negotiate === "YES";
+    
+    // Debug logging to see what's happening
+    console.log(`MovementEngine: canNegotiate debug for player ${player?.name} at position ${player?.position}`);
+    console.log(`MovementEngine: spaceData found:`, spaceData);
+    console.log(`MovementEngine: spaceData.Negotiate value:`, spaceData?.Negotiate);
+    console.log(`MovementEngine: spaceData.requires_dice_roll value:`, spaceData?.requires_dice_roll);
+    
+    if (!spaceData || spaceData.Negotiate !== "YES") {
+      console.log(`MovementEngine: canNegotiate returning false - no spaceData or Negotiate !== "YES"`);
+      return false;
+    }
+    
+    // If space requires dice roll, negotiate only available after dice is rolled
+    if (spaceData.requires_dice_roll === "Yes") {
+      // Check if dice has been rolled for this turn
+      const gameBoard = window.currentGameBoard;
+      const hasRolled = gameBoard && gameBoard.state && gameBoard.state.hasRolledDice;
+      console.log(`MovementEngine: Space requires dice roll. hasRolledDice:`, hasRolled);
+      return hasRolled;
+    }
+    
+    console.log(`MovementEngine: canNegotiate returning true`);
+    return true;
   }
   
   /**
@@ -1821,21 +1843,47 @@ class MovementEngine {
       return { success: false, error: 'Negotiation not allowed at this space' };
     }
     
-    // Add time penalty for negotiating (like in the test file)
+    const spaceData = this.getCurrentSpaceData(player);
+    const gameBoard = window.currentGameBoard;
+    
+    // Get pre-landing state from StaticPlayerStatus component
+    const preLandingState = gameBoard?.preLandingPlayerState;
+    if (!preLandingState || preLandingState.playerId !== player.id) {
+      return { success: false, error: 'Cannot find pre-landing state for revert' };
+    }
+    
+    // Revert player to pre-landing state
+    player.resources = {
+      money: preLandingState.resources.money,
+      time: preLandingState.resources.time
+    };
+    player.cards = [...preLandingState.cards];
+    player.position = preLandingState.position;
+    
+    // Parse and add time penalty from space data
+    let timePenalty = 1; // Default fallback
+    if (spaceData.Time && spaceData.Time.trim() !== '') {
+      const timeMatch = spaceData.Time.match(/(\d+)/);
+      if (timeMatch) {
+        timePenalty = parseInt(timeMatch[1], 10);
+      }
+    }
+    
+    // Apply negotiate time penalty
     if (!player.resources) {
       player.resources = { time: 0, money: 0 };
     }
-    player.resources.time += 1;
+    player.resources.time += timePenalty;
     
     // Reset movement state but don't move player
     this.resetMovementState();
     
-    console.log(`MovementEngine: ${player.name} chose to negotiate and stay (+1 day penalty)`);
+    console.log(`MovementEngine: ${player.name} chose to negotiate and stay (+${timePenalty} day penalty)`);
     
     return {
       success: true,
-      timePenalty: 1,
-      message: `${player.name} chose to negotiate and stay at ${player.position} (+1 day penalty)`
+      timePenalty: timePenalty,
+      message: `${player.name} chose to negotiate and stay at ${player.position} (+${timePenalty} day penalty)`
     };
   }
   
